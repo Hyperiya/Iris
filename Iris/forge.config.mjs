@@ -33,7 +33,7 @@ const config = {
         options: {
           bin: "iris", // Add this line
           categories: ["AudioVideo", "Audio", "Player"],
-          icon: "src/assets/icons/Iris.svg",
+          icon: path.join(process.cwd(), "src", "assets", "icons", "Iris.svg"),
         },
       },
     },
