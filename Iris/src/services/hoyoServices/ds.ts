@@ -19,22 +19,11 @@ export const DS_SALT = {
   cn_passport: "JwYDpKvLj6MrMqqYU6jTKF17KNO2PXoS",
 };
 
-const APP_KEYS = {
-  [Game.GENSHIN]: {
-    [Region.OVERSEAS]: "6a4c78fe0356ba4673b8071127b28123",
-    [Region.CHINESE]: "d0d3a7342df2026a70f650b907800111",
-  },
-  // Add other game keys as needed
-};
 
 let dsGenerator: DSGenerator | null = null;
 
 // Borrowed from TukanDev (https://github.com/TukanDev/qingyi/) 
 export function generateDynamicSecret(salt: string = DS_SALT[Region.OVERSEAS]): string {
-
-  // Try to use it
-  console.log('Process type:', process.type)  // Should log 'browser' if in main process, 'renderer' if in renderer
-
 
   const t = Math.floor(Date.now() / 1000);
   const r = nodeCrypto.randomBytes(6).toString('hex').slice(0, 6);

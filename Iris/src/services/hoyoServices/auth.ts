@@ -1,7 +1,6 @@
 // src/hoyolab-auth.ts
 import axios, { AxiosInstance } from 'axios';
 import * as tough from 'tough-cookie';
-import { wrapper } from 'axios-cookiejar-support';
 import crypto from 'crypto';
 
 interface cookies {
@@ -181,19 +180,21 @@ export class HoyolabAuth {
             };
 
             this.log('Sending POST request to:', url);
-            // amazonq-ignore-next-line
             this.log('Request data:', { ...requestData, password: '[REDACTED]' });
 
-            const response = await this.client.post<any>(url, requestData, {
+            const response = await this.client.post(url, requestData, {
                 headers: {
-                    'x-rpc-source': 'v2.webLogin',
-                    'x-rpc-device_fp': '38d7ee588249d',
-                    'x-rpc-sdk_version': '2.16.1',
-                    'x-rpc-app_id': "c9oqaq3s3gu8",
-                    'x-rpc-game_biz': 'bbs_oversea',
-                    'x-rpc-language': 'en-us',
-                    'x-rpc-client_type': '4',
-                    'Accept': '*/*',
+                    'x-rpc-source': "v2.webLogin",
+                    'x-rpc-device_fp': "38d7ee588249d",
+                    'x-rpc-sdk_version': "2.16.1",
+                    'x-rpc-app_id': 'c9oqaq3s3gu8', // Replace with actual app ID
+                    'x-rpc-device_id': `${crypto.randomUUID()}`,
+                    'x-rpc-game_biz': "bbs_oversea",
+                    'x-rpc-language': "en-us",
+                    'x-rpc-client_type': "4",
+                    'x-rpc-referrer': "https://account.hoyolab.com/",
+                    'Origin': "https://account.hoyolab.com",
+                    'Referer': "https://account.hoyolab.com/"
                 }
             });
 
