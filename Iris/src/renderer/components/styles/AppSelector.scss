@@ -112,9 +112,26 @@
   justify-content: center;
   align-items: center;
   padding: 8px; // Add padding to prevent icon from touching edges
+  
 
   &:hover {
     background: #444;
+  }
+  
+  &:hover div {
+    svg {
+      transition: scale ease 0.2s;
+      scale: 1.1;
+    }
+  }
+
+  &:active {
+    div {
+      svg {
+        transition: scale ease 0.2s; 
+        scale: 0.9;
+      }
+    }
   }
 }
 
