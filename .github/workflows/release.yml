@@ -18,6 +18,7 @@ jobs:
       - name: install dependencies
         working-directory: ./Iris
         run: |
+          pwd
           ls
           npm install
       - name: build
