@@ -31,10 +31,11 @@ const config = {
       name: "@reforged/maker-appimage",
       config: {
         options: {
-          categories: ["Network"],
+          bin: "iris", // Add this line
+          categories: ["AudioVideo", "Audio", "Player"],
           icon: "src/assets/icons/Iris.svg",
-        }
-      }
+        },
+      },
     },
     {
       executableName: "iris",
