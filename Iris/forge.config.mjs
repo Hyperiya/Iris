@@ -33,7 +33,7 @@ const config = {
         options: {
           bin: "iris", // Add this line
           categories: ["AudioVideo", "Audio", "Player"],
-          icon: path.join(process.cwd(), "src", "assets", "icons", "Iris.svg"),
+          icon: path.join(process.cwd(), "..", "src", "assets", "icons", "Iris.svg"),
         },
       },
     },
@@ -59,7 +59,7 @@ const config = {
       config: {
         options: {
           bin: "iris",
-          icon: path.join(process.cwd(), "src", "assets", "icons", "Iris.png"),
+          icon: path.join(process.cwd(), "..", "src", "assets", "icons", "Iris.png"),
           productName: "iris",
         },
       },
