@@ -136,7 +136,7 @@ const SongLyrics: React.FC<SongLyricsProps> = ({
         {currentLyricIndex > 0 && (
           <div 
             key={`prev-${currentLyricIndex}`}
-            className="lyric prev-lyric clickable" 
+            className="lyric  secondary-lyric prev-lyric clickable" 
             onClick={() => handleLyricClick(lyrics[currentLyricIndex - 1].time)}
           >
             {lyrics[currentLyricIndex - 1].text}
@@ -154,7 +154,7 @@ const SongLyrics: React.FC<SongLyricsProps> = ({
         {currentLyricIndex < lyrics.length - 1 && (
           <div 
             key={`next-${currentLyricIndex}`}
-            className="lyric next-lyric clickable"
+            className="lyric secondary-lyric next-lyric clickable"
             onClick={() => handleLyricClick(lyrics[currentLyricIndex + 1].time)}
           >
             {lyrics[currentLyricIndex + 1].text}

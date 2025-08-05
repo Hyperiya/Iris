@@ -72,7 +72,7 @@
   box-sizing: border-box;
   overflow: visible; // Add this  
 
- 
+
   /* or try without padding and use margin instead */
   margin: 8px 0;
   padding: 0;
@@ -235,6 +235,28 @@
   position: relative;
 
   /* Add this to position the pseudo-element */
+
+  div {
+    all: unset;
+    display: flex; // Add this
+    width: auto;
+    height: auto;
+    transition: scale 0.2s ease-in-out;
+
+    svg {
+      align-self: center;
+    }
+  }
+
+  &:hover div {
+    transition: scale 0.2s ease-in-out;
+    scale: 1.1;
+  }
+
+  &:active div {
+    transition: scale 0.1s ease-in-out;
+    scale: 0.9;
+  }
 
   &::before {
     content: '';

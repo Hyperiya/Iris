@@ -1,10 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './Styles/SongControls.scss';
 
-
 import { PlayArrow, Pause, SkipNextRounded, SkipPreviousRounded, ShuffleRounded, RepeatOneRounded, RepeatRounded } from '@mui/icons-material';
-
-
 
 interface SongControlsProps {
   isPlaying: boolean;
@@ -15,8 +12,6 @@ interface SongControlsProps {
   onPause: () => void;
   onNext: () => void;
   onBack: () => void;
-  volume: number;
-  onVolumeChange: (volume: number) => void;
   onShuffle: () => void;
   onLoop: () => void;
   albumCover: string;
@@ -35,8 +30,6 @@ const SongControls: React.FC<SongControlsProps> = ({
   onNext,
   onBack,
   onLoop,
-  volume,
-  onVolumeChange,
   colors,
   onShuffle,
   shuffle,
@@ -172,11 +165,13 @@ const SongControls: React.FC<SongControlsProps> = ({
       id="play"
       onClick={handlePlayPause}
     >
-      {isPlaying ? (
-        <Pause className="control-icon" />
-      ) : (
-        <PlayArrow className="control-icon" />
-      )}
+      <div>
+        {isPlaying ? (
+          <Pause className="control-icon control-icon" />
+        ) : (
+          <PlayArrow className="control-icon control-icon" />
+        )}
+      </div>
     </button>
   );
 
@@ -186,7 +181,10 @@ const SongControls: React.FC<SongControlsProps> = ({
       id="skip"
       onClick={handleSkip}
     >
-      <SkipNextRounded className="skip-icon" />
+      <div>
+        <SkipNextRounded className="skip-icon control-icon" />
+
+      </div>
     </button>
   );
 
@@ -196,7 +194,9 @@ const SongControls: React.FC<SongControlsProps> = ({
       id="back"
       onClick={handleBack}
     >
-      <SkipPreviousRounded className="back-icon" />
+      <div>
+        <SkipPreviousRounded className="back-icon control-icon" />
+      </div>
     </button>
   );
 
@@ -206,16 +206,18 @@ const SongControls: React.FC<SongControlsProps> = ({
       id="shuffle"
       onClick={onShuffle}
     >
-      {(() => {
-        switch (shuffle) {
-          case true:
-            return <ShuffleRounded className="shuffle-icon shuffled" />;
-          case false:
-            return <ShuffleRounded className="shuffle-icon" />;
-          default:
-            return <ShuffleRounded className="shuffle-icon" />;
-        }
-      })()}
+      <div>
+        {(() => {
+          switch (shuffle) {
+            case true:
+              return <ShuffleRounded className="shuffle-icon control-icon shuffled " />;
+            case false:
+              return <ShuffleRounded className="shuffle-icon control-icon" />;
+            default:
+              return <ShuffleRounded className="shuffle-icon control-icon" />;
+          }
+        })()}
+      </div>
     </button>
   );
 
@@ -225,28 +227,30 @@ const SongControls: React.FC<SongControlsProps> = ({
       id="loop"
       onClick={onLoop}
     >
-      {(() => {
-        // console.log(`${loop} && ${typeof (loop)}`)
-        switch (loop) {
+      <div>
+        {(() => {
+          // console.log(`${loop} && ${typeof (loop)}`)
+          switch (loop) {
 
-          /**
-           * From `spicetify.d.ts`:
-           * 0: No repeat
-           * 1: Repeat all
-           * 2: Repeat one
-           * 
-           * Return current Repeat state (No repeat = 0/Repeat all = 1/Repeat one = 2).
-           */
-          case 0:
-            return <RepeatRounded className="loop-icon none" data-state={loop} />;
-          case 1:
-            return <RepeatRounded className="loop-icon all" data-state={loop} />;
-          case 2:
-            return <RepeatOneRounded className="loop-icon one" data-state={loop} />;
-          default:
-            return <RepeatRounded className="loop-icon" data-state={loop} />;
-        }
-      })()}
+            /**
+             * From `spicetify.d.ts`:
+             * 0: No repeat
+             * 1: Repeat all
+             * 2: Repeat one
+             * 
+             * Return current Repeat state (No repeat = 0/Repeat all = 1/Repeat one = 2).
+             */
+            case 0:
+              return <RepeatRounded className="loop-icon control-icon none" data-state={loop} />;
+            case 1:
+              return <RepeatRounded className="loop-icon control-icon all" data-state={loop} />;
+            case 2:
+              return <RepeatOneRounded className="loop-icon control-icon one" data-state={loop} />;
+            default:
+              return <RepeatRounded className="loop-icon control-icon" data-state={loop} />;
+          }
+        })()}
+      </div>
     </button>
   );
   // Misc

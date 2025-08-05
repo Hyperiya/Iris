@@ -1,3 +1,5 @@
+@use 'sass:color';
+
 .lyrics-container {
   position: absolute;
   flex-direction: column;
@@ -12,9 +14,9 @@
   transform: translateY(-50%) translateX(-50%);
   z-index: 1;
   transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  --average-color:'#ffffff';
-  --brighter-color:'#cccccc';
-  --dimmer-color:'#999999';
+  --average-color: '#ffffff';
+  --brighter-color: '#cccccc';
+  --dimmer-color: '#999999';
   opacity: 0;
   // display: none;
   user-select: all;
@@ -37,8 +39,10 @@
   width: 50vw;
   max-width: 600px;
   margin: 0 auto;
-  overflow: hidden; /* Hide overflowing content during animations */
-  height: auto; /* Allow height to adjust to content */
+  overflow: hidden;
+  /* Hide overflowing content during animations */
+  height: auto;
+  /* Allow height to adjust to content */
 }
 
 .lyric {
@@ -47,23 +51,27 @@
   width: fit-content;
   transform-origin: center center;
   opacity: 1;
+  --set-dimmer-color: color-mix(in srgb, var(--dimmer-color) 30%, white 70%);
 
   /* Improved transitions for sliding effect */
-  transition: 
+  transition:
     transform 0.5s cubic-bezier(0.4, 0, 0.2, 1),
     opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
     color 0.3s ease;
 
-  &.prev-lyric {
-    color: var(--dimmer-color);
+
+  &.secondary-lyric {
+    color: var(--set-dimmer-color);
     font-size: calc(1.4vw + 0.3rem);
-    transform: translateY(-50%);
     opacity: 0.7;
-    mask-image: linear-gradient(0deg, var(--dimmer-color), transparent 150%);
     font-family: Urbanist;
+  }
+
+  &.prev-lyric {
+    mask-image: var(--set-dimmer-color);
     animation: slideFromTop 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   }
-  
+
   &.current-lyric {
     color: var(--average-color);
     font-size: calc(1.7vw + 0.3rem);
@@ -71,20 +79,29 @@
     margin: 0.5rem 0;
     font-family: urbanist;
     animation: slideIntoView 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-    
+
     &.current {
       animation: pulse 1.5s infinite alternate;
     }
   }
 
   &.next-lyric {
-    color: var(--dimmer-color);
-    font-size: calc(1.4vw + 0.3rem);
-    transform: translateY(50%);
-    opacity: 0.7;
-    mask-image: linear-gradient(180deg, var(--dimmer-color), transparent 150%);
-    font-family: Urbanist;
+    mask-image: var(--set-dimmer-color);
     animation: slideFromBottom 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+}
+
+.clickable {
+  cursor: pointer;
+  transition: scale 0.1s ease;
+  transform-origin: center;
+
+  &:hover {
+    scale: 1.02;
+  }
+
+  &:active {
+    scale: 0.98;
   }
 }
 
@@ -92,6 +109,7 @@
   0% {
     opacity: 0.9;
   }
+
   100% {
     opacity: 1;
   }
@@ -103,6 +121,7 @@
     transform: translateY(-60%);
     opacity: 0;
   }
+
   to {
     transform: translateY(-50%);
     opacity: 0.7;
@@ -114,6 +133,7 @@
     transform: translateY(50%);
     opacity: 0.7;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
@@ -125,6 +145,7 @@
     transform: translateY(60%);
     opacity: 0;
   }
+
   to {
     transform: translateY(50%);
     opacity: 0.7;
@@ -141,16 +162,3 @@
   font-style: italic;
 }
 
-.clickable {
-  cursor: pointer;
-  transition: transform 0.1s ease;
-  transform-origin: center;
-
-  &:hover {
-    transform: scale(1.02);
-  }
-
-  &:active {
-    transform: scale(0.98);
-  }
-}

@@ -45,7 +45,6 @@ class Iris {
     prevDuration: 0
   }
 
-  private songyear: number | null | undefined
   private loopSwitch: boolean = false
 
   constructor() {
@@ -301,21 +300,8 @@ class Iris {
               case 'next':
                 // Handle getting next track info
                 const nextTrack = Spicetify.Queue.nextTracks[0]['contextTrack']['metadata'];
-                const nextAlbumId = nextTrack.album_uri?.split(':')[2]
-                const nextAccessToken = Spicetify.Platform.Session.accessToken;
-                let nextYear
                 console.log(`Next Tracks: ${JSON.stringify(Spicetify.Queue.nextTracks[0]['contextTrack']['metadata'], null, 2)}`);
 
-                fetch(`https://api.spotify.com/v1/albums/${nextAlbumId}`, {
-                  headers: {
-                    'Authorization': `Bearer ${nextAccessToken}`
-                  }
-                })
-                  .then(response => response.json())
-                  .then(albumData => {
-                    // Extract year from release_date
-                    nextYear = albumData.release_date?.split('-')[0];
-                  })
 
                 this.sendMessage(JSON.stringify({
                   type: 'response',
@@ -326,7 +312,7 @@ class Iris {
                     album: nextTrack.album_title,
                     duration: nextTrack.duration,
                     album_cover: this.convertSpotifyImageUriToUrl(nextTrack.image_xlarge_url),
-                    year: nextYear || 2000
+                    year: nextTrack.album_name || 'Unknown',
                   }
                 }));
                 break;
@@ -456,7 +442,6 @@ class Iris {
                 this.duration.duration = currentTrack.duration.milliseconds;
 
                 console.log(`current track: ${currentTrack}`)
-                console.log(this.songyear)
                 this.sendMessage(JSON.stringify({
                   type: 'response',
                   action: 'current',
@@ -532,7 +517,6 @@ class Iris {
     Spicetify.showNotification("Hello from Iris!");
 
     const currentTrack = Spicetify.Player.data.item;
-    this.getSongYear(currentTrack)
   }
 
   // Method to safely send messages
@@ -555,27 +539,6 @@ class Iris {
     */
     this.listenForSongChange();
     this.listenForPlayPause();
-  }
-
-  private async getSongYear(currentTrack: any): Promise<string> {
-    const accessToken = Spicetify.Platform.Session.accessToken;
-    const trackId = currentTrack?.uri?.split(':')[2];
-    
-    try {
-      const response = await fetch(`https://api.spotify.com/v1/tracks/${trackId}`, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`
-        }
-      });
-      const albumData = await response.json();
-      console.log(`Album Data: ${JSON.stringify(albumData, null, 2)}`);
-      const year = albumData.album?.release_date?.split('-')[0] || 'Unknown Year';
-      this.songyear = year; // Still update the class property
-      return year;
-    } catch (error) {
-      console.error('Error fetching song year:', error);
-      return 'Unknown Year';
-    }
   }
 
   private async listenForSongChange() {
@@ -607,8 +570,6 @@ class Iris {
 
 
       // Fetch album details to get release date
-      this.getSongYear(currentTrack)
-
 
       console.log(`Song ended: Previous Duration: ${this.duration.prevDuration}`)
       console.log(`Song ended: Previous Progress: ${this.progress}`)

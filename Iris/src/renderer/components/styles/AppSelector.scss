@@ -14,8 +14,7 @@
   align-items: center;
   justify-content: center;
   left: 50%;
-  transform: translateX(-50%);
-  translate: 0px 10px;
+  translate: -50% 10px;
   z-index: 1000; // Adjust this if needed to be below titlebar but above other content
 
   &.hide {
@@ -49,17 +48,44 @@
   font-size: 1.05rem;
   font-family: Urbanist;
   padding: 4px 10px 4px 10px;
+  display: flex;
+  flex-direction: row;
   background-color: #1a1a1a;
   align-items: center;
   justify-content: center;
   text-align: center;
-  width:fit-content;
+  width: fit-content;
   border: solid #27272a 1px;
   border-top: transparent;
   border-radius: 0 0px 8px 8px;
   filter: drop-shadow(0 -10px #1a1a1a);
   
+  svg {
+    display: flex;
+    margin-right: 5px;
+    pointer-events: none; // Add this
+  }
   
+  // Also disable pointer events on text content
+  * {
+    pointer-events: none
+  }
+}
+
+.selector-wrapper {
+  transition: transform 0.3s ease;
+  
+  &.collapsed {
+    transform: translateY(calc(-100% + 25px));
+    
+    &.selector{
+      pointer-events: none  ;
+    }
+  }
+}
+
+.time-display {
+  transition: transform 0.3s ease;
 }
 
 

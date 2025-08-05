@@ -19,7 +19,6 @@ export function setupHoyoHandlers() {
         try {
             if (!hoyoManager) {
                 // Initialize if not exists
-                console.log('Init first please')
                 return;
             }
 

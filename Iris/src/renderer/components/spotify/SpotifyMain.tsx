@@ -291,12 +291,6 @@ const SpotifyMain: React.FC<SpotifyMainProps> = (
               await spotifyService.toggleRepeatMode()
             }}
             onSeek={handleSeek}
-            volume={currentTrackData.volume || 0}
-            onVolumeChange={async (volume: number) => {
-              manualStateUpdateRef.current = Date.now();
-              setCurrentTrackData((prev) => ({ ...prev, volume }));
-              await spotifyService.setVolume(volume);
-            }}
             albumCover={currentTrackData.album_cover || Iris}
             colors={colors}
             shuffle={currentTrackData.shuffle_state || false}
