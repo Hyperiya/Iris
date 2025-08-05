@@ -20,6 +20,10 @@ jobs:
         run: |
           pwd
           ls
+          ls ./src
+          ls ./src/assets
+          ls ./src/assets/icons
+          ls -la ..
           npm install
       - name: build
         working-directory: ./Iris

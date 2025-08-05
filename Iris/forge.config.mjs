@@ -59,7 +59,7 @@ const config = {
       config: {
         options: {
           bin: "iris",
-          icon: path.join(process.cwd(), "..", "src", "assets", "icons", "Iris.png"),
+          icon: path.join(process.cwd(), "src", "assets", "icons", "Iris.png"),
           productName: "iris",
         },
       },
