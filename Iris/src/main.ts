@@ -7,15 +7,11 @@ import { fileURLToPath } from 'url';
 import fs from 'fs'
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
-declare const MAIN_WINDOW_PRELOAD_VITE_ENTRY: string;
-declare const MAIN_WINDOW_VITE_NAME: string;
 
 import { setupIpcHandlers } from './ipc/index.ts';
 import { cleanupSpotifyHandlers } from './ipc/handlers/spotify.ts'
 
 import { saveWindowState, restoreWindowState } from './utils/windowState.ts';
-
-import Iris from './assets/icons/Iris.png'
 
 let mainWindow: BrowserWindow | null = null;
 let discordRPC: DiscordRPC | null = null;
@@ -168,7 +164,7 @@ const createWindow = async (): Promise<void> => {
     });
   }
 
-  setupIpcHandlers(mainWindow);
+  setupIpcHandlers(mainWindow, snapshotManager);
 
   mainWindow.on('maximize', () => {
     if (mainWindow) saveWindowState(mainWindow);
@@ -278,7 +274,13 @@ const startLoadingProcess = () => {
       // Create a new snapshot if one wasn't loaded or is outdated
       if (!snapshotLoaded) {
         // In a real implementation, you'd collect the loaded modules
-        const loadedModules = ['main', 'renderer', 'preload']; // Example
+        const loadedModules = [
+          __filename,
+          ...Object.keys(require.cache || {}),
+          'renderer-bundle',
+          'preload-bundle'
+        ];
+
         snapshotManager?.createSnapshot(loadedModules);
       }
     }
@@ -292,57 +294,13 @@ ipcMain.handle('get-app-path', () => {
 });
 
 ipcMain.on('console-log', (_, message) => {
+  if (process.env.NODE_ENV !== 'production') return; // Only log in non-production environments
   console.log(message); // This will print to terminal
 });
 
 ipcMain.on('console-error', (_, message) => {
+  if (process.env.NODE_ENV !== 'production') return; // Only log in non-production environments
   console.error(message); // This will print to terminal
-});
-
-// Add IPC handlers for snapshot management
-ipcMain.handle('snapshot:create', () => {
-  if (snapshotManager) {
-    const loadedModules = ['main', 'renderer', 'preload']; // Example
-    snapshotManager.createSnapshot(loadedModules);
-    return true;
-  }
-  return false;
-});
-
-ipcMain.handle('snapshot:delete', () => {
-  if (snapshotManager) {
-    snapshotManager.deleteSnapshot();
-    return true;
-  }
-  return false;
-});
-
-ipcMain.handle('snapshot:status', () => {
-  if (snapshotManager) {
-    return {
-      exists: snapshotManager.hasValidSnapshot(),
-      info: snapshotManager.getSnapshotInfo ? snapshotManager.getSnapshotInfo() : null
-    };
-  }
-  return { exists: false, info: null };
-});
-
-ipcMain.handle('toggle-click-through', (_, enable) => {
-  if (!mainWindow) return false;
-  
-  if (enable) {
-    // Enable click-through mode
-    mainWindow.setIgnoreMouseEvents(true, { forward: true });
-    mainWindow.setAlwaysOnTop(true);
-    mainWindow.setFocusable(false);
-  } else {
-    // Disable click-through mode
-    mainWindow.setIgnoreMouseEvents(false);
-    mainWindow.setAlwaysOnTop(false);
-    mainWindow.setFocusable(true);
-  }
-  
-  return true;
 });
 
 app.whenReady().then(async () => {

@@ -6,8 +6,10 @@ import { setupHoyoHandlers } from './handlers/hoyo.ts';
 import { setupSpicetifyHandlers } from './handlers/spicetify.ts';
 import { setupHoyoAuthHandlers } from './handlers/hoyoAuth.ts';
 import { setupLoadingHandlers } from './handlers/loading.ts';
+import { setupSnapshotHandler } from './handlers/snapshots.ts';
+import { SnapshotManager } from '../utils/snapshotUtil.ts';
 
-export function setupIpcHandlers(mainWindow: BrowserWindow) {
+export function setupIpcHandlers(mainWindow: BrowserWindow, snapshotManager: SnapshotManager | null) {
     setupWindowHandlers(mainWindow);
     setupDiscordHandlers(mainWindow);
     setupSpotifyHandlers();
@@ -15,4 +17,5 @@ export function setupIpcHandlers(mainWindow: BrowserWindow) {
     setupSpicetifyHandlers();
     setupHoyoAuthHandlers();
     setupLoadingHandlers(mainWindow);
+    setupSnapshotHandler(snapshotManager);
 }

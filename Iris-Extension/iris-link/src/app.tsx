@@ -515,8 +515,6 @@ class Iris {
     await this.establishListeners()
     // Show initial message
     Spicetify.showNotification("Hello from Iris!");
-
-    const currentTrack = Spicetify.Player.data.item;
   }
 
   // Method to safely send messages

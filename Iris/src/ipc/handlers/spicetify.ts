@@ -16,7 +16,7 @@ export function setupSpicetifyHandlers() {
   ipcMain.handle('install-spicetify-extension', async () => {
     try {
       if (process.platform !== 'win32') {
-        throw new Error('This feature is only available on Windows');
+        throw new Error('This feature is only available on Windows (For now!)');
       }
 
       const appDataPath = app.getPath('appData');
@@ -43,6 +43,8 @@ export function setupSpicetifyHandlers() {
       // Copy the extension file
       await fs.promises.copyFile(sourcePath, extensionDestPath);
 
+      await exec(`spicetify config extensions ${extensionFile}`); 
+
       // Run spicetify apply
       await new Promise((resolve, reject) => {
         exec('spicetify apply', (error, stdout, stderr) => {
@@ -57,7 +59,7 @@ export function setupSpicetifyHandlers() {
       });
 
       return { success: true, message: 'Extension installed successfully!' };
-    } catch (error:any) {
+    } catch (error: any) {
       console.error('Installation error:', error);
       return {
         success: false,

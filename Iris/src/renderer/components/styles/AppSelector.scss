@@ -76,10 +76,10 @@
   transition: transform 0.3s ease;
   
   &.collapsed {
-    transform: translateY(calc(-100% + 25px));
+    transform: translateY(calc(-100% + 20px));
     
     &.selector{
-      pointer-events: none  ;
+      pointer-events: none;
     }
   }
 }

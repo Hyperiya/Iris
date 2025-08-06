@@ -204,13 +204,11 @@ function AppContent() {
         />
 
         <div className={`content-wrapper ${viewState}`}>
-          {enabledModules.Hoyolab && enabledModules.Spotify && (
-            <AppSelector
-              viewState={viewState}
-              setViewState={setViewState}
-              hide={hide}
-            />
-          )}
+          <AppSelector
+            viewState={viewState}
+            setViewState={setViewState}
+            hide={hide}
+          />
           {isSettings && (
             <div
               className="settings-backdrop"
