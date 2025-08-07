@@ -7,6 +7,7 @@ interface Song {
   artist: string;
   album_cover: string;
   year: string;
+  album: string;
 }
 
 interface SongInfoProps {
@@ -33,7 +34,14 @@ const SongInfo: React.FC<SongInfoProps> = ({ currentSong, colors, volume, onVolu
         />
       </div>
       <div className="song-text">{currentSong?.name}</div>
-      <div className="artist-text">{currentSong?.artist} • <span className='year-text'>{currentSong.year}</span></div>
+      <div className="artist-text">{currentSong?.artist} • <span className='year-text'>{(() => {
+        if (currentSong.album == currentSong.name) {
+          return "Single";
+        } else if (currentSong.album == currentSong.artist) {
+          return currentSong.album;
+        }
+        return currentSong.album;
+      })()}</span></div>
     </div>
   );
 };

@@ -184,7 +184,8 @@ class SpotifyService {
 
                         // Check if this is the response we're waiting for
                         if (response.type === 'response' && response.action === 'current') {
-
+                            
+                            console.log(`response: ${JSON.stringify(response, null, 10)}`)
                             // Remove the message handler
                             this.ws?.removeEventListener('message', messageHandler);
                             // console.log(`response: ${JSON.stringify(response, null, 10)}`)
@@ -196,7 +197,7 @@ class SpotifyService {
                                 album_cover: response.data.album_cover || null,
                                 year: response.data.year,
                                 album: response.data.album,
-                                duration_ms: response.data.duration_ms?.milliseconds,
+                                duration_ms: response.data.duration_ms,
                                 progress_ms: response.data.progress_ms,
                                 is_playing: response.data.is_playing,
                                 volume: response.data.volume * 100,

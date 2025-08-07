@@ -1,11 +1,14 @@
 var interval: number = 100
 const workerCode =
   `
+let intervalId;
 self.onmessage = function(e) {
   if (e.data === 'start') {
-    setInterval(() => {
+    intervalId = setInterval(() => {
       self.postMessage('tick');
-    }, ${interval}); // Interval
+    }, ${interval});
+  } else if (e.data === 'stop') {
+    clearInterval(intervalId);
   }
 };
 `
@@ -46,6 +49,7 @@ class Iris {
   }
 
   private loopSwitch: boolean = false
+  private cleanupTimers: any[] = []
 
   constructor() {
     this.main();
@@ -67,36 +71,24 @@ class Iris {
 
 
 
-    // Listen for worker messages
+    // Listen for worker messages - optimized for performance
     this.progressWorker.onmessage = () => {
       if (
         this.duration.prevDuration - this.progress.prevProgress >= 1000 
         && this.progress.progress <= 500 
         && Spicetify.Player.getRepeat() === 2) this.loopSwitch = true;
 
-      let subtract
-      if (this.wasAutoSwitchedThisSong && !this.timingSwitch && !this.loopSwitch) {
-        subtract = -750
-      } else if (this.loopSwitch && !this.timingSwitch) {
-        subtract = -750
-      } else {
-        subtract = 0
+      let subtract = 0;
+      if ((this.wasAutoSwitchedThisSong || this.loopSwitch) && !this.timingSwitch) {
+        subtract = -750;
       }
+      
       const progress = Math.max((Spicetify.Player.getProgress() + subtract), 0);
       const duration = Spicetify.Player.getDuration();
-      this.progress.prevProgress = this.progress.progress
-      this.progress.progress = progress
+      this.progress.prevProgress = this.progress.progress;
+      this.progress.progress = progress;
 
-      console.log(JSON.stringify({
-        type: 'progress',
-        data: {
-          progress,
-          duration,
-          percentage: (progress / duration) * 100
-        }
-      }));
-
-
+      // Send progress data (keeping high frequency as requested)
       this.sendMessage(JSON.stringify({
         type: 'progress',
         data: {
@@ -130,6 +122,7 @@ class Iris {
 
   private stopProgressTracking() {
     if (this.progressWorker) {
+      this.progressWorker.postMessage('stop');
       this.progressWorker.terminate();
       this.progressWorker = null;
     }
@@ -180,11 +173,8 @@ class Iris {
       };
 
       this.ws.onmessage = async (event) => {
-        console.log('Received in app.tsx:', event.data);
         // Handle incoming messages here
-
         const data = JSON.parse(event.data);
-        console.log(`data: ${data}`)
 
 
 
@@ -300,7 +290,6 @@ class Iris {
               case 'next':
                 // Handle getting next track info
                 const nextTrack = Spicetify.Queue.nextTracks[0]['contextTrack']['metadata'];
-                console.log(`Next Tracks: ${JSON.stringify(Spicetify.Queue.nextTracks[0]['contextTrack']['metadata'], null, 2)}`);
 
 
                 this.sendMessage(JSON.stringify({
@@ -437,27 +426,34 @@ class Iris {
                 */
 
 
-                // Handle getting current track info
+                // Handle getting current track info - optimized payload
                 const currentTrack = Spicetify.Player.data.item;
+                if (!currentTrack) {
+                  this.sendMessage(JSON.stringify({
+                    type: 'response',
+                    action: 'current',
+                    data: { name: 'No Song Playing' }
+                  }));
+                  break;
+                }
+                
                 this.duration.duration = currentTrack.duration.milliseconds;
-
-                console.log(`current track: ${currentTrack}`)
+                
                 this.sendMessage(JSON.stringify({
                   type: 'response',
                   action: 'current',
                   data: {
-                    name: currentTrack?.name || 'No Song Playing',
-                    artist: currentTrack?.artists?.[0]?.name || 'Unknown Artist',
-                    album: currentTrack?.album?.name || 'Unknown',
-                    duration_ms: currentTrack?.duration || 0,
-                    album_cover: this.convertSpotifyImageUriToUrl(currentTrack.metadata.image_xlarge_url),
-                    year: currentTrack.album.name || 'Unknown',
-                    volume: Spicetify.Player.getVolume(),
+                    name: currentTrack.name,
+                    artist: currentTrack.artists?.[0]?.name || 'Unknown Artist',
+                    album: currentTrack.album?.name || 'Unknown',
+                    duration_ms: currentTrack?.duration?.milliseconds || 0,
+                    album_cover: this.convertSpotifyImageUriToUrl(currentTrack.metadata?.image_xlarge_url || ''),
+                    volume: Math.round(Spicetify.Player.getVolume() * 100),
                     is_playing: Spicetify.Player.isPlaying(),
                     repeat_state: Spicetify.Player.getRepeat(),
                     shuffle_state: Spicetify.Player.getShuffle(),
                     progress_ms: Spicetify.Player.getProgress(),
-                    progress_percentage: Spicetify.Player.getProgressPercent() * 100
+                    progress_percentage: Math.round(Spicetify.Player.getProgressPercent() * 100)
                   }
                 }));
 
@@ -536,56 +532,43 @@ class Iris {
     this.listenForProgressChange(); 
     */
     this.listenForSongChange();
-    this.listenForPlayPause();
   }
 
   private async listenForSongChange() {
     this.duration.prevDuration = Spicetify.Player.getDuration();
-    console.log('starting songchange eventlistener')
 
     Spicetify.Player.addEventListener("songchange", (event) => {
-      this.loopSwitch=false;
-      console.log('songchange event triggered');
-      // Check if previous song ended naturally (within 1.5s of its end)
-
-      console.log(`song: ${this.progress.prevProgress}`)
+      this.loopSwitch = false;
+      
+      // Optimized song change detection
       if (this.progress.prevProgress > (this.duration.prevDuration - 3550)) {
-        console.log('Song ended naturally')
         this.wasAutoSwitchedThisSong = true;
-        setTimeout(() => {
-          // Reset after 2 seconds
-        }, 2000);
+        const timerId = setTimeout(() => {
+          this.wasAutoSwitchedThisSong = false;
+        }, 2000) as any;
+        this.cleanupTimers.push(timerId);
       } else {
         this.wasAutoSwitchedThisSong = false;
-        console.log('Song ended abruptly')
-      };
-
-      
-
-      const currentTrack = Spicetify.Player.data.item;
-
-      console.log(JSON.stringify(currentTrack, null, 2))
-
-
-      // Fetch album details to get release date
-
-      console.log(`Song ended: Previous Duration: ${this.duration.prevDuration}`)
-      console.log(`Song ended: Previous Progress: ${this.progress}`)
+      }
 
       // Store current values for next change
       this.duration.prevDuration = Spicetify.Player.getDuration();
+      
+      // Reset timing switch
+      this.timingSwitch = false;
     });
   }
 
-
-  private async listenForPlayPause() {
-    Spicetify.Player.addEventListener('onplaypause', (event) => {
-      const isPlaying = Spicetify.Player.isPlaying();
-    })
-  }
-
-  // Clean up method
+  // Enhanced cleanup method
   public cleanup() {
+    // Stop progress tracking
+    this.stopProgressTracking();
+    
+    // Clear all timers
+    this.cleanupTimers.forEach(timerId => clearTimeout(timerId as any));
+    this.cleanupTimers = [];
+    
+    // Close WebSocket
     if (this.ws) {
       this.ws.close();
       this.ws = null;

@@ -57,13 +57,15 @@ const SpotifyMain: React.FC<SpotifyMainProps> = (
     const fetchCurrentTrack = async () => {
       try {
         if (Date.now() - manualStateUpdateRef.current < 2000) return;
-
+        
         const track = await spotifyService.getCurrentTrack();
+
         if (track) {
           setCurrentTrackData(prev => {
             if (prev.name === track.name &&
               prev.artist === track.artist &&
               prev.year === track.year &&
+              prev.album === track.album &&
               prev.duration_ms === track.duration_ms &&
               prev.is_playing === track.is_playing &&
               prev.volume === track.volume &&
@@ -108,10 +110,9 @@ const SpotifyMain: React.FC<SpotifyMainProps> = (
 
     const updateProgress = async () => {
       const timeSinceManualUpdate = Date.now() - manualStateUpdateRef.current;
-
       if (timeSinceManualUpdate < 1000) {
         const remainingWait = 200 - timeSinceManualUpdate;
-        console.log(`Waiting for ${remainingWait}ms before resuming updates`);
+        
 
         if (timeoutId) clearTimeout(timeoutId);
 
@@ -224,6 +225,7 @@ const SpotifyMain: React.FC<SpotifyMainProps> = (
               artist: currentTrackData.artist || "No artist",
               album_cover: currentTrackData.album_cover || Iris,
               year: currentTrackData.year || "N/A",
+              album: currentTrackData.album || "N/A",
             }}
             colors={colors}
             volume={currentTrackData.volume || 0}
