@@ -20,7 +20,7 @@ export default defineConfig({
         entryFileNames: '[name].js'
       }
     },
-    emptyOutDir: true,
+    emptyOutDir: false,
     minify: process.env.NODE_ENV === 'production'
   },
   resolve: {
