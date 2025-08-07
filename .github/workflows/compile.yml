@@ -1,0 +1,112 @@
+name: Compile
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build_on_linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: install dependencies
+        working-directory: ./Iris
+        run: |
+          pwd
+          ls
+          ls ./src
+          ls ./src/assets
+          ls ./src/assets/icons
+          ls -la ..
+          npm install
+      - name: build
+        working-directory: ./Iris
+        run: npm run make
+      - name: Upload Linux Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-builds
+          path: ./Iris/out/make/**/*
+          retention-days: 7
+
+  build_on_mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: install dependencies
+        working-directory: ./Iris
+        run: |
+          ls
+          npm install
+      - name: build
+        working-directory: ./Iris
+        run: npm run make
+      - name: Upload macOS Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-builds
+          path: ./Iris/out/make/**/*
+          retention-days: 7
+
+  build_on_win:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: install dependencies
+        working-directory: ./Iris
+        run: |
+          ls
+          npm install
+      - name: build
+        working-directory: ./Iris
+        run: npm run make
+      - name: Upload Windows Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-builds
+          path: ./Iris/out/make/**/*
+          retention-days: 7
+
+  combine_artifacts:
+    needs: [build_on_linux, build_on_mac, build_on_win]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create combined directory
+        run: mkdir -p combined-builds/{linux,macos,windows}
+
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-builds
+          path: combined-builds/linux
+
+      - name: Download macOS artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-builds
+          path: combined-builds/macos
+
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-builds
+          path: combined-builds/windows
+
+      - name: Upload combined artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: iris-all-platforms
+          path: combined-builds
+          retention-days: 7
