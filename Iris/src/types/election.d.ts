@@ -63,8 +63,26 @@ interface SpotifyAPI {
 }
 
 
+// I realized I don't need this in renderer right now, but I might need it later.
+
+interface MusicRPCAPI {
+    connect: (clientId: string) => Promise<{ success: boolean; error?: string }>;
+    setActivity: (activity: {
+        type?: number;
+        status_display_type?: number;
+        details?: string;
+        state?: string;
+        timestamps?: { start?: number; end?: number };
+        assets?: { large_image?: string; large_text?: string; small_image?: string; small_text?: string };
+        buttons?: { label: string; url: string }[];
+    }) => Promise<{ success: boolean; error?: string }>;
+    disconnect: () => Promise<{ success: boolean }>;
+}
+
+
 declare global {
     interface Window {
+        musicRPC: MusicRPCAPI;
         electron: ElectronAPI;
         discord: DiscordAPI;
         loading: {

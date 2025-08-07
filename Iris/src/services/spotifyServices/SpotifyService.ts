@@ -1,3 +1,5 @@
+import { isEqual, omit } from 'lodash';
+
 export enum RepeatState {
     OFF = 'off',
     CONTEXT = 'context', // Repeats the playlist/album
@@ -21,8 +23,8 @@ export interface Song {
 
 export interface Token {
     token: string
-    tokenExpire:number
-    tokenTime:number
+    tokenExpire: number
+    tokenTime: number
 }
 
 // export interface LyricsResponse {
@@ -30,14 +32,8 @@ export interface Token {
 //     error?: string;
 // }
 
-interface ProgressData {
-    progress_ms: number | null;
-    duration_ms: number | null;
-    percentage: number | null;
-}
-
 class SpotifyService {
-    private baseUrl = 'https://api.spotify.com/v1';
+    private existingTrackData: Song | null = null;
 
     private ws: WebSocket | null = null;
     private readonly WS_URL = 'ws://localhost:5001';
@@ -55,6 +51,7 @@ class SpotifyService {
     } | null = null;
 
     private prevVolume
+    private rpcConnected = false;
 
     get currentProgress() {
         try {
@@ -69,7 +66,42 @@ class SpotifyService {
 
     constructor() {
         console.log('SpotifyService constructed');
+        this.initializeRPC();
     }
+
+
+    private async waitForWindow(): Promise<void> {
+        return new Promise((resolve) => {
+            if (typeof window !== 'undefined' && window.musicRPC) {
+                resolve();
+                console.log('Window is ready, musicRPC is available');
+                return;
+            }
+
+            const checkWindow = () => {
+                if (typeof window !== 'undefined' && window.musicRPC) {
+                    resolve();
+                } else {
+                    setTimeout(checkWindow, 100);
+                }
+            };
+
+            checkWindow();
+        });
+    }
+
+    
+    private async initializeRPC() {
+        try {
+            await this.waitForWindow();
+            await window.musicRPC.connect('1403055837311926443');
+            this.rpcConnected = true;
+        } catch (error) {
+            console.error('Failed to connect Music RPC:', error);
+        }
+    }
+
+
 
     private connectWebSocket() {
         try {
@@ -158,7 +190,6 @@ class SpotifyService {
         }
     }
 
-
     // In SpotifyService.ts methods
     async getCurrentTrack(): Promise<Song> {
         try {
@@ -184,12 +215,13 @@ class SpotifyService {
 
                         // Check if this is the response we're waiting for
                         if (response.type === 'response' && response.action === 'current') {
-                            
+
                             console.log(`response: ${JSON.stringify(response, null, 10)}`)
                             // Remove the message handler
                             this.ws?.removeEventListener('message', messageHandler);
                             // console.log(`response: ${JSON.stringify(response, null, 10)}`)
 
+                            const lastTrack = this.existingTrackData;
                             // Format the data into Song interface
                             const song: Song = {
                                 name: response.data.name,
@@ -204,6 +236,42 @@ class SpotifyService {
                                 repeat_state: response.data.repeat_state,
                                 shuffle_state: response.data.shuffle_state,
                             };
+
+                            if (!isEqual(omit(song, 'progress_ms'), omit(lastTrack, 'progress_ms'))) {
+                                const now = Date.now();
+                                const startTime = now - (song.progress_ms || 0);
+                                const endTime = startTime + (song.duration_ms || 0);
+
+                                window.musicRPC.setActivity({
+                                    type: 2,
+                                    status_display_type: 2,
+                                    details: song.name,
+                                    state: song.artist,
+                                    assets: {
+                                        large_image: 'iristransparent',
+                                        large_text: song.name,
+                                        small_image: 'playing',
+                                        small_text: song.artist
+                                    },
+                                    timestamps: {
+                                        start: startTime,
+                                        end: endTime
+                                    },
+                                    buttons: [
+                                        {
+                                            label: 'Listen on Spotify',
+                                            url: `https://open.spotify.com/track/${response.data.id}`
+                                        },
+                                        {
+                                            label: 'Download this app!',
+                                            url: 'https://github.com/Hyperiya/Iris'
+                                        }
+                                    ]
+                                });
+                            }
+
+
+                            this.existingTrackData = song;
                             // console.log(`song: ${JSON.stringify(song, null, 10)}`)
 
                             resolve(song);
@@ -459,7 +527,7 @@ class SpotifyService {
         }
     }
 
-    
+
 
     async getToken(): Promise<Token> {
         try {
@@ -504,7 +572,7 @@ class SpotifyService {
                                 tokenExpire: this.tokenExpire,
                                 tokenTime: this.tokenTime
                             });
-    
+
                         }
                     } catch (error) {
                         reject(error);

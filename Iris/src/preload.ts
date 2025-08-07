@@ -109,3 +109,15 @@ contextBridge.exposeInMainWorld('loading', {
     return () => ipcRenderer.removeAllListeners('loading:update');
   }
 });
+
+// I realized I don't need this in preload/renderer right now, but I might need it later.  
+
+contextBridge.exposeInMainWorld('musicRPC', {
+  connect: (clientId: string) => ipcRenderer.invoke('musicRPC:connect', clientId),
+  setActivity: (activity: {
+    details?: string;
+    state?: string;
+    assets?: { large_image?: string; large_text?: string };
+  }) => ipcRenderer.invoke('musicRPC:setActivity', activity),
+  disconnect: () => ipcRenderer.invoke('musicRPC:disconnect'),
+});

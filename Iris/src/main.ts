@@ -1,6 +1,6 @@
 // src/main.ts
 import path from 'path'
-import { app, BrowserWindow, session, ipcMain, screen, nativeImage } from 'electron';
+import { app, BrowserWindow, session, ipcMain, screen } from 'electron';
 import DiscordRPC from './services/discordServices/discordRPC.ts';
 import { SnapshotManager } from './utils/snapshotUtil.ts';
 import { fileURLToPath } from 'url';
@@ -275,8 +275,7 @@ const startLoadingProcess = () => {
       if (!snapshotLoaded) {
         // In a real implementation, you'd collect the loaded modules
         const loadedModules = [
-          __filename,
-          ...Object.keys(require.cache || {}),
+          import.meta.url,
           'renderer-bundle',
           'preload-bundle'
         ];

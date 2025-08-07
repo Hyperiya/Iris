@@ -109,6 +109,7 @@
     "electron-store": "^10.0.1",
     "fs": "^0.0.1-security",
     "iris": "file:",
+    "lodash": "^4.17.21",
     "lucide-react": "^0.487.0",
     "net": "^1.0.2",
     "path": "^0.12.7",

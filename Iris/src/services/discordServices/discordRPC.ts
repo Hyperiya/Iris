@@ -224,7 +224,7 @@ class DiscordRPC extends EventEmitter {
             return;
         } else if (false || tokens.refresh_token !== undefined && tokens.expires_at < Date.now()) {
             console.log('refreshing')
-            const response = await fetch("https://discord.com/api/v10//oauth2/token", {
+            const response = await fetch("https://discord.com/api/v10/oauth2/token", {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
@@ -360,6 +360,7 @@ class DiscordRPC extends EventEmitter {
     }
 
     private async handleMessage(opcode: number, data: any) {
+        console.log('Handling message with opcode:', opcode, 'and data:', data);
         switch (opcode) {
             case 1: // Event
                 return this.handleEvent(data);
