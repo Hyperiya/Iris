@@ -45,10 +45,8 @@ class MusicRPC extends EventEmitter {
 
     private handleData(chunk: Buffer) {
         this.buffer = Buffer.concat([this.buffer, chunk]);
-        // Handle incoming data (simplified)
     }
 
-    // In musicRPC.ts
     public setActivity(activity: {
         type?: number;
         status_display_type?: number;

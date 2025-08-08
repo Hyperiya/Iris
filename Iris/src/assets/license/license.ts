@@ -1,5 +1,5 @@
-export const LICENSE_TEXT = 
-`Attribution-NonCommercial-ShareAlike 4.0 International
+export const LICENSE_TEXT =
+   `Attribution-NonCommercial-ShareAlike 4.0 International
 
 =======================================================================
 

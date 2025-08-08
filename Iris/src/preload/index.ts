@@ -1,0 +1,20 @@
+import './discord.ts';
+import './electron.ts';
+import './hoyo.ts';
+import './loading.ts';
+import './lrc.ts';
+import './music.ts';
+import './settings.ts';
+import './snapshot.ts';
+import './spotify.ts';
+import './versions.ts';
+// In preload/index.ts
+export type { ElectronAPI } from './electron.ts';
+export type { DiscordAPI } from './discord.ts';
+export type { SpotifyAPI } from './spotify.ts';
+export type { MusicRPCAPI } from './music.ts';
+export type { SettingsAPI } from './settings.ts';
+export type { LoadingAPI } from './loading.ts';
+export type { LrcAPI } from './lrc.ts';
+export type { HoyoAPI } from './hoyo.ts';
+export type { SnapshotAPI } from './snapshot.ts';

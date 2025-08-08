@@ -15,8 +15,8 @@ const HoyoMain: React.FC<AppProps> = ({ ViewState }) => {
     useEffect(() => {
         const performLogin = async () => {
             try {
-                const username = window.settings.get('hoyolab.username') as string;
-                const password = window.settings.get('hoyolab.password') as string;
+                const username = window.settings.get('hoyolab.username');
+                const password = window.settings.get('hoyolab.password');
 
                 if (!username || !password) {
                     throw new Error('Username or password not found in storage');
