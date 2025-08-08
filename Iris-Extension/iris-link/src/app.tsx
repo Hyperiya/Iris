@@ -453,7 +453,8 @@ class Iris {
                     repeat_state: Spicetify.Player.getRepeat(),
                     shuffle_state: Spicetify.Player.getShuffle(),
                     progress_ms: Spicetify.Player.getProgress(),
-                    progress_percentage: Math.round(Spicetify.Player.getProgressPercent() * 100)
+                    progress_percentage: Math.round(Spicetify.Player.getProgressPercent() * 100),
+                    id: (currentTrack.uri || '').split(':').pop() || '',
                   }
                 }));
 
