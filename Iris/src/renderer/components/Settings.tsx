@@ -1,7 +1,6 @@
 // Settings.tsx
 import { ArrowForwardIosRounded } from '@mui/icons-material';
 import React, { useEffect, useState, useRef } from 'react';
-import secureLocalStorage from "react-secure-storage";
 import { LICENSE_TEXT } from '../../assets/license/license.ts';
 import './styles/Settings.scss';
 
@@ -9,15 +8,15 @@ import './styles/Settings.scss';
 import Iris from '../../assets/icons/IrisWideTransparent.png';
 
 export interface EnabledModules {
-    Spotify: boolean;
-    Discord: boolean;
-    Hoyolab: boolean;
+    spotify: boolean;
+    discord: boolean;
+    hoyolab: boolean;
 }
 
 export const DEFAULT_MODULES: EnabledModules = {
-    Spotify: true,
-    Discord: true,
-    Hoyolab: true
+    spotify: true,
+    discord: true,
+    hoyolab: true
 };
 
 interface SettingsProps {
@@ -315,8 +314,8 @@ function Hoyo({ }: HoyoProps) {
         const username = idInput.value;
         const password = secretInput.value;
 
-        secureLocalStorage.setItem('hoyolab_username', username);
-        secureLocalStorage.setItem('hoyolab_password', password);
+        window.settings.set('hoyolab.username', username);
+        window.settings.set('hoyolab.password', username);
 
 
         if (!username || !password) {
@@ -404,8 +403,8 @@ function Discord({
         const id = idInput.value;
         const secret = secretInput.value;
 
-        secureLocalStorage.setItem('discord_client_id', id);
-        secureLocalStorage.setItem('discord_client_secret', secret);
+        window.settings.set('discord.clientId', id);
+        window.settings.set('discord.clientSecret', secret);
 
         // Refreshing discord connection with the new credentials
         window.discord.disconnect();
@@ -458,47 +457,49 @@ function Modules({
     isSettings,
     setIsSettings
 }: ModulesProps) {
-    const modules: Array<keyof EnabledModules> = ['Spotify', 'Discord', 'Hoyolab'];
-    const [enabledModules, setEnabledModules] = useState<EnabledModules>(() => {
-        // Load saved module states from secure storage, defaulting to DEFAULT_MODULES
-        const savedModules = secureLocalStorage.getItem('enabled_modules');
-        if (savedModules) {
-            return JSON.parse(savedModules as string) as EnabledModules;
-        }
-        return DEFAULT_MODULES;
-    });
-    const [tempModules, setTempModules] = useState<EnabledModules>(enabledModules);
+    const modules: Array<keyof EnabledModules> = ['spotify', 'discord', 'hoyolab'];
+    const [enabledModules, setEnabledModules] = useState<EnabledModules>(DEFAULT_MODULES);
+    const [tempModules, setTempModules] = useState<EnabledModules>(DEFAULT_MODULES);
+
+    // Load settings on component mount
+    useEffect(() => {
+        const loadSettings = async () => {
+            const savedModules = await window.settings.get('ui.modules');
+            setEnabledModules(savedModules);
+            setTempModules(savedModules);
+        };
+        loadSettings();
+    }, []);
 
     useEffect(() => {
         if (isSettings) {
             setTempModules(enabledModules);
         }
-    }, [isSettings]);
-
+    }, [isSettings, enabledModules]);
 
     const handleModuleToggle = (moduleName: keyof EnabledModules) => {
-        // Update only the temporary state
         setTempModules(prev => ({
             ...prev,
             [moduleName]: !prev[moduleName]
         }));
     };
 
-    const handleModuleSave = () => {
-        // Apply changes
-        setEnabledModules(tempModules);
-        secureLocalStorage.setItem('enabled_modules', JSON.stringify(tempModules));
-        window.electron.log('Module settings saved');
-        // Optionally close settings
-        location.reload();
+    const handleModuleSave = async () => {
+        try {
+            // Save to new settings service
+            await window.settings.set('ui.modules', tempModules);
+            setEnabledModules(tempModules);
+            window.electron.log('Module settings saved');
+            location.reload();
+        } catch (error) {
+            console.error('Failed to save module settings:', error);
+        }
     };
-
 
     return (
         <div className="settings-section">
             <div className="module-toggles">
                 {modules.map((module) => (
-
                     <div key={module} className="module-toggle">
                         <label className="toggle-switch">
                             <input
@@ -525,16 +526,16 @@ function Modules({
                 </button>
             </div>
         </div>
-
     );
 }
+
 
 interface AudioProps {
 }
 
 function Audio({
 }) {
-    const defaultValue = Number(window.localStorage.getItem('sensitivity-value'))
+    const defaultValue = Number(window.settings.get('audio.sensitivity')) || 0;
     const sliderRef = useRef<HTMLInputElement>(null);
 
     const [micVolume, setMicVolume] = useState<number>(0);
@@ -549,10 +550,7 @@ function Audio({
     const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
     const [selectedDevice, setSelectedDevice] = useState<string>('');
 
-    const [irisEnabled, setIrisEnabled] = useState<boolean>(() => {
-        return localStorage.getItem('iris-enabled') === 'true';
-    });
-
+    const [irisEnabled, setIrisEnabled] = useState<boolean>(false)
     // Audio Handlers
     const handleSensitivityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
@@ -562,17 +560,17 @@ function Audio({
         e.target.style.setProperty('--value', `${percent}%`);
     };
 
-    const handleSensitivityRelease = () => {
-        const e = sliderRef?.current
+    const handleSensitivityRelease = async () => {
+        const e = sliderRef?.current;
         const value = e?.value;
         const percent = (Number(value) - Number(e?.min)) /
             (Number(e?.max) - Number(e?.min)) * 100;
-        window.localStorage.setItem('sensitivity-value', String(percent));
-    }
+        await window.settings.set('audio.sensitivity', percent);
+    };
 
     const handleMicSelect = (deviceId: string) => {
         setSelectedDevice(deviceId);
-        window.localStorage.setItem('selected-device', deviceId);
+        window.settings.set('audio.device', deviceId);
     }
 
     const cleanup = () => {
@@ -639,6 +637,19 @@ function Audio({
             handleSensitivityChange(event);
         }
     }, [defaultValue]);
+
+    useEffect(() => {
+        const loadSettings = async () => {
+            const sensitivityValue = await window.settings.get('audio.sensitivity') || 0;
+            const selectedDeviceId = await window.settings.get('audio.device') || '';
+            const irisEnabledSetting = await window.settings.get('audio.enabled') || false;
+            
+            setMicAverage(sensitivityValue);
+            setSelectedDevice(selectedDeviceId);
+            setIrisEnabled(irisEnabledSetting);
+        };
+        loadSettings();
+    }, []);
 
     const setupAudioMonitoring = async () => {
         try {
@@ -721,85 +732,85 @@ function Audio({
     const handleIrisToggle = () => {
         setIrisEnabled(prevState => {
             const newState = !prevState;
-            // Save to localStorage after state change
-            localStorage.setItem('iris-enabled', String(newState));
+
+            window.settings.set('audio.enabled', newState);
             return newState;
         });
     };
 
     return (
-            <div className="settings-section">
-                <div className="audio-settings">
-                    <span>
-                        <h3>Voice Control Toggle (Unstable, high resource intensity!)</h3>
+        <div className="settings-section">
+            <div className="audio-settings">
+                <span>
+                    <h3>Voice Control Toggle (Unstable, high resource intensity!)</h3>
+                </span>
+                <div className='vc-toggle'>
+                    <label className="toggle-switch">
+                        <input
+                            type="checkbox"
+                            checked={irisEnabled}
+                            onChange={handleIrisToggle}
+                        />
+                        <span className="toggle-slider"></span>
+                    </label>
+                    <span className="module-name">
+                        Toggle "Hey Iris!"
                     </span>
-                    <div className='vc-toggle'>
-                        <label className="toggle-switch">
-                            <input
-                                type="checkbox"
-                                checked={irisEnabled}
-                                onChange={handleIrisToggle}
-                            />
-                            <span className="toggle-slider"></span>
-                        </label>
-                        <span className="module-name">
-                            Toggle "Hey Iris!"
+                </div>
+
+                {irisEnabled && (
+                    <>
+
+                        <span>
+                            <h3>Input Device</h3>
                         </span>
-                    </div>
+                        <select
+                            className="device-select"
+                            value={selectedDevice}
+                            onChange={(e) => handleMicSelect(e.target.value)}
+                        >
+                            {audioDevices.map((device) => (
+                                <option key={device.deviceId} value={device.deviceId}>
+                                    {device.label || `Microphone ${device.deviceId.slice(0, 5)}...`}
+                                </option>
+                            ))}
+                        </select>
 
-                    {irisEnabled && (
-                        <>
-
-                            <span>
-                                <h3>Input Device</h3>
-                            </span>
-                            <select
-                                className="device-select"
-                                value={selectedDevice}
-                                onChange={(e) => handleMicSelect(e.target.value)}
-                            >
-                                {audioDevices.map((device) => (
-                                    <option key={device.deviceId} value={device.deviceId}>
-                                        {device.label || `Microphone ${device.deviceId.slice(0, 5)}...`}
-                                    </option>
-                                ))}
-                            </select>
-
-                            <span>
-                                <h3>Input Sensitivity</h3>
-                            </span>
-                            <div className="sensitivity-slider-container">
-                                <input
-                                    ref={sliderRef}
-                                    type='range'
-                                    min="1"
-                                    max="100"
-                                    defaultValue={defaultValue || '50'}
-                                    className='sensitivity-slider'
-                                    onChange={handleSensitivityChange}
-                                    onMouseUp={handleSensitivityRelease}
-                                />
-                                <div className="volume-indicator">
-                                    <div className="volume-bar-container">
-                                        <div
-                                            className="volume-bar"
-                                            style={{
-                                                width: `${micVolume}%`,
-                                                backgroundColor: `${micVolume <= average ? '#d92626' : '#26d926'}`
-                                            }}
-                                        >
-                                            <div className='average-indicator'></div>
-                                        </div>
+                        <span>
+                            <h3>Input Sensitivity</h3>
+                        </span>
+                        <div className="sensitivity-slider-container">
+                            <input
+                                ref={sliderRef}
+                                type='range'
+                                min="1"
+                                max="100"
+                                defaultValue={defaultValue || '50'}
+                                className='sensitivity-slider'
+                                onChange={handleSensitivityChange}
+                                onMouseUp={handleSensitivityRelease}
+                            />
+                            <div className="volume-indicator">
+                                <div className="volume-bar-container">
+                                    <div
+                                        className="volume-bar"
+                                        style={{
+                                            width: `${micVolume}%`,
+                                            backgroundColor: `${micVolume <= average ? '#d92626' : '#26d926'}`
+                                        }}
+                                    >
+                                        <div className='average-indicator'></div>
                                     </div>
                                 </div>
                             </div>
-                        </>
-                    )}
+                        </div>
+                    </>
+                )}
 
 
 
-                </div>
             </div>
+        </div>
     );
 }
 

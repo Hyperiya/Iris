@@ -1,3 +1,5 @@
+import { AppSettings } from "../utils/settingsUtil.ts";
+
 interface ElectronAPI {
     openExternal: (url: string) => Promise<void>;
     log: (message: any) => void;
@@ -79,12 +81,38 @@ interface MusicRPCAPI {
     disconnect: () => Promise<{ success: boolean }>;
 }
 
+// Type helper to get nested property types
+type NestedKeyOf<ObjectType extends object> = {
+    [Key in keyof ObjectType & (string | number)]: ObjectType[Key] extends object
+    ? `${Key}` | `${Key}.${NestedKeyOf<ObjectType[Key]>}`
+    : `${Key}`;
+}[keyof ObjectType & (string | number)];
+
+type SettingValue<T extends NestedKeyOf<AppSettings>> =
+    T extends `${infer K}.${infer Rest}`
+    ? K extends keyof AppSettings
+    ? Rest extends NestedKeyOf<AppSettings[K]>
+    ? SettingValue<Rest>
+    : never
+    : never
+    : T extends keyof AppSettings
+    ? AppSettings[T]
+    : never;
+
+interface SettingsUtil {
+    get<T extends NestedKeyOf<AppSettings>>(key: T): SettingValue<T>;
+    set(key: NestedKeyOf<AppSettings>, value: any): void;
+    getAll: () => Promise<Record<string, any>>;
+    onChange: (callback: (key: string, value: any) => void) => void;
+    removeChangeListener: () => void;
+}
 
 declare global {
     interface Window {
         musicRPC: MusicRPCAPI;
         electron: ElectronAPI;
         discord: DiscordAPI;
+        settings: SettingsUtil;
         loading: {
             showLoading: (message?: string) => Promise<boolean>;
             updateLoading: (progress: number, message?: string) => Promise<boolean>;

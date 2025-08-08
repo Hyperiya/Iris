@@ -8,7 +8,8 @@ import { setupHoyoAuthHandlers } from './handlers/hoyoAuth.ts';
 import { setupLoadingHandlers } from './handlers/loading.ts';
 import { setupSnapshotHandler } from './handlers/snapshots.ts';
 import { SnapshotManager } from '../utils/snapshotUtil.ts';
-import { setupMusicRPCHandlers } from './handlers/musicRPC.ts';
+import { setupMusicRPCHandlers } from './handlers/musicRpc.ts';
+import { setupSettingsHandlers } from './handlers/settings.ts';
 
 export function setupIpcHandlers(mainWindow: BrowserWindow, snapshotManager: SnapshotManager | null) {
     setupWindowHandlers(mainWindow);
@@ -20,4 +21,5 @@ export function setupIpcHandlers(mainWindow: BrowserWindow, snapshotManager: Sna
     setupLoadingHandlers(mainWindow);
     setupSnapshotHandler(snapshotManager);
     setupMusicRPCHandlers();
+    setupSettingsHandlers(mainWindow);
 }

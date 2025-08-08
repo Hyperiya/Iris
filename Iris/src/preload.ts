@@ -110,7 +110,7 @@ contextBridge.exposeInMainWorld('loading', {
   }
 });
 
-// I realized I don't need this in preload/renderer right now, but I might need it later.  
+// DISREGARD: I realized I don't need this in preload/renderer right now, but I might need it later.  
 
 contextBridge.exposeInMainWorld('musicRPC', {
   connect: (clientId: string) => ipcRenderer.invoke('musicRPC:connect', clientId),
@@ -121,3 +121,17 @@ contextBridge.exposeInMainWorld('musicRPC', {
   }) => ipcRenderer.invoke('musicRPC:setActivity', activity),
   disconnect: () => ipcRenderer.invoke('musicRPC:disconnect'),
 });
+
+// In preload.ts
+contextBridge.exposeInMainWorld('settings', {
+    get: (key: string) => ipcRenderer.sendSync('settings:get', key),
+    set: (key: string, value: any) => ipcRenderer.sendSync('settings:set', key, value),
+    getAll: () => ipcRenderer.sendSync('settings:getAll'),
+    onChange: (callback: (key: string, value: any) => void) => {
+        ipcRenderer.on('settings:changed', (_, key, value) => callback(key, value));
+    },
+    removeChangeListener: () => {
+        ipcRenderer.removeAllListeners('settings:changed');
+    }
+});
+

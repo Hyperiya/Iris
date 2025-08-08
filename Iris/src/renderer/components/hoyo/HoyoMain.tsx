@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import secureLocalStorage from 'react-secure-storage';
 import GameAccountDashboard from './GameDashboard.tsx';
 import { ViewState } from "../../../types/viewState.ts";
 import './Styles/Main.scss';
@@ -12,14 +11,12 @@ interface AppProps {
 type GameType = 'genshin' | 'starrail' | 'zenless';
 
 const HoyoMain: React.FC<AppProps> = ({ ViewState }) => {
-    const [gameData, setGameData] = useState<any>(null);
-    const [loading, setLoading] = useState(false);
-
+    
     useEffect(() => {
         const performLogin = async () => {
             try {
-                const username = secureLocalStorage.getItem('hoyolab_username') as string;
-                const password = secureLocalStorage.getItem('hoyolab_password') as string;
+                const username = window.settings.get('hoyolab.username') as string;
+                const password = window.settings.get('hoyolab.password') as string;
 
                 if (!username || !password) {
                     throw new Error('Username or password not found in storage');

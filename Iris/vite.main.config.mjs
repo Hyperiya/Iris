@@ -21,7 +21,7 @@ export default defineConfig({
       }
     },
     emptyOutDir: false,
-    minify: process.env.NODE_ENV === 'production'
+    minify: false,
   },
   resolve: {
     // Add any resolve configurations if needed

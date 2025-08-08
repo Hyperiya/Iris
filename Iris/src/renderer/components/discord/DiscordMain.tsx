@@ -1,7 +1,4 @@
 import React, { useEffect } from 'react';
-
-import secureLocalStorage from 'react-secure-storage';
-
 import DiscordCall from './DiscordCall.tsx';
 import DiscordNotification from './DiscordNotification.tsx';
 
@@ -17,11 +14,11 @@ const DiscordMain: React.FC = ({
         let mounted = true;
         const connectToDiscord = async () => {
             try {
-                const id = secureLocalStorage.getItem('discord_client_id');
-                const secret = secureLocalStorage.getItem('discord_client_secret');
+                const id = window.settings.get('discord.clientId');
+                const secret = window.settings.get('discord.clientSecret');
 
                 if (!id || !secret) {
-                    console.error('Discord client ID or secret not found in secure storage.');
+                    console.error('Discord client ID or secret not found in settings.');
                     setLogins(false)
                     return;
                 } else {

@@ -27,8 +27,6 @@ jobs:
           npm install
       - name: build
         working-directory: ./Iris
-        env:
-          NODE_ENV: development
         run: npm run make
       - name: Upload Linux Artifacts
         uses: actions/upload-artifact@v4
@@ -51,8 +49,6 @@ jobs:
           npm install
       - name: build
         working-directory: ./Iris
-        env:
-          NODE_ENV: development
         run: npm run make
       - name: Upload macOS Artifacts
         uses: actions/upload-artifact@v4
@@ -75,8 +71,6 @@ jobs:
           npm install
       - name: build
         working-directory: ./Iris
-        env:
-          NODE_ENV: development
         run: npm run make
       - name: Upload Windows Artifacts
         uses: actions/upload-artifact@v4

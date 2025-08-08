@@ -1,13 +1,13 @@
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, useEffect } from 'react';
 import Titlebar from './components/Titlebar.tsx';
-import Settings, { EnabledModules, DEFAULT_MODULES } from './components/Settings.tsx';
+import Settings, { DEFAULT_MODULES } from './components/Settings.tsx';
+import { DEFAULT_SETTINGS, AppSettings, EnabledModules } from '../utils/settingsUtil.ts';
 import '../index.scss';
 import { ViewState } from '../types/viewState.ts';
 import SpotifyMain from './components/spotify/SpotifyMain.tsx';
 import HoyoMain from './components/hoyo/HoyoMain.tsx';
 import DiscordMain from './components/discord/DiscordMain.tsx';
 import AppSelector from './components/AppSelector.tsx';
-import secureLocalStorage from 'react-secure-storage';
 import SpeechRecognitionService from '../services/micServices/speech.ts';
 
 import { LoadingProvider, useLoading } from './context/LoadingContext.tsx';
@@ -23,40 +23,38 @@ function AppContent() {
   const [isSettings, setIsSettings] = useState<boolean>(false);
   const [isFullScreen, setIsFullScreen] = useState(false)
   const [enabledModules, setEnabledModules] = useState<EnabledModules>(() => {
-    const savedModules = secureLocalStorage.getItem('enabled_modules');
-    if (savedModules) {
-      return JSON.parse(savedModules as string) as EnabledModules;
-    }
-    return DEFAULT_MODULES;
+    const savedModules = window.settings.get('ui.modules');
+    return savedModules;
   });
 
   const [viewState, setViewState] = useState<ViewState>(() => {
-    if (!enabledModules.Hoyolab) {
+    if (!enabledModules.hoyolab) {
       return ViewState.SPOTIFY_FULL;
-    } else if (!enabledModules.Spotify) {
+    } else if (!enabledModules.spotify) {
       return ViewState.RIGHT_FULL;
     }
     return ViewState.NEUTRAL;
   });
 
   const [hide, setHide] = useState<boolean>(() => {
-    if (!enabledModules.Hoyolab || !enabledModules.Spotify) {
+    if (!enabledModules.hoyolab || !enabledModules.spotify) {
       return true;
     }
     return false;
   });
 
   const [sensitivity, setSensitivity] = useState<number>(() =>
-    Number(localStorage.getItem('sensitivity-value')) || 50
+    Number(window.settings.get('audio.sensitivity')) || 50
   );
 
   const [activeDevice, setActiveDevice] = useState<string>(() =>
-    localStorage.getItem('selected-device') || ''
+    String(window.settings.get('audio.device')) || ''
   );
 
-  const [isIrisEnabled, setIsIrisEnabled] = useState<boolean>(() => {
-    return localStorage.getItem('iris-enabled') === 'true' || false;
-  })
+  const [isIrisEnabled, setIsIrisEnabled] = useState<boolean>(() =>
+    Boolean(window.settings.get('audio.enabled')) || false
+  );
+
   const [irisStarted, setIrisStarted] = useState<boolean>(false)
 
   const { isLoading, progress, message } = useLoading();
@@ -64,12 +62,13 @@ function AppContent() {
   const speechService = SpeechRecognitionService;
 
   useEffect(() => {
-    const savedModules = secureLocalStorage.getItem('enabled_modules');
-    console.log(savedModules)
-    if (savedModules) {
-      setEnabledModules(JSON.parse(savedModules as string));
-    }
+    const loadSettings = async () => {
+      const savedModules = await window.settings.get('ui.modules');
+      setEnabledModules(savedModules);
+    };
+    loadSettings();
   }, []);
+
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -90,58 +89,27 @@ function AppContent() {
   }, []);
 
   useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'sensitivity-value') {
-        setSensitivity(Number(e.newValue) || 50);
+    const handleSettingsChange = (key: string, value: any) => {
+      if (key === 'audio.sensitivity') {
+        setSensitivity(Number(value) || 50);
       }
-      if (e.key === 'selected-device') {
-        setActiveDevice(e.newValue || '');
+      if (key === 'audio.selectedDevice') {
+        setActiveDevice(value || '');
       }
-      if (e.key === 'iris-enabled') {
-        setIsIrisEnabled(e.newValue === 'true' || false);
-      }
-      console.log('storage event')
-    };
-
-
-    // For changes from other windows/tabs
-    window.addEventListener('storage', handleStorageChange);
-
-    // For changes within the same window
-    const originalSetItem = localStorage.setItem;
-    localStorage.setItem = function (key: string, value: string) {
-      const event = new Event('localStorageChange');
-      (event as any).key = key;
-      (event as any).newValue = value;
-      window.dispatchEvent(event);
-      originalSetItem.apply(this, [key, value]);
-    };
-
-    const handleLocalChange = (e: Event) => {
-      const key = (e as any).key;
-      const newValue = (e as any).newValue;
-      console.log(key, newValue)
-
-      if (key === 'sensitivity-value') {
-        setSensitivity(Number(newValue) || 50);
-      }
-      if (key === 'selected-device') {
-        setActiveDevice(newValue || '');
-      }
-      if (key === 'iris-enabled') {
-        setIsIrisEnabled(newValue === 'true' || false);
+      if (key === 'audio.irisEnabled') {
+        setIsIrisEnabled(Boolean(value));
       }
     };
 
-    window.addEventListener('localStorageChange', handleLocalChange);
+    // Listen for settings changes
+    window.settings.onChange(handleSettingsChange);
 
     return () => {
       // Cleanup
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('localStorageChange', handleLocalChange);
-      localStorage.setItem = originalSetItem;
+      window.settings.removeChangeListener();
     };
   }, []);
+
 
   useEffect(() => {
     // Initialize the service
@@ -218,16 +186,16 @@ function AppContent() {
             </div>
           )}
 
-          {enabledModules.Discord && (
+          {enabledModules.discord && (
             <DiscordMain />
           )}
 
-          {enabledModules.Spotify && (
+          {enabledModules.spotify && (
             <div className={`spotify-section ${viewState === ViewState.SPOTIFY_FULL ? 'full' : ''}`}>
               <SpotifyMain ViewState={viewState} />
             </div>
           )}
-          {enabledModules.Hoyolab && (
+          {enabledModules.hoyolab && (
             <div className={`right-section ${viewState === ViewState.RIGHT_FULL ? 'full' : viewState === ViewState.SPOTIFY_FULL ? 'hidden' : ''}`}>
               <HoyoMain ViewState={viewState} />
             </div>

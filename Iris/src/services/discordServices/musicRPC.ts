@@ -45,7 +45,6 @@ class MusicRPC extends EventEmitter {
 
     private handleData(chunk: Buffer) {
         this.buffer = Buffer.concat([this.buffer, chunk]);
-        console.log('Received data:', this.buffer.toString());
         // Handle incoming data (simplified)
     }
 
