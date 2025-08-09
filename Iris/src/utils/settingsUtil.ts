@@ -1,6 +1,7 @@
 // src/services/settingsService.ts
 import { app } from 'electron';
 import { BrowserWindow } from 'electron';
+import { getOSLocale } from './locale.ts';
 
 import * as path from 'path';
 import * as fs from 'fs';
@@ -23,6 +24,9 @@ export interface AppSettings {
     ui: {
         modules: EnabledModules;
     };
+    music: {
+        prefferredLangauge?: string[]; // Optional, can be undefined
+    }
     audio: {
         enabled: boolean;
         device: string;
@@ -45,6 +49,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
             discord: true,
             hoyolab: true
         }
+    },
+    music: {
+        prefferredLangauge: getOSLocale() // Optional, can be undefined
     },
     audio: {
         enabled: false,

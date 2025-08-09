@@ -5,12 +5,12 @@ import type { TrackMetadata } from '../../types/lyrics.ts';
 const msxService = new MsXService();
 
 export function setupMsxHandlers() {
-    ipcMain.handle('msx:search', async (_, metadata: TrackMetadata) => {
+    ipcMain.handle('msx:search', async (_, metadata: TrackMetadata, preferredLanguage?: string[]) => {
         try {
-            return await msxService.searchLyrics(metadata);
+            return await msxService.searchLyrics(metadata, preferredLanguage);
         } catch (error) {
             console.error('MSX search error:', error);
-            return undefined;
+            return;
         }
     });
 }

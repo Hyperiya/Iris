@@ -4,7 +4,7 @@ export class MsXService {
     private baseUrl = 'https://apic-desktop.musixmatch.com/ws/1.1/';
     private token?: string;
 
-    async searchLyrics(metadata: TrackMetadata): Promise<SyncedLyrics> {
+    async searchLyrics(metadata: TrackMetadata, preferredLanguage?: string[]): Promise<SyncedLyrics> {
         let result: SyncedLyrics = [];
 
         try {
@@ -27,6 +27,24 @@ export class MsXService {
             const apiResult = await this.queryMusixmatch('macro.subtitles.get', params);
             if (apiResult) {
                 result = this.parseSyncedLyrics(apiResult);
+
+                // Get translations if preferred language is set
+                if (preferredLanguage) {
+                    const trackId = apiResult.message?.body?.macro_calls?.['matcher.track.get']?.message?.body?.track?.track_id;
+                    if (trackId) {
+                        const translations = await this.queryTranslation(trackId, preferredLanguage);
+                        console.log('Translations:', translations);
+                        if (translations && translations.length > 0) {
+                            translations.forEach((translation: any, index: number) => {
+                                if (result[index]) {
+                                    result[index].text = translation.translation.description;
+                                }
+                            });
+                        } else {
+                            console.warn('No translations found for the track');
+                        }
+                    }
+                }
             }
         } catch (error) {
             console.error('Error fetching Musixmatch lyrics:', error);
@@ -34,6 +52,7 @@ export class MsXService {
 
         return result;
     }
+
 
     private async getToken(): Promise<string | undefined> {
         if (this.token) return this.token;
@@ -96,5 +115,20 @@ export class MsXService {
         }
 
         return [];
+    }
+
+    async queryTranslation(trackId: string, language: string[]): Promise<any> {
+        const queryParams = {
+            format: 'json',
+            comment_format: 'text',
+            part: 'user',
+            track_id: trackId,
+            translation_fields_set: 'minimal',
+            selected_language: language[0], // You can make this configurable
+        };
+
+        console.log('Querying translations with params:', queryParams);
+        const result = await this.queryMusixmatch('crowd.track.translations.get', queryParams);
+        return result?.message?.body?.translations_list;
     }
 }

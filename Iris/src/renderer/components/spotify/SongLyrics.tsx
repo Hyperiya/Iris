@@ -57,7 +57,7 @@ const SongLyrics: React.FC<SongLyricsProps> = ({
           title: currentSong.name,
           album: currentSong.album,
           length: currentSong.length || 0
-        });
+        }, window.settings.get('music.prefferredLangauge'));
 
         if (msxLyrics && msxLyrics.length > 0) {
           lyricsData = msxLyrics;
