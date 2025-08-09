@@ -123,88 +123,84 @@
   padding: 16px;
 }
 
-.option-button {
-  text-align: left;
-  padding: 16px;
-  font-size: 16px;
-  border: none;
-  border-radius: 8px;
-  background-color: #f5f5f5;
-  color: #333;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background-color: #e8e8e8;
-  }
-}
-
-.credentials {
-  padding-top: 10px;
-  width: 100%;
+// Base utility classes
+.flex-center {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
+}
+
+.flex-column {
+  flex-direction: column;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.full-height {
   height: 100%;
 }
 
-#input-bar {
-  width: 90%;
+// Base input styling
+.base-input {
   padding: 12px;
   border-radius: 8px;
   border: 1px solid #323232;
   font-size: 14px;
-  margin-bottom: 5px;
-  margin-top: 5px;
   background-color: #1e1e20;
   color: white;
+  margin: 5px 0;
 }
 
-#input-button {
+// Base button styling
+.base-button {
   border-radius: 8px;
-  margin-right: 5px;
-  margin-left: 5px;
-  margin-bottom: 10px;
-  width: 60px;
-  height: 40px;
   border: 1px solid #323232;
   background-color: #1e1e20;
   color: white;
   cursor: pointer;
+  transition: all 0.2s ease;
 
   &:hover {
-    border: 1px solid #4f4f4f;
+    border-color: #4f4f4f;
     background-color: #323232;
   }
 }
 
+
+
 .settings-section {
-  align-items: center;
-  justify-content: center;
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   padding: 20px;
   border-radius: 8px;
   margin-bottom: 16px;
+  margin-left: 20px;
 
   h3 {
     margin: 0 0 16px 0;
     color: white;
     font-size: 16px;
   }
+  
+  hr {
+    color: white;
+    background-color: white;
+    height: 2px;
+    width: 100%;
+    margin: 24px 0;
+  }
 
   .install-button {
+    @extend .base-button;
     appearance: none;
     background: #1db954;
-    color: white;
     padding: 12px 20px;
-    border-radius: 4px;
     border: none;
     font-size: 14px;
     font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
 
     &:hover {
       background: #1ed760;
@@ -214,8 +210,6 @@
       background: #1aa34a;
     }
   }
-
-  
 }
 
 .install-status {
@@ -245,24 +239,31 @@
 // Module Toggle Section
 .module-toggles {
   display: flex;
-  flex-direction: column;
-  gap: 24px; // Increased gap between toggles
-  padding: 24px; // Increased padding around toggles
+  flex-direction: row;
   width: 100%;
+  gap: 24px;
+  padding: 24px 0;
+  align-items: flex-start;
 
   .module-toggle {
-    display: flex;
-    align-items: center;
-    gap: 16px; // Increased gap between toggle and text
-    padding: 16px 24px; // Increased padding inside each toggle
+    @extend .flex-center;
+    justify-content: flex-start;
+    gap: 16px;
+    padding: 16px 24px;
     background-color: #1e1e20;
-    border-radius: 8px; // Slightly larger border radius
-    transition: background-color 0.2s ease;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    width: 50%;
+
+    &:hover {
+      background-color: #28282b;
+      transform: translateY(-2px);
+    }
 
     .module-name {
       font-size: 16px;
       color: white;
-      font-weight: 500; // Make text a bit bolder
+      font-weight: 500;
     }
   }
 }
@@ -320,21 +321,19 @@
 .about-content {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   padding: 30px;
-
+  margin-left: 20px;
 
   .basic-details {
-    display: flex;
-    align-items: center;
+    @extend .flex-center;
     flex-direction: row;
   }
 
   .name-text {
-    display: flex;
-    flex-direction: column;
+    @extend .flex-column;
     justify-content: center;
     color: white;
-
     padding: 15px;
 
     #title {
@@ -353,35 +352,25 @@
     height: 100%;
     user-select: none;
 
-
     img {
-      width: 100%;
-      height: 100%;
+      @extend .full-width, .full-height;
       box-sizing: border-box;
-      object-fit: contain; // Ensures the SVG maintains aspect ratio
-      fill: currentColor; // Ensures the SVG takes on the current text color
+      object-fit: contain;
+      fill: currentColor;
     }
   }
 
   .iris-text {
     color: #fff;
     white-space: pre-line;
-    /* Preserves new lines and wraps text */
     overflow-y: auto;
-    max-height: 60vh; // Adjust this value as needed
-  }
-
-}
-
-
-
-.module-toggle {
-  &:hover {
-    background-color: #28282b;
-    transform: translateY(-2px);
-    transition: transform 0.2s ease, background-color 0.2s ease;
+    max-height: 60vh;
   }
 }
+
+
+
+
 
 // misc
 
@@ -475,16 +464,32 @@
   }
 }
 
+
+
+// Credentials container
+.credentials {
+  padding: 20px 0;
+  gap: 10px;
+  align-items: flex-start;
+  margin-left: 20px;
+}
+
+// Save input container
+.save-input {
+  gap: 10px;
+  margin-top: 5px;
+}
+
 .audio-settings {
   width: 90%;
 
   .vc-toggle {
-    display: flex;
-    align-items: center;
-    padding: 0 0;
+    @extend .flex-center;
+    justify-content: flex-start;
+    padding: 0;
     border-radius: 8px;
     margin-bottom: 15px;
-    transition: background-color 0.2s ease, transform 0.2s ease;
+    transition: all 0.2s ease;
 
     .module-name {
       color: white;
@@ -493,29 +498,8 @@
     .toggle-switch {
       margin-right: 10px;
     }
-
   }
 
-  .device-select {
-    width: 100%;
-    padding: 8px;
-    margin-bottom: 15px;
-    background-color: #2a2a2a;
-    color: #ffffff;
-    border: 1px solid #3a3a3a;
-    border-radius: 4px;
-    cursor: pointer;
-
-    &:focus {
-      outline: none;
-      border-color: #4a4a4a;
-    }
-
-    option {
-      background-color: #2a2a2a;
-      color: #ffffff;
-    }
-  }
 
   .sensitivity-slider-container {
     width: 100%;

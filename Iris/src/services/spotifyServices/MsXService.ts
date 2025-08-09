@@ -33,7 +33,6 @@ export class MsXService {
                     const trackId = apiResult.message?.body?.macro_calls?.['matcher.track.get']?.message?.body?.track?.track_id;
                     if (trackId) {
                         const translations = await this.queryTranslation(trackId, preferredLanguage);
-                        console.log('Translations:', translations);
                         if (translations && translations.length > 0) {
                             translations.forEach((translation: any, index: number) => {
                                 if (result[index]) {

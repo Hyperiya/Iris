@@ -289,6 +289,23 @@ function Spotify({
                 </div>
             )}
             {isInstalling && <div className="install-status installing">Installing...</div>}
+
+            <hr />
+
+            <h3>Preferred Language (Song Translation)</h3>
+            <select
+                className="base-input"
+                style={{ cursor: 'pointer', backgroundColor: '#2a2a2a', borderColor: '#3a3a3a' }}
+                onChange={(e) => window.settings.set('music.prefferredLangauge', e.target.value)}
+            >
+                <option value="en">English</option>
+                <option value="es">Spanish</option>
+                <option value="fr">French</option>
+                <option value="de">German</option>
+                <option value="ja">Japanese</option>
+                <option value="ko">Korean</option>
+                <option value="zh">Chinese</option>
+            </select>
         </div>
 
     );
@@ -304,15 +321,11 @@ interface HoyoProps {
 function Hoyo({ }: HoyoProps) {
     const [loginStatus, setLoginStatus] = useState<string>()
     const [loggingIn, setLoggingIn] = useState<boolean>(false)
+    const [username, setUsername] = useState<string>('')
+    const [password, setPassword] = useState<string>('')
 
     const handleCredentialsHoyo = async () => {
         let result
-
-        const idInput = document.querySelector('.hoyo-input') as HTMLInputElement;
-        const secretInput = document.querySelector('.hoyo-input-secret') as HTMLInputElement;
-
-        const username = idInput.value;
-        const password = secretInput.value;
 
         window.settings.set('hoyolab.username', username);
         window.settings.set('hoyolab.password', username);
@@ -357,21 +370,25 @@ function Hoyo({ }: HoyoProps) {
 
 
     return (
-        <div className="credentials">
+        <div className="credentials flex-center flex-column full-width">
             <input
                 type="text"
                 placeholder="Hoyolab Username/Email"
-                className="hoyo-input"
-                id='input-bar'
+                className="base-input"
+                style={{ width: '90%' }}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
             />
             <input
                 type="password"
                 placeholder="Hoyolab Password"
-                className="hoyo-input-secret"
-                id='input-bar'
+                className="base-input"
+                style={{ width: '90%' }}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
             />
-            <div className="save-input">
-                <button id='input-button' className="save-button" onClick={handleCredentialsHoyo}>Save</button>
+            <div className="save-input flex-center">
+                <button className="base-button" style={{ padding: '8px 16px', minWidth: '60px', height: '40px' }} onClick={handleCredentialsHoyo}>Save</button>
             </div>
             {loginStatus && !loggingIn && (
                 <div className={`install-status ${loginStatus.toLowerCase().includes('failed') ? 'error' : 'success'
@@ -395,20 +412,16 @@ interface DiscordProps {
 
 function Discord({
 }: DiscordProps) {
+    const [clientId, setClientId] = useState<string>('')
+    const [clientSecret, setClientSecret] = useState<string>('')
 
     const handleCredentialsDiscord = () => {
-        const idInput = document.querySelector('.discord-input') as HTMLInputElement;
-        const secretInput = document.querySelector('.discord-input-secret') as HTMLInputElement;
-
-        const id = idInput.value;
-        const secret = secretInput.value;
-
-        window.settings.set('discord.clientId', id);
-        window.settings.set('discord.clientSecret', secret);
+        window.settings.set('discord.clientId', clientId);
+        window.settings.set('discord.clientSecret', clientSecret);
 
         // Refreshing discord connection with the new credentials
         window.discord.disconnect();
-        window.discord.connect(String(id), String(secret))
+        window.discord.connect(clientId, clientSecret)
     }
 
     const handleDiscordReset = async () => {
@@ -422,23 +435,27 @@ function Discord({
     }
 
     return (
-        <div className="credentials">
+        <div className="credentials flex-center flex-column full-width">
             <input
                 type="text"
                 placeholder="Discord Client ID"
-                className="discord-input"
-                id='input-bar'
+                className="base-input"
+                style={{ width: '90%' }}
+                value={clientId}
+                onChange={(e) => setClientId(e.target.value)}
             />
             <input
                 type="text"
                 placeholder="Discord Client Secret"
-                className="discord-input-secret"
-                id='input-bar'
+                className="base-input"
+                style={{ width: '90%' }}
+                value={clientSecret}
+                onChange={(e) => setClientSecret(e.target.value)}
             />
 
-            <div className="save-input">
-                <button id='input-button' className="save-button" onClick={handleCredentialsDiscord}>Save</button>
-                <button id='input-button' className="reset-button" onClick={handleDiscordReset}>Reset</button>
+            <div className="save-input flex-center">
+                <button className="base-button" style={{ padding: '8px 16px', minWidth: '60px', height: '40px' }} onClick={handleCredentialsDiscord}>Save</button>
+                <button className="base-button" style={{ padding: '8px 16px', minWidth: '60px', height: '40px' }} onClick={handleDiscordReset}>Reset</button>
             </div>
         </div>
     );
@@ -516,10 +533,10 @@ function Modules({
                 ))}
             </div>
 
-            <div className="save-input">
+            <div className="save-input flex-center">
                 <button
-                    id='input-button'
-                    className="save-button"
+                    className="base-button"
+                    style={{ padding: '8px 16px', minWidth: '60px', height: '40px' }}
                     onClick={handleModuleSave}
                 >
                     Save
@@ -643,7 +660,7 @@ function Audio({
             const sensitivityValue = await window.settings.get('audio.sensitivity') || 0;
             const selectedDeviceId = await window.settings.get('audio.device') || '';
             const irisEnabledSetting = await window.settings.get('audio.enabled') || false;
-            
+
             setMicAverage(sensitivityValue);
             setSelectedDevice(selectedDeviceId);
             setIrisEnabled(irisEnabledSetting);
@@ -765,7 +782,7 @@ function Audio({
                             <h3>Input Device</h3>
                         </span>
                         <select
-                            className="device-select"
+                            className="select"
                             value={selectedDevice}
                             onChange={(e) => handleMicSelect(e.target.value)}
                         >
