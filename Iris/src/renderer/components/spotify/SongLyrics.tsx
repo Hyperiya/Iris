@@ -7,6 +7,7 @@ interface SongLyricsProps {
     name: string;
     artist: string;
     album: string;
+    length?: number; // Optional length in milliseconds
   };
   currentTime: number;
   viewState: ViewState;
@@ -21,7 +22,7 @@ const SongLyrics: React.FC<SongLyricsProps> = ({
   colors,
   onSeek
 }) => {
-  const [lyrics, setLyrics] = useState<Array<{time: number, text: string}>>([]);
+  const [lyrics, setLyrics] = useState<Array<{ time: number, text: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentLyricIndex, setCurrentLyricIndex] = useState(-1);
@@ -41,36 +42,41 @@ const SongLyrics: React.FC<SongLyricsProps> = ({
     const fetchLyrics = async () => {
       setLoading(true);
       setError(null);
-      
+
       try {
-        
-        
-        // Log the search parameters
         console.log('Fetching lyrics for:', {
           track: currentSong.name,
           artist: currentSong.artist,
           album: currentSong.album
         });
 
-        const lyricsData = await window.lrc.searchLyrics({
+        let lyricsData;
+
+        const msxLyrics = await window.msx.searchLyrics({
           artist: currentSong.artist,
-          track: currentSong.name,
-          album: currentSong.album
+          title: currentSong.name,
+          album: currentSong.album,
+          length: currentSong.length || 0
         });
+
+        if (msxLyrics && msxLyrics.length > 0) {
+          lyricsData = msxLyrics;
+        } else {
+          const lrcLyrics = await window.lrc.searchLyrics({
+            artist: currentSong.artist,
+            track: currentSong.name,
+            album: currentSong.album
+          });
+
+          if (lrcLyrics?.syncedLyrics) {
+            lyricsData = await window.lrc.parseSyncedLyrics(lrcLyrics.syncedLyrics);
+          }
+        }
 
         console.log('Lyrics data received:', lyricsData);
 
-        if (lyricsData.syncedLyrics) {
-          const parsedLyrics = window.lrc.parseSyncedLyrics(lyricsData.syncedLyrics);
-          console.log('Parsed synced lyrics:', parsedLyrics);
-          setLyrics(await parsedLyrics);
-        } else if (lyricsData.plaintext) {
-          // Fallback to plain text if no synced lyrics
-          const plainLyrics = lyricsData.plaintext.split('\n').map((text:any, index:any) => ({
-            time: index * 5000, // Space lines 5 seconds apart
-            text: text.trim()
-          }));
-          setLyrics(plainLyrics);
+        if (lyricsData && lyricsData.length > 0) {
+          setLyrics(lyricsData);
         } else {
           setError('No lyrics found');
         }
@@ -82,7 +88,6 @@ const SongLyrics: React.FC<SongLyricsProps> = ({
       }
     };
 
-    // Only fetch if we have both song name and artist
     if (currentSong.name && currentSong.artist) {
       fetchLyrics();
     }
@@ -93,7 +98,7 @@ const SongLyrics: React.FC<SongLyricsProps> = ({
     if (lyrics.length > 0) {
       // Store previous index before updating
       setPrevLyricIndex(currentLyricIndex);
-      
+
       const index = lyrics.findIndex((lyric, i) => {
         const nextLyric = lyrics[i + 1];
         return (
@@ -107,7 +112,7 @@ const SongLyrics: React.FC<SongLyricsProps> = ({
 
   if (loading) {
     return (
-      <div className={`lyrics-container ${viewState === ViewState.SPOTIFY_FULL ? 'shown' : ''}`}> 
+      <div className={`lyrics-container ${viewState === ViewState.SPOTIFY_FULL ? 'shown' : ''}`}>
         <div className="lyrics-menu">
           <div className="lyric current-lyric">
             Loading lyrics...
@@ -119,7 +124,7 @@ const SongLyrics: React.FC<SongLyricsProps> = ({
 
   if (error) {
     return (
-      <div className={`lyrics-container ${viewState === ViewState.SPOTIFY_FULL ? 'shown' : ''}`}> 
+      <div className={`lyrics-container ${viewState === ViewState.SPOTIFY_FULL ? 'shown' : ''}`}>
         <div className="lyrics-menu">
           <div className="lyric current-lyric">
             {error}
@@ -128,31 +133,31 @@ const SongLyrics: React.FC<SongLyricsProps> = ({
       </div>
     );
   }
-  
+
   return (
-    <div className={`lyrics-container ${viewState === ViewState.SPOTIFY_FULL ? 'shown' : ''}`} 
-         style={lyricsStyle}>
+    <div className={`lyrics-container ${viewState === ViewState.SPOTIFY_FULL ? 'shown' : ''}`}
+      style={lyricsStyle}>
       <div className="lyrics-menu">
         {currentLyricIndex > 0 && (
-          <div 
+          <div
             key={`prev-${currentLyricIndex}`}
-            className="lyric  secondary-lyric prev-lyric clickable" 
+            className="lyric  secondary-lyric prev-lyric clickable"
             onClick={() => handleLyricClick(lyrics[currentLyricIndex - 1].time)}
           >
             {lyrics[currentLyricIndex - 1].text}
           </div>
         )}
-        
-        <div 
+
+        <div
           key={`current-${currentLyricIndex}`}
           className="lyric current-lyric clickable"
           onClick={() => currentLyricIndex >= 0 && handleLyricClick(lyrics[currentLyricIndex].time)}
         >
           {currentLyricIndex >= 0 ? lyrics[currentLyricIndex].text : '♪'}
         </div>
-        
+
         {currentLyricIndex < lyrics.length - 1 && (
-          <div 
+          <div
             key={`next-${currentLyricIndex}`}
             className="lyric secondary-lyric next-lyric clickable"
             onClick={() => handleLyricClick(lyrics[currentLyricIndex + 1].time)}

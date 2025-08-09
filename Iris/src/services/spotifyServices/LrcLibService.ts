@@ -1,4 +1,5 @@
 // lrclib-api.ts
+import { LyricLine, SyncedLyrics } from '../../types/lyrics.ts';
 
 /**
  * Interface for LrcLib API response
@@ -27,23 +28,24 @@ interface SearchParams {
  * Main class for interacting with the LrcLib API
  */
 export class LrcLibApi {
-  private baseUrl = 'https://lrclib.net/api';
+  private readonly baseUrl = 'https://lrclib.net/api';
 
   /**
    * Search for lyrics by artist and track
    * @param params Search parameters (artist, track, optional album)
    * @returns Promise with the search results
    */
-  async searchLyrics(params: { artist: string; track: string; album?: string }): Promise<LrcLibResponse> {
+  async searchLyrics(params: { artist: string; track: string; album?: string }): Promise<SyncedLyrics | null> {
+    let result: LrcLibResponse | null = null;
+
     try {
-      // Clean up and encode parameters
       const cleanArtist = params.artist.trim().replace(/\s+/g, '+');
       const cleanTrack = params.track.trim().replace(/\s+/g, '+');
 
       console.log('Search parameters:', cleanArtist, cleanTrack);
 
       // First attempt with album if provided
-      if (params.album) {
+      if (params.album && !result) {
         const cleanAlbum = params.album.trim().replace(/\s+/g, '+');
         const urlWithAlbum = `${this.baseUrl}/get?artist_name=${cleanArtist}&track_name=${cleanTrack}&album_name=${cleanAlbum}`;
 
@@ -52,9 +54,8 @@ export class LrcLibApi {
         try {
           const response = await fetch(urlWithAlbum);
           if (response.ok) {
-            const data = await response.json();
+            result = await response.json();
             console.log('Found lyrics with album!');
-            return data;
           }
         } catch (error) {
           console.log('First attempt failed, trying without album...');
@@ -62,24 +63,25 @@ export class LrcLibApi {
       }
 
       // Second attempt without album
-      const urlWithoutAlbum = `${this.baseUrl}/get?artist_name=${cleanArtist}&track_name=${cleanTrack}`;
-      console.log('Trying second attempt without album:', urlWithoutAlbum);
+      if (!result) {
+        const urlWithoutAlbum = `${this.baseUrl}/get?artist_name=${cleanArtist}&track_name=${cleanTrack}`;
+        console.log('Trying second attempt without album:', urlWithoutAlbum);
 
-      try {
-        const response = await fetch(urlWithoutAlbum);
-        if (response.ok) {
-          const data = await response.json();
-          console.log('Found lyrics without album!');
-          return data;
+        try {
+          const response = await fetch(urlWithoutAlbum);
+          if (response.ok) {
+            result = await response.json();
+            console.log('Found lyrics without album!');
+          }
+        } catch (error) {
+          console.log('Second attempt failed, trying with primary artist only...');
         }
-      } catch (error) {
-        console.log('Second attempt failed, trying with primary artist only...');
       }
 
       // Third attempt with only the first artist (if multiple artists)
-      if (params.artist.includes(',') || params.artist.includes('&') || params.artist.includes('feat.')) {
+      if (!result && (params.artist.includes(',') || params.artist.includes('&') || params.artist.includes('feat.'))) {
         const primaryArtist = params.artist
-          .split(/,|\&|feat\./)[0]  // Split on ',', '&', or 'feat.'
+          .split(/,|\&|feat\./)[0]
           .trim()
           .replace(/\s+/g, '+');
 
@@ -88,51 +90,57 @@ export class LrcLibApi {
 
         const response = await fetch(urlPrimaryArtist);
 
-        if (!response.ok) {
+        if (response.ok) {
+          result = await response.json();
+          console.log('Found lyrics with primary artist!');
+        } else {
           const errorText = await response.text();
           console.error('API Error Response, third:', {
             status: response.status,
             statusText: response.statusText,
             body: errorText,
           });
-          throw new Error(`API error: ${response.status} ${response.statusText}`);
         }
-
-        const data = await response.json();
-        console.log('Found lyrics with primary artist!');
-        return data;
       }
 
-      const url = `${this.baseUrl}/search?q=${cleanTrack}+${cleanArtist}+${params.album}`;
+      // Final fallback search
+      if (!result) {
+        const url = `${this.baseUrl}/search?q=${cleanTrack}+${cleanArtist}+${params.album}`;
+        const response = await fetch(url);
 
-      const response = await fetch(url)
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('API Error Response:', {
-          status: response.status,
-          statusText: response.statusText,
-          body: errorText
-        });
-        throw new Error(`API error: ${response.status} ${response.statusText}`);
-      } else {
-        return response.json()
+        if (response.ok) {
+          result = await response.json();
+        } else {
+          const errorText = await response.text();
+          console.error('API Error Response:', {
+            status: response.status,
+            statusText: response.statusText,
+            body: errorText
+          });
+          throw new Error(`API error: ${response.status} ${response.statusText}`);
+        }
       }
     } catch (error) {
       console.error('Error fetching lyrics:', error);
       throw error;
     }
+
+    if (result?.syncedLyrics) {
+      return this.parseSyncedLyrics(result.syncedLyrics);
+    } else {
+      return null;
+    }
   }
 
 
-  parseSyncedLyrics(syncedLyrics: string): Array<{ time: number, text: string }> {
+
+  parseSyncedLyrics(syncedLyrics: string): SyncedLyrics {
     if (!syncedLyrics) return [];
 
     const lines = syncedLyrics.split('\n');
-    const result: Array<{ time: number, text: string }> = [];
+    const result: LyricLine[] = [];
 
     for (const line of lines) {
-      // Match the timestamp format [mm:ss.xx]
       const match = line.match(/\[(\d+):(\d+)\.(\d+)\](.*)/);
 
       if (match) {
@@ -141,15 +149,15 @@ export class LrcLibApi {
         const hundredths = parseInt(match[3], 10);
         const text = match[4].trim();
 
-        // Convert to milliseconds
         const time = (minutes * 60 + seconds) * 1000 + hundredths * 10;
-
         result.push({ time, text });
       }
     }
 
     return result.sort((a, b) => a.time - b.time);
   }
+
+
 
 
 

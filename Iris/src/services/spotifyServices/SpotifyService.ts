@@ -216,10 +216,8 @@ class SpotifyService {
                         // Check if this is the response we're waiting for
                         if (response.type === 'response' && response.action === 'current') {
 
-                            console.log(`response: ${JSON.stringify(response, null, 10)}`)
                             // Remove the message handler
                             this.ws?.removeEventListener('message', messageHandler);
-                            console.log(`response: ${JSON.stringify(response, null, 10)}`)
 
                             const lastTrack = this.existingTrackData;
                             // Format the data into Song interface

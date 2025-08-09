@@ -10,6 +10,7 @@ import { setupSnapshotHandler } from './handlers/snapshots.ts';
 import { SnapshotManager } from '../utils/snapshotUtil.ts';
 import { setupMusicRPCHandlers } from './handlers/musicRpc.ts';
 import { setupSettingsHandlers } from './handlers/settings.ts';
+import { setupMsxHandlers } from './handlers/msx.ts';
 
 export function setupIpcHandlers(mainWindow: BrowserWindow, snapshotManager: SnapshotManager | null) {
     setupWindowHandlers(mainWindow);
@@ -22,4 +23,5 @@ export function setupIpcHandlers(mainWindow: BrowserWindow, snapshotManager: Sna
     setupSnapshotHandler(snapshotManager);
     setupMusicRPCHandlers();
     setupSettingsHandlers(mainWindow);
+    setupMsxHandlers();
 }

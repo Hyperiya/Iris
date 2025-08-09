@@ -314,6 +314,7 @@ const SpotifyMain: React.FC<SpotifyMainProps> = (
                 name: currentTrackData.name || "",
                 artist: currentTrackData.artist || "",
                 album: currentTrackData.album || "",
+                length: currentTrackData.duration_ms || 0,
               }}
               currentTime={
                 Date.now() - manualStateUpdateRef.current < 200
