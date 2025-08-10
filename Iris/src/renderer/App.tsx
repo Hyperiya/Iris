@@ -8,7 +8,6 @@ import SpotifyMain from './components/spotify/SpotifyMain.tsx';
 import HoyoMain from './components/hoyo/HoyoMain.tsx';
 import DiscordMain from './components/discord/DiscordMain.tsx';
 import AppSelector from './components/AppSelector.tsx';
-import SpeechRecognitionService from '../services/micServices/speech.ts';
 
 import { LoadingProvider, useLoading } from './context/LoadingContext.tsx';
 import LoadingScreen from './components/LoadingScreen.tsx';
@@ -59,7 +58,6 @@ function AppContent() {
 
   const { isLoading, progress, message } = useLoading();
 
-  const speechService = SpeechRecognitionService;
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -109,40 +107,6 @@ function AppContent() {
       window.settings.removeChangeListener();
     };
   }, []);
-
-
-  useEffect(() => {
-    // Initialize the service
-    if (isIrisEnabled) {
-      console.log('isIrisEnabled', isIrisEnabled)
-      speechService.initialize()
-    };
-
-    return () => {
-      speechService.cleanup();
-    };
-  }, []);
-
-  useEffect(() => {
-    console.log('Sens, Activedevice changed')
-    if (isIrisEnabled) {
-      if (irisStarted) speechService.stopListening();
-      speechService.startListening(sensitivity, activeDevice);
-    }
-  }, [sensitivity, activeDevice])
-
-  useEffect(() => {
-    if (isIrisEnabled === true) {
-      speechService.initialize()
-      speechService.startListening(sensitivity, activeDevice);
-      setIrisStarted(true)
-    } else {
-      if (irisStarted) {
-        speechService.cleanup();
-        setIrisStarted(false)
-      };
-    }
-  }, [isIrisEnabled])
 
   // useEffect(() => {
   //   window.electron.window.toggleClickThrough(true);

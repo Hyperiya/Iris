@@ -35,7 +35,6 @@ const Settings: React.FC<SettingsProps> = ({
         'Spotify Settings',
         'Hoyolab Settings',
         'Discord Settings',
-        'Audio Settings (BETA)',
         'Modules',
     ];
 
@@ -141,10 +140,10 @@ const Settings: React.FC<SettingsProps> = ({
                 )}
 
 
-                {activeMenu === 'Audio Settings (BETA)' && (
+                {/* {activeMenu === 'Audio Settings (BETA)' && (
                     <Audio
                     />
-                )}
+                )} */}
 
                 {/* About Menu */}
                 {activeMenu === 'About' && (
@@ -550,284 +549,284 @@ function Modules({
 interface AudioProps {
 }
 
-function Audio({
-}) {
-    const defaultValue = Number(window.settings.get('audio.sensitivity')) || 0;
-    const sliderRef = useRef<HTMLInputElement>(null);
+// function Audio({
+// }) {
+//     const defaultValue = Number(window.settings.get('audio.sensitivity')) || 0;
+//     const sliderRef = useRef<HTMLInputElement>(null);
 
-    const [micVolume, setMicVolume] = useState<number>(0);
-    const [average, setMicAverage] = useState<number>(defaultValue)
+//     const [micVolume, setMicVolume] = useState<number>(0);
+//     const [average, setMicAverage] = useState<number>(defaultValue)
 
-    const audioContextRef = useRef<AudioContext | null>(null);
-    const analyserRef = useRef<AnalyserNode | null>(null);
-    const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
-    const animationFrameRef = useRef<number>(0);
-    const streamRef = useRef<MediaStream | null>(null);
+//     const audioContextRef = useRef<AudioContext | null>(null);
+//     const analyserRef = useRef<AnalyserNode | null>(null);
+//     const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+//     const animationFrameRef = useRef<number>(0);
+//     const streamRef = useRef<MediaStream | null>(null);
 
-    const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
-    const [selectedDevice, setSelectedDevice] = useState<string>('');
+//     const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
+//     const [selectedDevice, setSelectedDevice] = useState<string>('');
 
-    const [irisEnabled, setIrisEnabled] = useState<boolean>(false)
-    // Audio Handlers
-    const handleSensitivityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        const percent = (Number(value) - Number(e.target.min)) /
-            (Number(e.target.max) - Number(e.target.min)) * 100;
-        setMicAverage(percent);
-        e.target.style.setProperty('--value', `${percent}%`);
-    };
+//     const [irisEnabled, setIrisEnabled] = useState<boolean>(false)
+//     // Audio Handlers
+//     const handleSensitivityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+//         const value = e.target.value;
+//         const percent = (Number(value) - Number(e.target.min)) /
+//             (Number(e.target.max) - Number(e.target.min)) * 100;
+//         setMicAverage(percent);
+//         e.target.style.setProperty('--value', `${percent}%`);
+//     };
 
-    const handleSensitivityRelease = async () => {
-        const e = sliderRef?.current;
-        const value = e?.value;
-        const percent = (Number(value) - Number(e?.min)) /
-            (Number(e?.max) - Number(e?.min)) * 100;
-        await window.settings.set('audio.sensitivity', percent);
-    };
+//     const handleSensitivityRelease = async () => {
+//         const e = sliderRef?.current;
+//         const value = e?.value;
+//         const percent = (Number(value) - Number(e?.min)) /
+//             (Number(e?.max) - Number(e?.min)) * 100;
+//         await window.settings.set('audio.sensitivity', percent);
+//     };
 
-    const handleMicSelect = (deviceId: string) => {
-        setSelectedDevice(deviceId);
-        window.settings.set('audio.device', deviceId);
-    }
+//     const handleMicSelect = (deviceId: string) => {
+//         setSelectedDevice(deviceId);
+//         window.settings.set('audio.device', deviceId);
+//     }
 
-    const cleanup = () => {
-        if (animationFrameRef.current) {
-            cancelAnimationFrame(animationFrameRef.current);
-        }
-        if (sourceRef.current) {
-            sourceRef.current.disconnect();
-        }
-        if (audioContextRef.current) {
-            audioContextRef.current.close();
-        }
-        if (streamRef.current) {
-            streamRef.current.getTracks().forEach(track => track.stop());
-        }
-        // Reset refs
-        audioContextRef.current = null;
-        analyserRef.current = null;
-        sourceRef.current = null;
-        streamRef.current = null;
-    };
+//     const cleanup = () => {
+//         if (animationFrameRef.current) {
+//             cancelAnimationFrame(animationFrameRef.current);
+//         }
+//         if (sourceRef.current) {
+//             sourceRef.current.disconnect();
+//         }
+//         if (audioContextRef.current) {
+//             audioContextRef.current.close();
+//         }
+//         if (streamRef.current) {
+//             streamRef.current.getTracks().forEach(track => track.stop());
+//         }
+//         // Reset refs
+//         audioContextRef.current = null;
+//         analyserRef.current = null;
+//         sourceRef.current = null;
+//         streamRef.current = null;
+//     };
 
-    const getAudioDevices = async () => {
-        try {
-            // Request initial permission to access media devices
-            await navigator.mediaDevices.getUserMedia({ audio: true });
+//     const getAudioDevices = async () => {
+//         try {
+//             // Request initial permission to access media devices
+//             await navigator.mediaDevices.getUserMedia({ audio: true });
 
-            // Get all media devices
-            const devices = await navigator.mediaDevices.enumerateDevices();
+//             // Get all media devices
+//             const devices = await navigator.mediaDevices.enumerateDevices();
 
-            // Filter for only audio input devices (microphones)
-            const audioInputDevices = devices.filter(device => device.kind === 'audioinput');
+//             // Filter for only audio input devices (microphones)
+//             const audioInputDevices = devices.filter(device => device.kind === 'audioinput');
 
-            setAudioDevices(audioInputDevices);
+//             setAudioDevices(audioInputDevices);
 
-            // Set default device if none selected
-            if (!selectedDevice && audioInputDevices.length > 0) {
-                setSelectedDevice(audioInputDevices[0].deviceId);
-            }
+//             // Set default device if none selected
+//             if (!selectedDevice && audioInputDevices.length > 0) {
+//                 setSelectedDevice(audioInputDevices[0].deviceId);
+//             }
 
-            console.log('Available audio devices:', audioInputDevices);
-        } catch (error) {
-            console.error('Error getting audio devices:', error);
-        }
-    };
+//             console.log('Available audio devices:', audioInputDevices);
+//         } catch (error) {
+//             console.error('Error getting audio devices:', error);
+//         }
+//     };
 
-    // Initial setup of the slider value and CSS property
-    useEffect(() => {
-        if (!irisEnabled) return;
-        if (sliderRef.current && defaultValue) {
-            // Set the input value
-            sliderRef.current.value = String(defaultValue);
+//     // Initial setup of the slider value and CSS property
+//     useEffect(() => {
+//         if (!irisEnabled) return;
+//         if (sliderRef.current && defaultValue) {
+//             // Set the input value
+//             sliderRef.current.value = String(defaultValue);
 
-            // Calculate and set the CSS custom property
-            const percent = (Number(defaultValue) - Number(sliderRef.current.min)) /
-                (Number(sliderRef.current.max) - Number(sliderRef.current.min)) * 100;
+//             // Calculate and set the CSS custom property
+//             const percent = (Number(defaultValue) - Number(sliderRef.current.min)) /
+//                 (Number(sliderRef.current.max) - Number(sliderRef.current.min)) * 100;
 
-            sliderRef.current.style.setProperty('--value', `${percent}%`);
+//             sliderRef.current.style.setProperty('--value', `${percent}%`);
 
-            // Create and dispatch change event to maintain consistency
-            const event = {
-                target: sliderRef.current
-            } as React.ChangeEvent<HTMLInputElement>;
-            handleSensitivityChange(event);
-        }
-    }, [defaultValue]);
+//             // Create and dispatch change event to maintain consistency
+//             const event = {
+//                 target: sliderRef.current
+//             } as React.ChangeEvent<HTMLInputElement>;
+//             handleSensitivityChange(event);
+//         }
+//     }, [defaultValue]);
 
-    useEffect(() => {
-        const loadSettings = async () => {
-            const sensitivityValue = await window.settings.get('audio.sensitivity') || 0;
-            const selectedDeviceId = await window.settings.get('audio.device') || '';
-            const irisEnabledSetting = await window.settings.get('audio.enabled') || false;
+//     useEffect(() => {
+//         const loadSettings = async () => {
+//             const sensitivityValue = await window.settings.get('audio.sensitivity') || 0;
+//             const selectedDeviceId = await window.settings.get('audio.device') || '';
+//             const irisEnabledSetting = await window.settings.get('audio.enabled') || false;
 
-            setMicAverage(sensitivityValue);
-            setSelectedDevice(selectedDeviceId);
-            setIrisEnabled(irisEnabledSetting);
-        };
-        loadSettings();
-    }, []);
+//             setMicAverage(sensitivityValue);
+//             setSelectedDevice(selectedDeviceId);
+//             setIrisEnabled(irisEnabledSetting);
+//         };
+//         loadSettings();
+//     }, []);
 
-    const setupAudioMonitoring = async () => {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                audio: {
-                    deviceId: selectedDevice ? { exact: selectedDevice } : undefined,
-                    echoCancellation: true,
-                    noiseSuppression: true
-                }
-            });
+//     const setupAudioMonitoring = async () => {
+//         try {
+//             const stream = await navigator.mediaDevices.getUserMedia({
+//                 audio: {
+//                     deviceId: selectedDevice ? { exact: selectedDevice } : undefined,
+//                     echoCancellation: true,
+//                     noiseSuppression: true
+//                 }
+//             });
 
-            streamRef.current = stream;
-            audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-            analyserRef.current = audioContextRef.current.createAnalyser();
-            analyserRef.current.fftSize = 256;
-            analyserRef.current.smoothingTimeConstant = 0.8;
+//             streamRef.current = stream;
+//             audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+//             analyserRef.current = audioContextRef.current.createAnalyser();
+//             analyserRef.current.fftSize = 256;
+//             analyserRef.current.smoothingTimeConstant = 0.8;
 
-            sourceRef.current = audioContextRef.current.createMediaStreamSource(stream);
-            sourceRef.current.connect(analyserRef.current);
+//             sourceRef.current = audioContextRef.current.createMediaStreamSource(stream);
+//             sourceRef.current.connect(analyserRef.current);
 
-            monitorVolume();
-        } catch (error) {
-            console.error('Error accessing microphone:', error);
-        }
-    };
+//             monitorVolume();
+//         } catch (error) {
+//             console.error('Error accessing microphone:', error);
+//         }
+//     };
 
-    const monitorVolume = () => {
-        if (!analyserRef.current) return;
+//     const monitorVolume = () => {
+//         if (!analyserRef.current) return;
 
-        const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+//         const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
 
-        const updateVolume = () => {
-            if (!analyserRef.current) return;
+//         const updateVolume = () => {
+//             if (!analyserRef.current) return;
 
-            analyserRef.current.getByteFrequencyData(dataArray);
+//             analyserRef.current.getByteFrequencyData(dataArray);
 
-            // Calculate average volume
-            const average = dataArray.reduce((acc, value) => acc + value, 0) / dataArray.length;
+//             // Calculate average volume
+//             const average = dataArray.reduce((acc, value) => acc + value, 0) / dataArray.length;
 
-            // Convert to 0-100 range and round to nearest integer
-            const normalizedVolume = Math.min(Math.round((average / 256) * 100), 100);
-            setMicVolume(normalizedVolume);
+//             // Convert to 0-100 range and round to nearest integer
+//             const normalizedVolume = Math.min(Math.round((average / 256) * 100), 100);
+//             setMicVolume(normalizedVolume);
 
-            // Continue monitoring
-            animationFrameRef.current = requestAnimationFrame(updateVolume);
-        };
+//             // Continue monitoring
+//             animationFrameRef.current = requestAnimationFrame(updateVolume);
+//         };
 
-        updateVolume();
-    };
+//         updateVolume();
+//     };
 
-    useEffect(() => {
-        if (!irisEnabled) return;
-        getAudioDevices();
+//     useEffect(() => {
+//         if (!irisEnabled) return;
+//         getAudioDevices();
 
-        // Listen for device changes (e.g., plugging in/removing a mic)
-        navigator.mediaDevices.addEventListener('devicechange', getAudioDevices);
+//         // Listen for device changes (e.g., plugging in/removing a mic)
+//         navigator.mediaDevices.addEventListener('devicechange', getAudioDevices);
 
-        return () => {
-            navigator.mediaDevices.removeEventListener('devicechange', getAudioDevices);
-        };
-    }, []);
+//         return () => {
+//             navigator.mediaDevices.removeEventListener('devicechange', getAudioDevices);
+//         };
+//     }, []);
 
-    useEffect(() => {
-        if (selectedDevice) {
-            setupAudioMonitoring();
-        }
-    }, [selectedDevice]);
-
-
-    useEffect(() => {
-        if (!irisEnabled) return;
-        setupAudioMonitoring();
-
-        // Cleanup function
-        return () => {
-            cleanup();
-        };
-    }, []);
-
-    const handleIrisToggle = () => {
-        setIrisEnabled(prevState => {
-            const newState = !prevState;
-
-            window.settings.set('audio.enabled', newState);
-            return newState;
-        });
-    };
-
-    return (
-        <div className="settings-section">
-            <div className="audio-settings">
-                <span>
-                    <h3>Voice Control Toggle (Unstable, high resource intensity!)</h3>
-                </span>
-                <div className='vc-toggle'>
-                    <label className="toggle-switch">
-                        <input
-                            type="checkbox"
-                            checked={irisEnabled}
-                            onChange={handleIrisToggle}
-                        />
-                        <span className="toggle-slider"></span>
-                    </label>
-                    <span className="module-name">
-                        Toggle "Hey Iris!"
-                    </span>
-                </div>
-
-                {irisEnabled && (
-                    <>
-
-                        <span>
-                            <h3>Input Device</h3>
-                        </span>
-                        <select
-                            className="select"
-                            value={selectedDevice}
-                            onChange={(e) => handleMicSelect(e.target.value)}
-                        >
-                            {audioDevices.map((device) => (
-                                <option key={device.deviceId} value={device.deviceId}>
-                                    {device.label || `Microphone ${device.deviceId.slice(0, 5)}...`}
-                                </option>
-                            ))}
-                        </select>
-
-                        <span>
-                            <h3>Input Sensitivity</h3>
-                        </span>
-                        <div className="sensitivity-slider-container">
-                            <input
-                                ref={sliderRef}
-                                type='range'
-                                min="1"
-                                max="100"
-                                defaultValue={defaultValue || '50'}
-                                className='sensitivity-slider'
-                                onChange={handleSensitivityChange}
-                                onMouseUp={handleSensitivityRelease}
-                            />
-                            <div className="volume-indicator">
-                                <div className="volume-bar-container">
-                                    <div
-                                        className="volume-bar"
-                                        style={{
-                                            width: `${micVolume}%`,
-                                            backgroundColor: `${micVolume <= average ? '#d92626' : '#26d926'}`
-                                        }}
-                                    >
-                                        <div className='average-indicator'></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </>
-                )}
+//     useEffect(() => {
+//         if (selectedDevice) {
+//             setupAudioMonitoring();
+//         }
+//     }, [selectedDevice]);
 
 
+//     useEffect(() => {
+//         if (!irisEnabled) return;
+//         setupAudioMonitoring();
 
-            </div>
-        </div>
-    );
-}
+//         // Cleanup function
+//         return () => {
+//             cleanup();
+//         };
+//     }, []);
+
+//     const handleIrisToggle = () => {
+//         setIrisEnabled(prevState => {
+//             const newState = !prevState;
+
+//             window.settings.set('audio.enabled', newState);
+//             return newState;
+//         });
+//     };
+
+//     return (
+//         <div className="settings-section">
+//             <div className="audio-settings">
+//                 <span>
+//                     <h3>Voice Control Toggle (Unstable, high resource intensity!)</h3>
+//                 </span>
+//                 <div className='vc-toggle'>
+//                     <label className="toggle-switch">
+//                         <input
+//                             type="checkbox"
+//                             checked={irisEnabled}
+//                             onChange={handleIrisToggle}
+//                         />
+//                         <span className="toggle-slider"></span>
+//                     </label>
+//                     <span className="module-name">
+//                         Toggle "Hey Iris!"
+//                     </span>
+//                 </div>
+
+//                 {irisEnabled && (
+//                     <>
+
+//                         <span>
+//                             <h3>Input Device</h3>
+//                         </span>
+//                         <select
+//                             className="select"
+//                             value={selectedDevice}
+//                             onChange={(e) => handleMicSelect(e.target.value)}
+//                         >
+//                             {audioDevices.map((device) => (
+//                                 <option key={device.deviceId} value={device.deviceId}>
+//                                     {device.label || `Microphone ${device.deviceId.slice(0, 5)}...`}
+//                                 </option>
+//                             ))}
+//                         </select>
+
+//                         <span>
+//                             <h3>Input Sensitivity</h3>
+//                         </span>
+//                         <div className="sensitivity-slider-container">
+//                             <input
+//                                 ref={sliderRef}
+//                                 type='range'
+//                                 min="1"
+//                                 max="100"
+//                                 defaultValue={defaultValue || '50'}
+//                                 className='sensitivity-slider'
+//                                 onChange={handleSensitivityChange}
+//                                 onMouseUp={handleSensitivityRelease}
+//                             />
+//                             <div className="volume-indicator">
+//                                 <div className="volume-bar-container">
+//                                     <div
+//                                         className="volume-bar"
+//                                         style={{
+//                                             width: `${micVolume}%`,
+//                                             backgroundColor: `${micVolume <= average ? '#d92626' : '#26d926'}`
+//                                         }}
+//                                     >
+//                                         <div className='average-indicator'></div>
+//                                     </div>
+//                                 </div>
+//                             </div>
+//                         </div>
+//                     </>
+//                 )}
+
+
+
+//             </div>
+//         </div>
+//     );
+// }
 

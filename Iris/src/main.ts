@@ -14,17 +14,9 @@ import { cleanupSpotifyHandlers } from './ipc/handlers/spotify.ts'
 import { saveWindowState, restoreWindowState } from './utils/windowState.ts';
 
 const isDebugMode = process.env.DEBUG_MODE?.trim() === 'true'
-console.log('DEBUG_MODE:', process.env.DEBUG_MODE, 'isDebugMode:', isDebugMode); // Add this
 global.DEBUG_MODE = isDebugMode;
 
 global.HOYO_ONLINE = process.env.HOYO_ONLINE?.trim() === 'true';
-console.log('HOYO_ONLINE:', process.env.HOYO_ONLINE, 'global.HOYO_ONLINE:', global.HOYO_ONLINE); // Add this
-
-console.log('DEBUG_MODE raw:', JSON.stringify(process.env.DEBUG_MODE));
-console.log('Comparison result:', process.env.DEBUG_MODE === 'true');
-console.log('Type of DEBUG_MODE:', typeof process.env.DEBUG_MODE);
-console.log('Length of DEBUG_MODE:', process.env.DEBUG_MODE?.length);
-
 
 global.logger = {
   log: (...args: any[]) => {
