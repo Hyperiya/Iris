@@ -9,7 +9,7 @@ export function setupMsxHandlers() {
         try {
             return await msxService.searchLyrics(metadata, preferredLanguage);
         } catch (error) {
-            console.error('MSX search error:', error);
+            logger.error('MSX search error:', error);
             return;
         }
     });

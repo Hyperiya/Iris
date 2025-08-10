@@ -8,7 +8,7 @@ export function setupHoyoAuthHandlers () {
       const result = await auth.login(username, password);
       return result;
     } catch (error) {
-      console.error('Login error:', error);
+      logger.error('Login error:', error);
       throw error;
     }
   });
@@ -19,7 +19,7 @@ export function setupHoyoAuthHandlers () {
       const result = await auth.getSToken(username, password);
       return result;
     } catch (error) {
-      console.error('getSToken error:', error);
+      logger.error('getSToken error:', error);
       throw error;
     }
   });

@@ -15,7 +15,7 @@ export function setupMusicRPCHandlers() {
             musicRPC.connect();
             return { success: true };
         } catch (error) {
-            console.error('Failed to connect Music RPC:', error);
+            logger.error('Failed to connect Music RPC:', error);
             return { success: false, error: error.message };
         }
     });
@@ -29,7 +29,7 @@ export function setupMusicRPCHandlers() {
             await musicRPC.setActivity(activity);
             return { success: true };
         } catch (error) {
-            console.error('Failed to set activity:', error);
+            logger.error('Failed to set activity:', error);
             return { success: false, error: error.message };
         }
     });

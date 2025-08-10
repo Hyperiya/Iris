@@ -30,10 +30,10 @@ export function setupHoyoHandlers() {
 
 
             // Direct method calls
-            console.log(`${className}.${methodName}, args`)
+            logger.log(`${className}.${methodName}, args`)
             return await hoyoManager[methodName](...args);
         } catch (error) {
-            console.error('Error calling HoyoManager method:', error);
+            logger.error('Error calling HoyoManager method:', error);
             throw error;
         }
     });

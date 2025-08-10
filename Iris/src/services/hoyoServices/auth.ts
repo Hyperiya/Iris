@@ -50,11 +50,11 @@ export class HoyolabAuth {
     private debug = true;
 
     private log(...args: any[]) {
-        if (this.debug) console.log('[HoyolabAuth]', ...args);
+        if (this.debug) logger.log('[HoyolabAuth]', ...args);
     }
 
     private logError(...args: any[]) {
-        if (this.debug) console.error('[HoyolabAuth]', ...args);
+        if (this.debug) logger.error('[HoyolabAuth]', ...args);
     }
 
     constructor() {
@@ -136,7 +136,7 @@ export class HoyolabAuth {
 
         }
         catch (error) {
-            console.error('Error during login:', error);
+            logger.error('Error during login:', error);
         }
         // This is the path of the stoken. Yeah- it looks stupid.
         return response?.data.data.token.token
@@ -253,7 +253,7 @@ export class HoyolabAuth {
         });
 
 
-        // console.log(cookies)
+        // logger.log(cookies)
         return cookies;
     }
 
@@ -262,8 +262,8 @@ export class HoyolabAuth {
         try {
             // Initialize session
             await this.getLoginPage();
-            console.log('Login page loaded successfully');
-            console.log('Process type:', process.type)  // Should log 'browser' if in main process, 'renderer' if in renderer
+            logger.log('Login page loaded successfully');
+            logger.log('Process type:', process.type)  // Should log 'browser' if in main process, 'renderer' if in renderer
 
 
             // Perform login

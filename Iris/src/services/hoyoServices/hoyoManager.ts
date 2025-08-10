@@ -76,31 +76,31 @@ export class HoyoManager {
   public async getBaseDetails(): Promise<void | null | baseInfo.baseInfo > {
     try {
       const response = await this.makeRequest<baseInfo.baseInfo>(this.userInfoUrl, { uid: this.uid });
-      console.log(`Test: ${JSON.stringify(response?.data, null, 2)}`)
+      logger.log(`Test: ${JSON.stringify(response?.data, null, 2)}`)
       if (response?.data?.list) {
         response.data.list.forEach((entry: GameRecord) => {
           switch (entry.game_id) {
             case 2: // Genshin
               this._genshinUid = entry.game_role_id;
               this._genshinRegion = entry.region;
-              console.log(this._genshinUid, this._genshinRegion)
+              logger.log(this._genshinUid, this._genshinRegion)
               break;
             case 6: // Starrail
               this._starrailUid = entry.game_role_id;
               this._starrailRegion = entry.region;
-              console.log(this._starrailUid, this._starrailRegion)
+              logger.log(this._starrailUid, this._starrailRegion)
               break;
             case 8: // Zenless
               this._zenlessUid = entry.game_role_id;
               this._zenlessRegion = entry.region;
-              console.log(this._zenlessUid, this._zenlessRegion)
+              logger.log(this._zenlessUid, this._zenlessRegion)
               break;
           }
         });
       }
       return response;
     } catch (error) {
-      console.error('Failed to get base details:', error);
+      logger.error('Failed to get base details:', error);
     }
   }
 
@@ -116,7 +116,7 @@ export class HoyoManager {
       ? generateCnDynamicSecret(params, params, Region.CHINESE)
       : generateDynamicSecret();
 
-    console.log(`ds= ${ds}`)
+    logger.log(`ds= ${ds}`)
 
     const baseHeaders = {
       Cookie: this.cookieManager.formatForHeader(),
@@ -166,7 +166,7 @@ export class HoyoManager {
 
       return response.data;
     } catch (error) {
-      console.error(`Request to ${endpoint} failed:`, error);
+      logger.error(`Request to ${endpoint} failed:`, error);
       return null;
     }
   }
@@ -197,15 +197,15 @@ class GenshinManager {
       'POST'
     );
 
-    console.log("\nGenshin Events Response:");
-    console.log(JSON.stringify(response, null, 2))
+    logger.log("\nGenshin Events Response:");
+    logger.log(JSON.stringify(response, null, 2))
 
     return response
   }
 
   async getInfo(): Promise<void | null | genshinInfo.genshinInfo> {
     if (!this.mainApi.genshinUid || !this.mainApi.genshinRegion) {
-      console.log("No Genshin account found");
+      logger.log("No Genshin account found");
       return;
     }
 
@@ -219,8 +219,8 @@ class GenshinManager {
       this.mainApi.genshinRegion
     );
 
-    console.log("\nGenshin Info Response:");
-    console.log(JSON.stringify(data, null, 2));
+    logger.log("\nGenshin Info Response:");
+    logger.log(JSON.stringify(data, null, 2));
 
     return data
   }
@@ -238,8 +238,8 @@ class GenshinManager {
       this.mainApi.genshinRegion
     );
 
-    console.log("\nGenshin Notes Response:");
-    console.log(JSON.stringify(data, null, 2));
+    logger.log("\nGenshin Notes Response:");
+    logger.log(JSON.stringify(data, null, 2));
 
     return data
   }
@@ -257,8 +257,8 @@ class GenshinManager {
       this.mainApi.genshinRegion
     );
 
-    console.log("\nSpiral Abyss Response:");
-    console.log(data);
+    logger.log("\nSpiral Abyss Response:");
+    logger.log(data);
     return data;
   }
 }
@@ -278,16 +278,16 @@ class StarrailManager {
       this.mainApi.starrailRegion
     );
 
-    console.log("\nStarrail Events Response:");
-    console.log(JSON.stringify(response.data.act_list, null, 2))
+    logger.log("\nStarrail Events Response:");
+    logger.log(JSON.stringify(response.data.act_list, null, 2))
 
     return response.data.act_list as starrailEvents.starrailEvents
   }
 
   async getInfo(): Promise<null | void | starrailInfo.starrailInfo> {
-    console.log("Starrail UID:", this.mainApi.starrailUid);
+    logger.log("Starrail UID:", this.mainApi.starrailUid);
     if (!this.mainApi.starrailUid || !this.mainApi.starrailRegion) {
-      console.log("No Starrail account found");
+      logger.log("No Starrail account found");
       return;
     }
 
@@ -300,8 +300,8 @@ class StarrailManager {
       this.mainApi.starrailRegion
     );
 
-    console.log("\nStarrail Info Response:");
-    console.log(JSON.stringify(data, null, 2));
+    logger.log("\nStarrail Info Response:");
+    logger.log(JSON.stringify(data, null, 2));
 
     return data
   }
@@ -318,8 +318,8 @@ class StarrailManager {
       this.mainApi.starrailRegion
     );
 
-    console.log("\nStamina Response:");
-    console.log(JSON.stringify(data, null, 2));
+    logger.log("\nStamina Response:");
+    logger.log(JSON.stringify(data, null, 2));
     return data;
   }
 
@@ -337,8 +337,8 @@ class StarrailManager {
       this.mainApi.starrailRegion
     );
 
-    console.log("\nForgotten Hall Response:");
-    console.log(data);
+    logger.log("\nForgotten Hall Response:");
+    logger.log(data);
     return data
   }
 }
@@ -347,9 +347,9 @@ class ZenlessManager {
   constructor(private mainApi: HoyoManager) { }
 
   async getInfo(): Promise<void | null | zenlessInfo.zenlessInfo> {
-    console.log("Zenless UID:", this.mainApi.zenlessUid);
+    logger.log("Zenless UID:", this.mainApi.zenlessUid);
     if (!this.mainApi.zenlessUid || !this.mainApi.zenlessRegion) {
-      console.log("No Zenless account found");
+      logger.log("No Zenless account found");
       return;
     }
 
@@ -362,8 +362,8 @@ class ZenlessManager {
       this.mainApi.zenlessRegion
     );
 
-    console.log("\nZenless Info Response:");
-    console.log(JSON.stringify(data, null, 2));
+    logger.log("\nZenless Info Response:");
+    logger.log(JSON.stringify(data, null, 2));
 
     return data
   }
@@ -380,9 +380,9 @@ class ZenlessManager {
       this.mainApi.zenlessRegion
     );
 
-    console.log("\nBattery Info Response:");
-    console.log(JSON.stringify(data, null, 2));
-    console.log(data?.data.energy.progress)
+    logger.log("\nBattery Info Response:");
+    logger.log(JSON.stringify(data, null, 2));
+    logger.log(data?.data.energy.progress)
     return data;
   }
 
@@ -399,8 +399,8 @@ class ZenlessManager {
       this.mainApi.zenlessRegion
     );
 
-    console.log("\nDeadly Assault Response:");
-    console.log(data);
+    logger.log("\nDeadly Assault Response:");
+    logger.log(data);
     return data
   }
 
@@ -416,8 +416,8 @@ class ZenlessManager {
       this.mainApi.zenlessRegion
     );
 
-    console.log("\nHollow Zero Response:");
-    console.log(data);
+    logger.log("\nHollow Zero Response:");
+    logger.log(data);
 
     return data;
   }

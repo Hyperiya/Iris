@@ -68,13 +68,13 @@ class DiscordRPC extends EventEmitter {
                     // Setup socket listeners
                     this.socket.once('connect', () => {
                         connected = true;
-                        console.log('Connected to Discord IPC pipe:', pipeNum);
+                        logger.log('Connected to Discord IPC pipe:', pipeNum);
                         this.setupSocket(); // Only setup full listeners after successful connection
                         resolve(true);
                     });
         
                     this.socket.once('error', (err) => {
-                        console.log(`Failed to connect to pipe ${pipeNum}:`, err.message);
+                        logger.log(`Failed to connect to pipe ${pipeNum}:`, err.message);
                         
                         // Clean up failed connection attempt
                         this.socket?.removeAllListeners();
@@ -93,13 +93,13 @@ class DiscordRPC extends EventEmitter {
                         ? `\\\\?\\pipe\\discord-ipc-${pipeNum}`
                         : `/tmp/discord-ipc-${pipeNum}`;
         
-                    console.log(`Attempting to connect to pipe ${pipeNum}:`, currentPath);
+                    logger.log(`Attempting to connect to pipe ${pipeNum}:`, currentPath);
                     
                     try {
                         this.socket.connect(currentPath);
                     } catch (err) {
                         // If connect throws synchronously, clean up and try next pipe
-                        console.error(`Error connecting to pipe ${pipeNum}:`, err);
+                        logger.error(`Error connecting to pipe ${pipeNum}:`, err);
                         this.socket?.removeAllListeners();
                         this.socket?.destroy();
                         
@@ -113,7 +113,7 @@ class DiscordRPC extends EventEmitter {
                 };
         
                 // Start with pipe 0
-                console.log('Starting Discord IPC connection attempts');
+                logger.log('Starting Discord IPC connection attempts');
                 tryConnect(currentPipe);
             });
         };
@@ -123,7 +123,7 @@ class DiscordRPC extends EventEmitter {
             const connected = await attemptConnection();
             if (connected) return true;
             
-            console.log('Failed to connect to Discord. Retrying in 60 seconds...');
+            logger.log('Failed to connect to Discord. Retrying in 60 seconds...');
             await new Promise(resolve => setTimeout(resolve, 60000)); // Wait 60 seconds
         }    
     }
@@ -135,11 +135,11 @@ class DiscordRPC extends EventEmitter {
             .on('ready', () => this.handleConnect())
             .on('data', (data) => this.handleData(data))
             .on('close', () => {
-                console.log('Socket closed');
+                logger.log('Socket closed');
                 this.emit('close');
             })
             .on('error', (err) => {
-                console.log('Socket error:', err);
+                logger.log('Socket error:', err);
                 this.emit('error', err);
             });
     }
@@ -147,7 +147,7 @@ class DiscordRPC extends EventEmitter {
 
 
     private async handleConnect() {
-        console.log('Connected to Discord IPC');
+        logger.log('Connected to Discord IPC');
         await this.sendHandshake();
     }
 
@@ -160,7 +160,7 @@ class DiscordRPC extends EventEmitter {
                 op: 0
             };
 
-            console.log('Sending handshake payload:', handshakePayload);
+            logger.log('Sending handshake payload:', handshakePayload);
             this.sendFrame(handshakePayload);
 
             // Set up a timeout for handshake response
@@ -216,14 +216,14 @@ class DiscordRPC extends EventEmitter {
             expires_at: this.store.get('expires_at') as number
         }
 
-        console.log(`access tokens: ${tokens.access_token}, ${tokens.refresh_token}, ${tokens.expires_at}`)
+        logger.log(`access tokens: ${tokens.access_token}, ${tokens.refresh_token}, ${tokens.expires_at}`)
 
         if (tokens.access_token !== undefined && tokens.expires_at > Date.now() && tokens.refresh_token !== undefined) {
-            console.log('skippy')
+            logger.log('skippy')
             this.authenticate(tokens.access_token);
             return;
         } else if (false || tokens.refresh_token !== undefined && tokens.expires_at < Date.now()) {
-            console.log('refreshing')
+            logger.log('refreshing')
             const response = await fetch("https://discord.com/api/v10/oauth2/token", {
                 method: 'POST',
                 headers: {
@@ -252,7 +252,7 @@ class DiscordRPC extends EventEmitter {
         // After handshake is successful, you'll receive a READY event
         // Then you should send IDENTIFY
         this.once('codeReceived', (code) => {
-            console.log('getting token');
+            logger.log('getting token');
             this.getToken(code)
         });
 
@@ -292,7 +292,7 @@ class DiscordRPC extends EventEmitter {
             })
         });
         const data = await response.json();
-        console.log(JSON.stringify(data, null, 2))
+        logger.log(JSON.stringify(data, null, 2))
         /*
         {
         "token_type": "Bearer",
@@ -314,7 +314,7 @@ class DiscordRPC extends EventEmitter {
     private async authenticate(code: string) {
 
         this.once('authenticated', () => {
-            console.log('subscribing')
+            logger.log('subscribing')
             this.subscribe();
         });
 
@@ -327,7 +327,7 @@ class DiscordRPC extends EventEmitter {
             }
         };
 
-        console.log('Sending authenticate payload')
+        logger.log('Sending authenticate payload')
         this.sendFrame(authenticatePayload);
     }
 
@@ -352,7 +352,7 @@ class DiscordRPC extends EventEmitter {
 
             const payload = JSON.parse(this.buffer.subarray(8, totalLength).toString());
 
-            console.log('Received payload:', JSON.stringify(payload, null, 2));
+            logger.log('Received payload:', JSON.stringify(payload, null, 2));
             this.handleMessage(opcode, payload);
 
             this.buffer = this.buffer.subarray(totalLength);
@@ -360,14 +360,14 @@ class DiscordRPC extends EventEmitter {
     }
 
     private async handleMessage(opcode: number, data: any) {
-        console.log('Handling message with opcode:', opcode, 'and data:', data);
+        logger.log('Handling message with opcode:', opcode, 'and data:', data);
         switch (opcode) {
             case 1: // Event
                 return this.handleEvent(data);
             case 2: // Error
                 return this.handleError(data);
             default:
-                console.log('Unknown opcode:', opcode);
+                logger.log('Unknown opcode:', opcode);
         }
     }
 
@@ -379,7 +379,7 @@ class DiscordRPC extends EventEmitter {
         }
 
         if (data.cmd === 'AUTHENTICATE') {
-            console.log('authenticated')
+            logger.log('authenticated')
             this.emit('authenticated');
             return;
         }
@@ -412,10 +412,10 @@ class DiscordRPC extends EventEmitter {
 
         try {
             this.sendFrame(payload);
-            console.log(payload)
-            console.log(`Sent ${command}`);
+            logger.log(payload)
+            logger.log(`Sent ${command}`);
         } catch (error) {
-            console.error(`Failed to send ${command}:`, error);
+            logger.error(`Failed to send ${command}:`, error);
         }
     }
 
@@ -448,11 +448,11 @@ class DiscordRPC extends EventEmitter {
 
         try {
             this.sendFrame(payload);
-            console.log(payload)
+            logger.log(payload)
             this.subscribedEvents.add(event);
-            console.log(`Subscribed to ${event}`);
+            logger.log(`Subscribed to ${event}`);
         } catch (error) {
-            console.error(`Failed to subscribe to ${event}:`, error);
+            logger.error(`Failed to subscribe to ${event}:`, error);
         }
     }
 
@@ -471,9 +471,9 @@ class DiscordRPC extends EventEmitter {
         try {
             this.sendFrame(payload);
             this.subscribedEvents.delete(event);
-            console.log(`Unsubscribed from ${event}`);
+            logger.log(`Unsubscribed from ${event}`);
         } catch (error) {
-            console.error(`Failed to unsubscribe from ${event}:`, error);
+            logger.error(`Failed to unsubscribe from ${event}:`, error);
         }
     }
 
@@ -492,7 +492,7 @@ class DiscordRPC extends EventEmitter {
         try {
             this.sendFrame(payload);
         } catch (error) {
-            console.error(`Failed to send SELECT_TEXT_CHANNEL:`, error);
+            logger.error(`Failed to send SELECT_TEXT_CHANNEL:`, error);
         }
     }
 
@@ -530,10 +530,10 @@ class VoiceManager {
         this.rpc.on('data', (data: VoiceChannelSelectType) => {
             if (data.evt === 'VOICE_CHANNEL_SELECT') {
                 if (data.data.channel_id == null) {
-                    console.log('leaving call')
+                    logger.log('leaving call')
                     this.unsubscribeFromVoiceEvents(this.channel_id)
                 } else {
-                    console.log(`joined ${data.data.channel_id}`)
+                    logger.log(`joined ${data.data.channel_id}`)
                     this.channel_id = data.data.channel_id
                     this.subscribeToVoiceEvents(this.channel_id)
                     this.rpc.sendCommand('GET_VOICE_SETTINGS')

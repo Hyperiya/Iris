@@ -9,6 +9,7 @@ import './loaders/snapshot.ts';
 import './loaders/spotify.ts';
 import './loaders/versions.ts';
 import './loaders/msx.ts';
+import './loaders/dev.ts';
 // In preload/index.ts
 export type { ElectronAPI } from './loaders/electron.ts';
 export type { DiscordAPI } from './loaders/discord.ts';
@@ -20,3 +21,4 @@ export type { LrcAPI } from './loaders/lrc.ts';
 export type { HoyoAPI } from './loaders/hoyo.ts';
 export type { SnapshotAPI } from './loaders/snapshot.ts';
 export type { MsxAPI } from './loaders/msx.ts';
+export type { DevAPI } from './loaders/dev.ts';

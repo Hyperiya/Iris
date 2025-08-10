@@ -11,14 +11,14 @@ const clients = new Set<WebSocket>();
 
 function createWebSocketServer() {
     if (wss) {
-        console.log('WebSocket server already running');
+        logger.log('WebSocket server already running');
         return;
     }
 
     wss = new WebSocketServer({ port: 5001 });
 
     wss.on('listening', () => {
-        console.log('WebSocket server is listening on port 5001');
+        logger.log('WebSocket server is listening on port 5001');
     });
 
     const handleSpicetifyMessage = (message: string): Promise<any> => {
@@ -32,7 +32,7 @@ function createWebSocketServer() {
 
     wss.on('connection', async (ws: WebSocket) => {
         await clients.add(ws);
-        console.log('New Spicetify client connected');
+        logger.log('New Spicetify client connected');
 
         ws.on('message', async (message) => {
             try {
@@ -50,17 +50,17 @@ function createWebSocketServer() {
                 // Echo back the message
                 // ws.send(`Server received: ${messageString}`);
             } catch (error) {
-                console.error('Error handling message:', error);
+                logger.error('Error handling message:', error);
             }
         });
 
         ws.on('close', () => {
             clients.delete(ws);
-            console.log('Client disconnected');
+            logger.log('Client disconnected');
         });
 
         ws.on('error', (error) => {
-            console.error('WebSocket error:', error);
+            logger.error('WebSocket error:', error);
             clients.delete(ws);
 
         });
@@ -70,7 +70,7 @@ function createWebSocketServer() {
     });
 
     wss.on('error', (error) => {
-        console.error('WebSocket server error:', error);
+        logger.error('WebSocket server error:', error);
     });
 
     const healthServer = http.createServer((req, res) => {
@@ -84,7 +84,7 @@ function createWebSocketServer() {
     });
 
     healthServer.listen(5001, '127.0.0.1', () => {
-        console.log('Health check server listening on port 5001');
+        logger.log('Health check server listening on port 5001');
     });
 }
 
@@ -98,7 +98,7 @@ export function setupSpotifyHandlers() {
             await SpotifyService.startLinkWs();
             return true;
         } catch (error) {
-            console.error('Failed to start Spotify link:', error);
+            logger.error('Failed to start Spotify link:', error);
             throw error;
         }
     })
@@ -113,7 +113,7 @@ export function setupSpotifyHandlers() {
             });
             return response;
         } catch (error) {
-            console.error('Error searching lyrics:', error);
+            logger.error('Error searching lyrics:', error);
             throw error;
         }
     })
@@ -124,7 +124,7 @@ export function setupSpotifyHandlers() {
             const response = await lrcLibApi.parseSyncedLyrics(syncedLyrics);
             return response;
         } catch (error) {
-            console.error('Error parsing lyrics:', error);
+            logger.error('Error parsing lyrics:', error);
             throw error;
         }
     })
@@ -141,14 +141,14 @@ export function cleanupSpotifyHandlers() {
 
             // Close WebSocket server
             wss.close(() => {
-                console.log('WebSocket server closed');
+                logger.log('WebSocket server closed');
                 wss = null;
             });
         }
 
         if (healthServer) {
             healthServer.close(() => {
-                console.log('Health check server closed');
+                logger.log('Health check server closed');
                 healthServer = null;
             });
         }

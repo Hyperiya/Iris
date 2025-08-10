@@ -1,3 +1,5 @@
+$card-height: 100px; // Default card height
+
 /* Main container */
 .loading-spinner-container {
     display: flex;
@@ -61,6 +63,45 @@
     &.full {
         .game-cards-container {
             height: var(--available-height, auto); // Add this line
+
+            .game-card {
+                .game-info-section {
+                    max-height: 100% !important;
+                    min-height: 100% !important;
+                    height: 100% !important;
+                }
+
+                .stats-section {
+                    .stats-grid {
+                        grid-auto-rows: 1fr;
+
+                        .stat-card {
+                            &:nth-child(4n-3):nth-last-child(1) {
+                                grid-column: span 4;
+                            }
+
+                            // 2 cards in row - each takes 2 columns
+                            &:nth-child(4n-3):nth-last-child(2),
+                            &:nth-child(4n-2):nth-last-child(1) {
+                                grid-column: span 2;
+                            }
+
+                            // 3 cards in row - distribute as 2-1-1
+                            &:nth-child(4n-3):nth-last-child(3) {
+                                grid-column: span 2;
+                            }
+
+                            &:nth-child(4n-2):nth-last-child(2),
+                            &:nth-child(4n-1):nth-last-child(1) {
+                                grid-column: span 1;
+                            }
+                        }
+                    }
+                }
+            }
+
+
+
         }
     }
 
@@ -71,8 +112,6 @@
                 grid-column: 1 / -1;
             }
         }
-
-
 
         .game-card {
             &:not(.hidden-card) {
@@ -156,25 +195,30 @@
     flex-direction: row;
     transition: all 0.3s ease; // Add smooth transition
     height: var(--card-height, auto);
-    min-height: 0; // Allow shrinking
+    min-height: 100px; // Allow shrinking
     flex-shrink: 0; // Prevent unwanted shrinking
 
 
     // Make game info section clickable in neutral mode
 
     &.hidden-card {
-        height: 100px; // Smaller height when not selected
-        flex-shrink: 0; // Add this to prevent shrinking
+        height: 100px !important; // Smaller height when not selected
+        // flex-shrink: 0; // Add this to prevent shrinking
+        flex-direction: column;
 
         .game-info-section {
             align-items: center;
             width: 100%;
             border-right: none;
+            min-height: $card-height !important;
+            max-height: $card-height !important;
+            // flex: 1;
         }
 
         .stats-section,
         .action-section {
-            display: none;
+            overflow: hidden;
+            flex-shrink: 0;
         }
     }
 }
@@ -191,6 +235,7 @@
     background-color: #1e1e20; // Slightly elevated background
     width: 15%;
     box-sizing: border-box;
+    height: $card-height ;
 
     &:hover {
         background-color: #28282b;
@@ -227,7 +272,7 @@
 
 /* Stats section styles */
 .stats-section {
-    
+
     /* Add this to ensure full height */
     padding: 16px;
     flex: 1;
@@ -241,25 +286,42 @@
     gap: 16px;
     width: 100%;
     height: 100%;
-    align-items: center;
-    justify-content: center;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     align-items: stretch;
-    grid-auto-flow: dense;
-    grid-auto-rows: 1fr; // Make rows share available space equally
 
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    grid-auto-rows: 14.8vh;
 }
 
 .stat-card {
     display: flex;
     align-items: center;
     gap: 12px;
-    background-color: #1e1e20; // Elevated background
+    background-color: #1e1e20;
     padding: 12px;
     box-sizing: border-box;
     border-radius: 6px;
-    min-height: 0; // Allow card to shrink below its content size
     width: 100%;
+
+    // &:nth-child(4n-3):nth-last-child(1) {
+    //     grid-column: span 4;
+    // }
+
+    // // 2 cards in row - each takes 2 columns
+    // &:nth-child(4n-3):nth-last-child(2),
+    // &:nth-child(4n-2):nth-last-child(1) {
+    //     grid-column: span 2;
+    // }
+
+    // // 3 cards in row - distribute as 2-1-1
+    // &:nth-child(4n-3):nth-last-child(3) {
+    //     grid-column: span 2;
+    // }
+
+    // &:nth-child(4n-2):nth-last-child(2),
+    // &:nth-child(4n-1):nth-last-child(1) {
+    //     grid-column: span 1;
+    // }
 }
 
 .stat-icon-container {

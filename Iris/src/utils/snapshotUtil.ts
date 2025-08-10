@@ -39,20 +39,20 @@ export class SnapshotManager {
       
       // Invalidate snapshot if app version changed
       if (snapshotInfo.version !== this.appVersion) {
-        console.log('App version changed, snapshot invalid');
+        logger.log('App version changed, snapshot invalid');
         return false;
       }
 
       // Invalidate if snapshot is older than 7 days
       const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
       if (Date.now() - snapshotInfo.timestamp > oneWeekMs) {
-        console.log('Snapshot too old, invalidating');
+        logger.log('Snapshot too old, invalidating');
         return false;
       }
 
       return true;
     } catch (error) {
-      console.error('Error checking snapshot validity:', error);
+      logger.error('Error checking snapshot validity:', error);
       return false;
     }
   }
@@ -65,7 +65,7 @@ export class SnapshotManager {
       const data = fs.readFileSync(this.snapshotInfoPath, 'utf8');
       return JSON.parse(data) as SnapshotInfo;
     } catch (error) {
-      console.error('Error reading snapshot info:', error);
+      logger.error('Error reading snapshot info:', error);
       return {
         version: '',
         timestamp: 0,
@@ -94,9 +94,9 @@ export class SnapshotManager {
       // This is a placeholder for the binary snapshot data
       fs.writeFileSync(this.snapshotPath, Buffer.from('SNAPSHOT_PLACEHOLDER'));
       
-      console.log('Snapshot created successfully');
+      logger.log('Snapshot created successfully');
     } catch (error) {
-      console.error('Error creating snapshot:', error);
+      logger.error('Error creating snapshot:', error);
     }
   }
 
@@ -106,15 +106,15 @@ export class SnapshotManager {
   public loadSnapshot(): boolean {
     try {
       if (!this.hasValidSnapshot()) {
-        console.log('No valid snapshot found');
+        logger.log('No valid snapshot found');
         return false;
       }
 
       // In a real implementation, we would use V8's deserialize API to load the snapshot
-      console.log('Snapshot loaded successfully');
+      logger.log('Snapshot loaded successfully');
       return true;
     } catch (error) {
-      console.error('Error loading snapshot:', error);
+      logger.error('Error loading snapshot:', error);
       return false;
     }
   }
@@ -130,9 +130,9 @@ export class SnapshotManager {
       if (fs.existsSync(this.snapshotInfoPath)) {
         fs.unlinkSync(this.snapshotInfoPath);
       }
-      console.log('Snapshot deleted successfully');
+      logger.log('Snapshot deleted successfully');
     } catch (error) {
-      console.error('Error deleting snapshot:', error);
+      logger.error('Error deleting snapshot:', error);
     }
   }
 }

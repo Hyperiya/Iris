@@ -117,6 +117,7 @@ declare global {
         hoyoAPI: PreloadTypes.HoyoAPI;
         spotify: PreloadTypes.SpotifyAPI;
         msx: PreloadTypes.MsxAPI;
+        dev: PreloadTypes.DevAPI;
         saveDiscordTokens: (tokens: any) => void;
         loadDiscordTokens: () => any;
     }

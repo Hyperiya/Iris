@@ -27,8 +27,8 @@ export function setupSpicetifyHandlers() {
       // Get the source path from our assets
       const sourcePath = getAssetPath();
 
-      console.log('Source path:', sourcePath);
-      console.log('Destination path:', extensionDestPath);
+      logger.log('Source path:', sourcePath);
+      logger.log('Destination path:', extensionDestPath);
 
       // Check if source exists
       if (!fs.existsSync(sourcePath)) {
@@ -49,10 +49,10 @@ export function setupSpicetifyHandlers() {
       await new Promise((resolve, reject) => {
         exec('spicetify apply', (error, stdout, stderr) => {
           if (error) {
-            console.error('Error running spicetify apply:', error);
+            logger.error('Error running spicetify apply:', error);
             reject(error);
           } else {
-            console.log('Spicetify apply output:', stdout);
+            logger.log('Spicetify apply output:', stdout);
             resolve(stdout);
           }
         });
@@ -60,7 +60,7 @@ export function setupSpicetifyHandlers() {
 
       return { success: true, message: 'Extension installed successfully!' };
     } catch (error: any) {
-      console.error('Installation error:', error);
+      logger.error('Installation error:', error);
       return {
         success: false,
         message: `Installation failed: ${error.message}`

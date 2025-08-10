@@ -13,6 +13,31 @@ import { cleanupSpotifyHandlers } from './ipc/handlers/spotify.ts'
 
 import { saveWindowState, restoreWindowState } from './utils/windowState.ts';
 
+const isDebugMode = process.env.DEBUG_MODE?.trim() === 'true'
+console.log('DEBUG_MODE:', process.env.DEBUG_MODE, 'isDebugMode:', isDebugMode); // Add this
+global.DEBUG_MODE = isDebugMode;
+
+global.HOYO_ONLINE = process.env.HOYO_ONLINE?.trim() === 'true';
+console.log('HOYO_ONLINE:', process.env.HOYO_ONLINE, 'global.HOYO_ONLINE:', global.HOYO_ONLINE); // Add this
+
+console.log('DEBUG_MODE raw:', JSON.stringify(process.env.DEBUG_MODE));
+console.log('Comparison result:', process.env.DEBUG_MODE === 'true');
+console.log('Type of DEBUG_MODE:', typeof process.env.DEBUG_MODE);
+console.log('Length of DEBUG_MODE:', process.env.DEBUG_MODE?.length);
+
+
+global.logger = {
+  log: (...args: any[]) => {
+    if (isDebugMode) console.log(...args);
+  },
+  error: (...args: any[]) => {
+    if (isDebugMode) console.error(...args);
+  },
+  warn: (...args: any[]) => {
+    if (isDebugMode) console.warn(...args);
+  }
+};
+
 let mainWindow: BrowserWindow | null = null;
 let discordRPC: DiscordRPC | null = null;
 let snapshotManager: SnapshotManager | null = null;
@@ -38,6 +63,8 @@ process.on('unhandledRejection', (reason, promise) => {
   fs.appendFileSync(logPath, `${new Date().toISOString()} - ${errorMsg}`);
   console.error(errorMsg);
 });
+
+
 
 const cspDirectives = {
   'font-src': ["'self'"],
@@ -88,7 +115,7 @@ const createWindow = async (): Promise<void> => {
   app.commandLine.appendSwitch('enable-webgl');
   app.commandLine.appendSwitch('enable-webgl2');
 
-  console.log(app.getGPUFeatureStatus())
+  logger.log(app.getGPUFeatureStatus())
 
   // Create the browser window.
   mainWindow = new BrowserWindow({
@@ -165,6 +192,7 @@ const createWindow = async (): Promise<void> => {
   }
 
   setupIpcHandlers(mainWindow, snapshotManager);
+  ipcMain.handle('get-debug-mode', () => isDebugMode);
 
   mainWindow.on('maximize', () => {
     if (mainWindow) saveWindowState(mainWindow);
@@ -231,7 +259,7 @@ const createWindow = async (): Promise<void> => {
   ensureWindowVisible();
 
   // and load the index.html of the app.
-  console.log(__dirname)
+  logger.log(__dirname)
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
   } else {
@@ -239,7 +267,7 @@ const createWindow = async (): Promise<void> => {
   };
   // Open the DevTools.
   if (process.env.NODE_ENV === 'development') {
-    // mainWindow.webContents.openDevTools();
+    
   }
 };
 
@@ -293,23 +321,22 @@ ipcMain.handle('get-app-path', () => {
 });
 
 ipcMain.on('console-log', (_, message) => {
-  if (process.env.NODE_ENV !== 'production') return; // Only log in non-production environments
+  if (process.env.DEBUG_MODE == 'false') return; // Only log in non-production environments
   console.log(message); // This will print to terminal
 });
 
 ipcMain.on('console-error', (_, message) => {
-  if (process.env.NODE_ENV !== 'production') return; // Only log in non-production environments
+  if (process.env.DEBUG_MODE == 'false') return; // Only log in non-production environments
   console.error(message); // This will print to terminal
 });
 
 app.whenReady().then(async () => {
   app.on('gpu-info-update', () => {
     const gpuInfo = app.getGPUInfo('basic');
-    console.log('GPU Info:', gpuInfo);
+    logger.log('GPU Info:', gpuInfo);
   });
 
   const displays = screen.getAllDisplays();
-  const primaryDisplay = screen.getPrimaryDisplay();
 
   displays.sort((a, b) => {
     // Sort first by x position, then by y position

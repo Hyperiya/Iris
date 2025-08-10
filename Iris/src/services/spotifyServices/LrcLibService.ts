@@ -42,39 +42,39 @@ export class LrcLibApi {
       const cleanArtist = params.artist.trim().replace(/\s+/g, '+');
       const cleanTrack = params.track.trim().replace(/\s+/g, '+');
 
-      console.log('Search parameters:', cleanArtist, cleanTrack);
+      logger.log('Search parameters:', cleanArtist, cleanTrack);
 
       // First attempt with album if provided
       if (params.album && !result) {
         const cleanAlbum = params.album.trim().replace(/\s+/g, '+');
         const urlWithAlbum = `${this.baseUrl}/get?artist_name=${cleanArtist}&track_name=${cleanTrack}&album_name=${cleanAlbum}`;
 
-        console.log('Trying first attempt with album:', urlWithAlbum);
+        logger.log('Trying first attempt with album:', urlWithAlbum);
 
         try {
           const response = await fetch(urlWithAlbum);
           if (response.ok) {
             result = await response.json();
-            console.log('Found lyrics with album!');
+            logger.log('Found lyrics with album!');
           }
         } catch (error) {
-          console.log('First attempt failed, trying without album...');
+          logger.log('First attempt failed, trying without album...');
         }
       }
 
       // Second attempt without album
       if (!result) {
         const urlWithoutAlbum = `${this.baseUrl}/get?artist_name=${cleanArtist}&track_name=${cleanTrack}`;
-        console.log('Trying second attempt without album:', urlWithoutAlbum);
+        logger.log('Trying second attempt without album:', urlWithoutAlbum);
 
         try {
           const response = await fetch(urlWithoutAlbum);
           if (response.ok) {
             result = await response.json();
-            console.log('Found lyrics without album!');
+            logger.log('Found lyrics without album!');
           }
         } catch (error) {
-          console.log('Second attempt failed, trying with primary artist only...');
+          logger.log('Second attempt failed, trying with primary artist only...');
         }
       }
 
@@ -86,16 +86,16 @@ export class LrcLibApi {
           .replace(/\s+/g, '+');
 
         const urlPrimaryArtist = `${this.baseUrl}/get?artist_name=${primaryArtist}&track_name=${cleanTrack}`;
-        console.log('Trying third attempt with primary artist:', urlPrimaryArtist);
+        logger.log('Trying third attempt with primary artist:', urlPrimaryArtist);
 
         const response = await fetch(urlPrimaryArtist);
 
         if (response.ok) {
           result = await response.json();
-          console.log('Found lyrics with primary artist!');
+          logger.log('Found lyrics with primary artist!');
         } else {
           const errorText = await response.text();
-          console.error('API Error Response, third:', {
+          logger.error('API Error Response, third:', {
             status: response.status,
             statusText: response.statusText,
             body: errorText,
@@ -112,7 +112,7 @@ export class LrcLibApi {
           result = await response.json();
         } else {
           const errorText = await response.text();
-          console.error('API Error Response:', {
+          logger.error('API Error Response:', {
             status: response.status,
             statusText: response.statusText,
             body: errorText
@@ -121,7 +121,7 @@ export class LrcLibApi {
         }
       }
     } catch (error) {
-      console.error('Error fetching lyrics:', error);
+      logger.error('Error fetching lyrics:', error);
       throw error;
     }
 
@@ -179,7 +179,7 @@ export class LrcLibApi {
 
       return await response.json() as LrcLibResponse;
     } catch (error) {
-      console.error('Error fetching lyrics by ID:', error);
+      logger.error('Error fetching lyrics by ID:', error);
       throw error;
     }
   }

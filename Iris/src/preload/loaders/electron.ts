@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer } from "electron";
 
 const electronAPI = {
-    restart: () => ipcRenderer.invoke('restart-app'),
+  restart: () => ipcRenderer.invoke('restart-app'),
   openExternal: (url: string) => ipcRenderer.invoke('open-external', url),
   log: (message: any) => ipcRenderer.send('console-log', message),
   getAppPath: () => ipcRenderer.invoke('get-app-path'),

@@ -20,6 +20,8 @@ export interface AppSettings {
     hoyolab: {
         username: string;
         password: string;
+        cookie?: string; // Optional, can be undefined
+        uid?: string;
     };
     ui: {
         modules: EnabledModules;
@@ -95,7 +97,7 @@ class SettingsService {
                 this.settings = { ...DEFAULT_SETTINGS, ...loadedSettings };
             }
         } catch (error) {
-            console.error('Failed to load settings:', error);
+            logger.error('Failed to load settings:', error);
             this.settings = DEFAULT_SETTINGS;
         }
     }
@@ -104,7 +106,7 @@ class SettingsService {
         try {
             fs.writeFileSync(this.settingsPath, JSON.stringify(this.settings, null, 2));
         } catch (error) {
-            console.error('Failed to save settings:', error);
+            logger.error('Failed to save settings:', error);
         }
     }
 

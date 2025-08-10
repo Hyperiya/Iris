@@ -36,7 +36,9 @@
     }
   },
   "scripts": {
-    "start": "electron-forge start",
+    "start": "set DEBUG_MODE=false && set HOYO_ONLINE=false && electron-forge start",
+    "start-hoyo": "set DEBUG_MODE=true && set HOYO_ONLINE=true && electron-forge start",
+    "start-debug": "set DEBUG_MODE=true && set HOYO_ONLINE=false && electron-forge start",
     "package": "set DEBUG=electron-forge:*,electron-packager:* && electron-forge package",
     "make": "set DEBUG=electron-forge:*,electron-packager:*,electron-installer-* && electron-forge make",
     "publish": "set DEBUG=electron-forge:*,electron-packager:*,electron-installer-* && electron-forge publish",

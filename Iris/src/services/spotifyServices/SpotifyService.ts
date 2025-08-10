@@ -1,4 +1,6 @@
 import { isEqual, omit } from 'lodash';
+import { logger } from '../../renderer/utils/logger.ts';
+
 
 export enum RepeatState {
     OFF = 'off',
@@ -65,7 +67,6 @@ class SpotifyService {
 
 
     constructor() {
-        console.log('SpotifyService constructed');
         this.initializeRPC();
     }
 
@@ -74,7 +75,7 @@ class SpotifyService {
         return new Promise((resolve) => {
             if (typeof window !== 'undefined' && window.musicRPC) {
                 resolve();
-                console.log('Window is ready, musicRPC is available');
+                logger.log('Window is ready, musicRPC is available');
                 return;
             }
 
@@ -90,7 +91,7 @@ class SpotifyService {
         });
     }
 
-    
+
     private async initializeRPC() {
         try {
             await this.waitForWindow();
@@ -135,7 +136,7 @@ class SpotifyService {
                     try {
                         response = JSON.parse(event.data);
                     } catch (parseError) {
-                        console.error('Error parsing WebSocket message:', parseError);
+                        logger.error('Error parsing WebSocket message:', parseError);
                         return; // Exit the function if parsing fails
                     }
 
@@ -290,7 +291,7 @@ class SpotifyService {
             });
 
         } catch (error) {
-            console.error('Error fetching current track:', error);
+            logger.error('Error fetching current track:', error);
             throw error;
         }
     }

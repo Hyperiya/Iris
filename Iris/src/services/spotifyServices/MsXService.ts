@@ -40,13 +40,13 @@ export class MsXService {
                                 }
                             });
                         } else {
-                            console.warn('No translations found for the track');
+                            logger.warn('No translations found for the track');
                         }
                     }
                 }
             }
         } catch (error) {
-            console.error('Error fetching Musixmatch lyrics:', error);
+            logger.error('Error fetching Musixmatch lyrics:', error);
         }
 
         return result;
@@ -87,7 +87,7 @@ export class MsXService {
 
             return await response.json();
         } catch (error) {
-            console.error(`Musixmatch request failed for ${method}:`, error);
+            logger.error(`Musixmatch request failed for ${method}:`, error);
             return undefined;
         }
     }
@@ -126,7 +126,7 @@ export class MsXService {
             selected_language: language[0], // You can make this configurable
         };
 
-        console.log('Querying translations with params:', queryParams);
+        logger.log('Querying translations with params:', queryParams);
         const result = await this.queryMusixmatch('crowd.track.translations.get', queryParams);
         return result?.message?.body?.translations_list;
     }

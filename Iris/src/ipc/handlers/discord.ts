@@ -25,7 +25,7 @@ export function setupDiscordHandlers(mainWindow: BrowserWindow) {
             isConnecting = false;
             return { success: true };
         } catch (error) {
-            console.error('Failed to connect to Discord:', error);
+            logger.error('Failed to connect to Discord:', error);
             isConnecting = false;
             discordRPC = null;
             return { success: false, error: error.message };
@@ -46,7 +46,7 @@ export function setupDiscordHandlers(mainWindow: BrowserWindow) {
             }
             return { success: true };
         } catch (error) {
-            console.error('Failed to disconnect from Discord:', error);
+            logger.error('Failed to disconnect from Discord:', error);
             return { success: false, error: error.message };
         }
     });
@@ -60,7 +60,7 @@ export function setupDiscordHandlers(mainWindow: BrowserWindow) {
                 return { success: false, error: 'DiscordRPC instance not initialized' };
             }
         } catch (error) {
-            console.error('Failed to revoke tokens:', error);
+            logger.error('Failed to revoke tokens:', error);
             return { success: false, error: error.message };
         }
     })
@@ -72,7 +72,7 @@ export function setupDiscordHandlers(mainWindow: BrowserWindow) {
         try {
             await discordRPC.subscribeToEvent(event, args);
         } catch (error) {
-            console.error('Subscription error:', error);
+            logger.error('Subscription error:', error);
             throw error;
         }
     })
@@ -97,7 +97,7 @@ export function setupDiscordHandlers(mainWindow: BrowserWindow) {
             }
         }
         catch (error) {
-            console.error('Text control error:', error);
+            logger.error('Text control error:', error);
             throw error;
         }
     })
@@ -141,7 +141,7 @@ export function setupDiscordHandlers(mainWindow: BrowserWindow) {
                     throw new Error(`${action} is not a valid action for this function`);
             }
         } catch (error) {
-            console.error('Voice control error:', error);
+            logger.error('Voice control error:', error);
             throw error;
         }
     });

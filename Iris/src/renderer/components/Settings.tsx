@@ -214,8 +214,8 @@ function About({ handleMenuSelect }: AboutProps) {
             <div className='basic-details'>
                 <img src={Iris} alt="Iris" className="iris-image" draggable="true"></img>
                 <div className='name-text'>
-                    <span id='title'>Iris</span>
-                    <span id='name'>By Hyperiya</span>
+                    <span id='title'>Iris </span>
+                    <span id='name'>  By Hyperiya</span>
                 </div>
             </div>
             <p className="iris-text">
@@ -328,7 +328,7 @@ function Hoyo({ }: HoyoProps) {
         let result
 
         window.settings.set('hoyolab.username', username);
-        window.settings.set('hoyolab.password', username);
+        window.settings.set('hoyolab.password', password);
 
 
         if (!username || !password) {

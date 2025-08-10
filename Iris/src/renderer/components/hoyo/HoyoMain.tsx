@@ -11,35 +11,58 @@ interface AppProps {
 type GameType = 'genshin' | 'starrail' | 'zenless';
 
 const HoyoMain: React.FC<AppProps> = ({ ViewState }) => {
-    
+
     useEffect(() => {
         const performLogin = async () => {
             try {
-                const username = window.settings.get('hoyolab.username');
-                const password = window.settings.get('hoyolab.password');
-
-                if (!username || !password) {
-                    throw new Error('Username or password not found in storage');
+                if (window.dev.enabled) {
+                    return;
                 }
 
-                const result = await window.hoyoAPI.login(username, password);
-                console.log('Login successful:', result);
+                if (window.settings.get('hoyolab.cookie') && window.settings.get('hoyolab.uid')) {
+                    const cookie = window.settings.get('hoyolab.cookie');
+                    const uid = window.settings.get('hoyolab.uid');
 
-                const cookieString = [
-                    `cookie_token_v2=${result.cookies.cookie_token_v2}`,
-                    `account_mid_v2=${result.cookies.account_mid_v2}`,
-                    `account_id_v2=${result.cookies.account_id_v2}`,
-                    `ltoken_v2=${result.cookies.ltoken_v2}`,
-                    `ltmid_v2=${result.cookies.ltmid_v2}`,
-                    `ltuid_v2=${result.cookies.ltuid_v2}`,
-                ].join('; ');
+                    if (!cookie || !uid) {
+                        throw new Error('Cookie or UID not found in storage');
+                    }
 
-                var uid = result.uid
+                    await window.hoyoAPI.initialize(cookie, uid);
+                    console.log('HoyoAPI initialized with existing cookie and UID');
 
-                await window.hoyoAPI.initialize(cookieString, uid);
+                    // Optionally, you can fetch user info or other data here
+                    console.log(await window.hoyoAPI.callMethod('genshin.getInfo', ''));
+                    
+                } else {
+                    const username = window.settings.get('hoyolab.username');
+                    const password = window.settings.get('hoyolab.password');
 
-                console.log(await window.hoyoAPI.callMethod('genshin.getInfo', ''))
-                
+                    if (!username || !password) {
+                        throw new Error('Username or password not found in storage');
+                    }
+
+                    const result = await window.hoyoAPI.login(username, password);
+                    console.log('Login successful:', result);
+
+                    const cookieString = [
+                        `cookie_token_v2=${result.cookies.cookie_token_v2}`,
+                        `account_mid_v2=${result.cookies.account_mid_v2}`,
+                        `account_id_v2=${result.cookies.account_id_v2}`,
+                        `ltoken_v2=${result.cookies.ltoken_v2}`,
+                        `ltmid_v2=${result.cookies.ltmid_v2}`,
+                        `ltuid_v2=${result.cookies.ltuid_v2}`,
+                    ].join('; ');
+
+                    var uid = result.uid
+                    window.settings.set('hoyolab.cookie', cookieString);
+                    window.settings.set('hoyolab.uid', uid);
+
+                    await window.hoyoAPI.initialize(cookieString, uid);
+
+                    console.log(await window.hoyoAPI.callMethod('genshin.getInfo', ''))
+                }
+
+
 
             } catch (err) {
                 console.error('Login failed:', err);
