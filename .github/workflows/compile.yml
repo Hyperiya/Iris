@@ -26,7 +26,9 @@ jobs:
           npm install
       - name: build
         working-directory: ./Iris
-        run: npm run make
+        run: |
+          npm run package
+          npm run make
       - name: Upload Linux Artifacts
         uses: actions/upload-artifact@v4
         with:
