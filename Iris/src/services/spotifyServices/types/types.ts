@@ -68,7 +68,8 @@ export interface Playlist {
   link: string;
   name: string;
   totalLength: number;
-  picture: string;
+  picture: string[] | string;
+  mosaic: boolean;
 }
 
 export interface originalPlaylist {
@@ -95,6 +96,7 @@ export interface originalPlaylist {
     offline?:                  string;
     allows?:                   Allows;
     capabilities?:             Capabilities;
+    mosaic?:                   boolean;
 }
 
 interface Allows {

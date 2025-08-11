@@ -496,6 +496,7 @@ class SpotifyService {
 
     async getPlaylists(): Promise<Playlist[]> {
         try {
+            logger.log('Getting playlists')
             this.sendWsMessage({
                 type: 'info',
                 action: 'playlists'
@@ -523,7 +524,8 @@ class SpotifyService {
                                 link: playlist.link,
                                 name: playlist.name,
                                 totalLength: playlist.totalLength,
-                                picture: playlist.picture
+                                picture: playlist.picture,
+                                mosaic: playlist.mosaic
                             }));
 
                             resolve(playlists);

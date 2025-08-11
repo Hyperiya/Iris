@@ -274,16 +274,22 @@ class IrisSpotifyExtension {
     const res = await Spicetify.CosmosAsync.get("sp://core-playlist/v1/rootlist");
     console.log("playlists", res)
 
-    res.forEach((playlist: any) => {
-      playlist.picture = this.convertSpotifyImageUri(playlist.picture)
-    })
+    const processedRows = res.rows.map((playlist: any) => ({
+      ...playlist,
+      picture: playlist.picture?.startsWith('spotify:mosaic:')
+        ? playlist.picture.split(':').slice(2).map((id: number) => `https://i.scdn.co/image/${id}`)
+        : playlist.picture?.startsWith('spotify:image:') ? this.convertSpotifyImageUri(playlist.picture) : playlist.picture,
+      mosaic: playlist.picture?.startsWith('spotify:mosaic:')
+      
+    }));
+    console.log(processedRows)
     this.sendMessage({
       type: 'response',
       action: 'playlists',
-      data: res.rows
+      data: processedRows
     });
   }
-  
+
 
   private sendCurrentTrackInfo(): void {
     const currentTrack = Spicetify.Player.data.item;

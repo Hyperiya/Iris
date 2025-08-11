@@ -13,6 +13,8 @@ import { spotifyService } from "../../../services/spotifyServices/SpotifyService
 import { Song } from "../../../services/spotifyServices/types/types.ts";
 import { ViewState } from "../../../types/viewState.ts";
 import { ColorExtractor } from '../../../utils/ColorExtractor.ts'
+import SpotifyPlaylists from "./SpotifyPlaylists.tsx";
+import { Playlist } from "../../../services/spotifyServices/types/types.ts";
 
 interface SpotifyMainProps {
   ViewState: ViewState
@@ -41,16 +43,17 @@ const SpotifyMain: React.FC<SpotifyMainProps> = (
     artist: "",
     album_cover: "",
   });
-  
+
   const [localProgress, setLocalProgress] = useState<number>(0);
-  
+
   const [hasInitialData, setHasInitialData] = useState(false);
 
   const manualStateUpdateRef = useRef<number>(0);
   const isMountedRef = useRef<boolean>(true);
-  
+
   const progressRef = useRef<number>(0); // Add a ref to track between renders
-  
+  const [playlists, setPlaylists] = useState<Playlist[] | undefined>()
+
   // NextTrack tracking
   const initialNextTrack = useCallback(async () => {
     // console.log("initialNextTrack called");
@@ -62,7 +65,14 @@ const SpotifyMain: React.FC<SpotifyMainProps> = (
       console.error("Error fetching next track:", error);
     }
   }, []);
-  
+
+  useEffect(() => {
+    setInterval(async () => {
+      const playlists = await spotifyService.getPlaylists()
+      setPlaylists(playlists)
+    }, 10000);
+  }, [])
+
   // CurrentTrack Tracking
   useEffect(() => {
     isMountedRef.current = true;
@@ -70,7 +80,7 @@ const SpotifyMain: React.FC<SpotifyMainProps> = (
     const fetchCurrentTrack = async () => {
       try {
         if (Date.now() - manualStateUpdateRef.current < 2000) return;
-        
+
         const track = await spotifyService.getCurrentTrack();
 
         if (track) {
@@ -125,7 +135,7 @@ const SpotifyMain: React.FC<SpotifyMainProps> = (
       const timeSinceManualUpdate = Date.now() - manualStateUpdateRef.current;
       if (timeSinceManualUpdate < 1000) {
         const remainingWait = 200 - timeSinceManualUpdate;
-        
+
 
         if (timeoutId) clearTimeout(timeoutId);
 
@@ -158,7 +168,7 @@ const SpotifyMain: React.FC<SpotifyMainProps> = (
     };
   }, []); // Remove localProgress from dependencies
 
-  
+
   useEffect(() => {
     initialNextTrack();
     const debounceTimeout = setTimeout(async () => {
@@ -190,7 +200,7 @@ const SpotifyMain: React.FC<SpotifyMainProps> = (
 
   // Getting Avg Colors
   const [colors, setColors] = useState<string[]>([]);
-  
+
   useEffect(() => {
     const getColors = async () => {
 
@@ -204,7 +214,7 @@ const SpotifyMain: React.FC<SpotifyMainProps> = (
           palette.LightMuted?.hex, // [4]
           palette.DarkMuted?.hex, // [5]
         ].filter((color): color is string => !!color);
-        
+
         setColors(extractedColors); // Set the state with extracted colors
       } catch (error) {
         console.error('Error extracting colors:', error);
@@ -301,14 +311,21 @@ const SpotifyMain: React.FC<SpotifyMainProps> = (
             loop={currentTrackData.repeat_state || 0}
           />
         </div>
-        <SongUpcoming
-          nextSong={{
-            id: "1",
-            title: nextTrackData.name || "No upcoming track",
-            artist: nextTrackData.artist || "None",
-            albumCover: nextTrackData.album_cover || Iris,
-          }}
-        />
+        <div id="right-edge">
+          <SongUpcoming
+            nextSong={{
+              id: "1",
+              title: nextTrackData.name || "No upcoming track",
+              artist: nextTrackData.artist || "None",
+              albumCover: nextTrackData.album_cover || Iris,
+            }}
+          />
+          <SpotifyPlaylists
+            playlists={playlists}
+            onSelectedPlaylist={(playlistId: string) => spotifyService.playUri(playlistId)}
+          />
+
+        </div>
         {hasInitialData && (
           <div className="song-lyrics">
             <SongLyrics
