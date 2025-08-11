@@ -3,7 +3,7 @@ import { Clock, Battery, Star, Coins, Award, RefreshCw } from 'lucide-react';
 import './Styles/GameAccountDashboard.scss';
 import { ViewState } from "../../../types/viewState.ts";
 import { logger } from '../../utils/logger.ts';
-import { testGames } from '../../../testObjects/gameStats.tsx';
+// import { testGames } from '../../../testObjects/gameStats.tsx';
 
 import zzzIcon from "../../../assets/images/Zenless_Zone_Zero_logo.png"
 import genshinIcon from "../../../assets/images/Genshin-Impact-Logo.png"
@@ -346,8 +346,6 @@ const GameAccountDashboard: React.FC<GameAccountDashboardProps> = ({ viewState }
               ],
             });
           }
-        } else {
-          return testGames; // Fallback to test data if no games are available
         }
 
         setLastUpdated(Date.now());
