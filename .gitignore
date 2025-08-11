@@ -102,5 +102,5 @@ out/
 
 .discord-tokens.json
 
-src/testObjects/*
+testObjects/
 

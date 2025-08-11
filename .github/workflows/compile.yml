@@ -26,10 +26,13 @@ jobs:
           npm install
       - name: build
         working-directory: ./Iris
-        env:
-          NODE_ENV: 'development'
         run: |
+          npx vite build --config vite.main.config.mjs
+          npx vite build --config vite.preload.config.mjs
+          npx vite build --config vite.renderer.config.mjs
           npm run make
+          
+          ls -la .vite/build/ || echo "Build directory not found"
       - name: Upload Linux Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -47,6 +50,7 @@ jobs:
           ls -la .vite/ 2>/dev/null || echo "No .vite directory"
           echo "=== Current directory ==="
           pwd && ls -la
+          npm run make
 
   build_on_mac:
     runs-on: macos-latest
