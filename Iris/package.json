@@ -36,13 +36,13 @@
     }
   },
   "scripts": {
-    "start": "set DEBUG_MODE=false && set HOYO_ONLINE=false && electron-forge start",
-    "start-hoyo": "set DEBUG_MODE=true && set HOYO_ONLINE=true && electron-forge start",
-    "start-debug": "set DEBUG_MODE=true && set HOYO_ONLINE=false && electron-forge start",
-    "package": "set DEBUG=electron-forge:*,electron-packager:* && electron-forge package",
-    "make": "set DEBUG=electron-forge:*,electron-packager:*,electron-installer-* && electron-forge make",
-    "publish": "set DEBUG=electron-forge:*,electron-packager:*,electron-installer-* && electron-forge publish",
-    "start-log": "set ELECTRON_ENABLE_LOGGING=true && electron . --enable-logging",
+    "start": "cross-env DEBUG_MODE=false HOYO_ONLINE=false electron-forge start",
+    "start-hoyo": "cross-env DEBUG_MODE=true HOYO_ONLINE=true electron-forge start",
+    "start-debug": "cross-env DEBUG_MODE=true HOYO_ONLINE=false electron-forge start",
+    "package": "cross-env DEBUG=electron-forge:*,electron-packager:* electron-forge package",
+    "make": "cross-env NODE_ENV=production DEBUG=electron-forge:*,electron-packager:*,electron-installer-* electron-forge make",
+    "publish": "cross-env DEBUG=electron-forge:*,electron-packager:*,electron-installer-* electron-forge publish",
+    "start-log": "cross-env ELECTRON_ENABLE_LOGGING=true electron . --enable-logging",
     "knip": "knip"
   },
   "devDependencies": {
@@ -71,6 +71,7 @@
     "@vitejs/plugin-react": "^4.4.1",
     "autoprefixer": "^10.4.21",
     "copyfiles": "^2.4.1",
+    "cross-env": "^10.0.0",
     "css-loader": "^6.11.0",
     "electron": "^34.2.0",
     "electron-vite": "^3.1.0",
