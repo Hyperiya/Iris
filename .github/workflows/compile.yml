@@ -27,9 +27,6 @@ jobs:
       - name: build
         working-directory: ./Iris
         run: |
-          npx vite build --config vite.main.config.mjs
-          npx vite build --config vite.preload.config.mjs
-          npx vite build --config vite.renderer.config.mjs
           npm run make
           
           ls -la .vite/build/ || echo "Build directory not found"
