@@ -37,7 +37,7 @@ const createProgressWorker = (interval: number) => {
       }
     };
   `;
-  
+
   const blob = new Blob([workerCode], { type: 'application/javascript' });
   const workerUrl = URL.createObjectURL(blob);
   const worker = new Worker(workerUrl);
@@ -51,7 +51,7 @@ class IrisSpotifyExtension {
   private reconnectAttempts = 0;
   private isServerCheckInProgress = false;
   private cleanupTimers: NodeJS.Timeout[] = [];
-  
+
   // State tracking
   private progress: ProgressState = { current: 0, previous: 0 };
   private duration: DurationState = { current: 0, previous: 0 };
@@ -80,7 +80,7 @@ class IrisSpotifyExtension {
   // WebSocket Management
   private async connectWebSocket(): Promise<void> {
     if (this.isServerCheckInProgress) return;
-    
+
     this.isServerCheckInProgress = true;
 
     try {
@@ -125,7 +125,7 @@ class IrisSpotifyExtension {
   private handleWebSocketMessage(event: MessageEvent): void {
     try {
       const data: WebSocketMessage = JSON.parse(event.data);
-      
+
       if (data.type === 'playback') {
         this.handlePlaybackMessage(data);
       } else if (data.type === 'info') {
@@ -203,6 +203,9 @@ class IrisSpotifyExtension {
       case 'current':
         this.sendCurrentTrackInfo();
         break;
+      case 'playlists':
+        this.sendPlaylists();
+        break;
     }
   }
 
@@ -227,7 +230,7 @@ class IrisSpotifyExtension {
     const currentState = Spicetify.Player.getRepeat();
     const stateMap = ['off', 'context', 'track'];
     const newState = (currentState + 1) % 3;
-    
+
     Spicetify.Player.setRepeat(newState);
 
     this.sendMessage({
@@ -267,9 +270,24 @@ class IrisSpotifyExtension {
     });
   }
 
+  private async sendPlaylists(): Promise<void> {
+    const res = await Spicetify.CosmosAsync.get("sp://core-playlist/v1/rootlist");
+    console.log("playlists", res)
+
+    res.forEach((playlist: any) => {
+      playlist.picture = this.convertSpotifyImageUri(playlist.picture)
+    })
+    this.sendMessage({
+      type: 'response',
+      action: 'playlists',
+      data: res.rows
+    });
+  }
+  
+
   private sendCurrentTrackInfo(): void {
     const currentTrack = Spicetify.Player.data.item;
-    
+
     if (!currentTrack) {
       this.sendMessage({
         type: 'response',
@@ -312,7 +330,7 @@ class IrisSpotifyExtension {
 
     Spicetify.Player.addEventListener("songchange", () => {
       this.loopSwitch = false;
-      
+
       // Detect auto-switch (song ended naturally)
       if (this.progress.previous > (this.duration.previous - 3550)) {
         this.wasAutoSwitched = true;
@@ -340,7 +358,7 @@ class IrisSpotifyExtension {
     if (this.progressWorker) return;
 
     this.progressWorker = createProgressWorker(PROGRESS_UPDATE_INTERVAL);
-    
+
     this.progressWorker.onmessage = () => {
       this.updateProgress();
     };
@@ -350,9 +368,9 @@ class IrisSpotifyExtension {
 
   private updateProgress(): void {
     // Handle loop detection
-    if (this.duration.previous - this.progress.previous >= 1000 && 
-        this.progress.current <= 500 && 
-        Spicetify.Player.getRepeat() === 2) {
+    if (this.duration.previous - this.progress.previous >= 1000 &&
+      this.progress.current <= 500 &&
+      Spicetify.Player.getRepeat() === 2) {
       this.loopSwitch = true;
     }
 
@@ -364,7 +382,7 @@ class IrisSpotifyExtension {
 
     const progress = Math.max(Spicetify.Player.getProgress() + subtract, 0);
     const duration = Spicetify.Player.getDuration();
-    
+
     this.progress.previous = this.progress.current;
     this.progress.current = progress;
 
@@ -422,10 +440,10 @@ class IrisSpotifyExtension {
   // Cleanup
   public cleanup(): void {
     this.stopProgressTracking();
-    
+
     this.cleanupTimers.forEach(timer => clearTimeout(timer));
     this.cleanupTimers = [];
-    
+
     if (this.ws) {
       this.ws.close();
       this.ws = null;

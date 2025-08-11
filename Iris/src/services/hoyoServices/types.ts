@@ -29,3 +29,4 @@ export interface GameRecord {
   region: string;
   // Add other properties as needed
 }
+

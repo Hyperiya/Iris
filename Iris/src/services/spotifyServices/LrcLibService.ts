@@ -1,5 +1,5 @@
 // lrclib-api.ts
-import { LyricLine, SyncedLyrics } from '../../types/lyrics.ts';
+import { LyricLine, SyncedLyrics } from './types/lyrics.ts';
 
 /**
  * Interface for LrcLib API response

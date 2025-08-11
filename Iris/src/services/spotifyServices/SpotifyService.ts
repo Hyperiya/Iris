@@ -1,38 +1,6 @@
 import { isEqual, omit } from 'lodash';
 import { logger } from '../../renderer/utils/logger.ts';
-
-
-export enum RepeatState {
-    OFF = 'off',
-    CONTEXT = 'context', // Repeats the playlist/album
-    TRACK = 'track'     // Repeats the current song
-}
-
-export interface Song {
-    name: string;
-    artist: string;
-    album_cover: string | null;
-    year?: string;
-    is_playing?: boolean;
-    progress_ms?: number;
-    duration_ms?: number;
-    repeat_state?: number;
-    volume?: number;
-    album?: string;
-    shuffle_state?: boolean;
-
-}
-
-export interface Token {
-    token: string
-    tokenExpire: number
-    tokenTime: number
-}
-
-// export interface LyricsResponse {
-//     lyrics: string;
-//     error?: string;
-// }
+import { Song, RepeatState, Token, Playlist, originalPlaylist } from './types/types.ts';
 
 class SpotifyService {
     private existingTrackData: Song | null = null;
@@ -526,7 +494,59 @@ class SpotifyService {
         }
     }
 
+    async getPlaylists(): Promise<Playlist[]> {
+        try {
+            this.sendWsMessage({
+                type: 'info',
+                action: 'playlists'
+            })
 
+            return new Promise((resolve, reject) => {
+                const messageHandler = (event: MessageEvent) => {
+                    try {
+                        let response;
+                        try {
+                            response = JSON.parse(event.data);
+                            response = { ...response } as originalPlaylist;
+                        } catch (parseError) {
+                            console.error('Error parsing JSON:', parseError);
+                            return; // Skip this message if it's not valid JSON
+                        }
+
+                        // Check if this is the response we're waiting for
+                        if (response.type === 'response' && response.action === 'playlists') {
+
+                            // Remove the message handler
+                            this.ws?.removeEventListener('message', messageHandler);
+
+                            const playlists: Playlist[] = response.data.map((playlist: any) => ({
+                                link: playlist.link,
+                                name: playlist.name,
+                                totalLength: playlist.totalLength,
+                                picture: playlist.picture
+                            }));
+
+                            resolve(playlists);
+                        }
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+
+                // Add temporary message handler
+                this.ws?.addEventListener('message', messageHandler);
+
+                // Add timeout to prevent hanging
+                setTimeout(() => {
+                    this.ws?.removeEventListener('message', messageHandler);
+                    reject(new Error('Timeout waiting for playlists'));
+                }, 5000); // 5 second timeout
+            });
+        } catch (error) {
+            console.error('Error getting playlists:', error);
+            throw error;
+        }
+    }
 
     async getToken(): Promise<Token> {
         try {

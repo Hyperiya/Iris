@@ -1,4 +1,4 @@
-import type { SyncedLyrics, TrackMetadata } from '../../types/lyrics.ts';
+import type { SyncedLyrics, TrackMetadata } from './types/lyrics.ts';
 
 export class MsXService {
     private baseUrl = 'https://apic-desktop.musixmatch.com/ws/1.1/';

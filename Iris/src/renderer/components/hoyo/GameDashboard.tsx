@@ -3,6 +3,7 @@ import { Clock, Battery, Star, Coins, Award, RefreshCw } from 'lucide-react';
 import './Styles/GameAccountDashboard.scss';
 import { ViewState } from "../../../types/viewState.ts";
 import { logger } from '../../utils/logger.ts';
+import { testGames } from '../../../testObjects/gameStats.tsx';
 
 import zzzIcon from "../../../assets/images/Zenless_Zone_Zero_logo.png"
 import genshinIcon from "../../../assets/images/Genshin-Impact-Logo.png"
@@ -32,7 +33,7 @@ interface GameEvent {
   isHighlight?: boolean;
 }
 
-interface Game {
+export interface Game {
   title: string;
   logo: string;
   accent: string;
@@ -56,46 +57,6 @@ const LoadingSpinner: React.FC = () => (
 
 const debug = window.dev.enabled || window.dev.hoyo.online;
 const hoyoOnline = window.dev.hoyo.online;
-const testGames: Game[] = [
-  {
-    title: "Zenless Zone Zero",
-    logo: zzzIcon,
-    accent: "#fc8b3d",
-    stats: [
-      { label: "Proxy Level", value: "45", icon: <Star size={18} /> },
-      { label: "Battery", value: "180/240", icon: <Battery size={18} /> },
-      { label: "Engagement", value: "320/400", icon: <Coins size={18} /> },
-      { label: "Ridu Weekly", value: "850/1300", icon: <Clock size={18} /> },
-      { label: "Daily Reset", value: "6 hours", icon: <Clock size={18} /> },
-      { label: "Daily Reset", value: "6 hours", icon: <Clock size={18} /> },
-
-    ],
-  },
-  {
-    title: "Honkai Star Rail",
-    logo: honkaiIcon,
-    accent: "#e5c0cc",
-    stats: [
-      { label: "Trailblaze Level", value: "65", icon: <Star size={18} /> },
-      { label: "Stamina", value: "120/240", icon: <Battery size={18} /> },
-      { label: "Backup Stamina", value: "1500/2000", icon: <Coins size={18} /> },
-      { label: "Echoes Of War", value: "3/3", icon: <Clock size={18} /> },
-      { label: "Daily Reset", value: "8 hours", icon: <Clock size={18} /> },
-    ]
-  },
-  {
-    title: "Genshin Impact",
-    logo: genshinIcon,
-    accent: "#ffffff",
-    stats: [
-      { label: "Adventure Rank", value: "58", icon: <Star size={18} /> },
-      { label: "Resin", value: "160/200", icon: <Battery size={18} /> },
-      { label: "Commisions", value: "4/4", icon: <Coins size={18} /> },
-      { label: "Daily Reset", value: "12 hours", icon: <Clock size={18} /> },
-    ],
-  }
-];
-
 
 const GameAccountDashboard: React.FC<GameAccountDashboardProps> = ({ viewState }) => {
   const [selectedGame, setSelectedGame] = useState<string | null>("Zenless Zone Zero");

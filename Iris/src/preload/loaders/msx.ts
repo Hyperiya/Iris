@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { TrackMetadata, SyncedLyrics } from '../../types/lyrics.ts';
+import type { TrackMetadata, SyncedLyrics } from '../../services/spotifyServices/types/lyrics.ts';
 
 const msxAPI = {
     searchLyrics: (metadata: TrackMetadata, prefferredLangauge: string[]): Promise<SyncedLyrics | undefined> =>

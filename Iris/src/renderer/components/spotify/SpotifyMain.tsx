@@ -9,7 +9,8 @@ import SongLyrics from "./SongLyrics.tsx";
 import Iris from '../../../assets/icons/Iris.png'
 
 import "./Styles/Main.scss";
-import { spotifyService, Song } from "../../../services/spotifyServices/SpotifyService.ts";
+import { spotifyService } from "../../../services/spotifyServices/SpotifyService.ts";
+import { Song } from "../../../services/spotifyServices/types/types.ts";
 import { ViewState } from "../../../types/viewState.ts";
 import { ColorExtractor } from '../../../utils/ColorExtractor.ts'
 
@@ -40,16 +41,28 @@ const SpotifyMain: React.FC<SpotifyMainProps> = (
     artist: "",
     album_cover: "",
   });
-
+  
   const [localProgress, setLocalProgress] = useState<number>(0);
-
+  
   const [hasInitialData, setHasInitialData] = useState(false);
 
   const manualStateUpdateRef = useRef<number>(0);
   const isMountedRef = useRef<boolean>(true);
-
+  
   const progressRef = useRef<number>(0); // Add a ref to track between renders
-
+  
+  // NextTrack tracking
+  const initialNextTrack = useCallback(async () => {
+    // console.log("initialNextTrack called");
+    try {
+      const nextTrack = await spotifyService.getNextSong();
+      // console.log(`next track:${nextTrack}`)
+      setNextTrackData(nextTrack);
+    } catch (error) {
+      console.error("Error fetching next track:", error);
+    }
+  }, []);
+  
   // CurrentTrack Tracking
   useEffect(() => {
     isMountedRef.current = true;
@@ -145,18 +158,7 @@ const SpotifyMain: React.FC<SpotifyMainProps> = (
     };
   }, []); // Remove localProgress from dependencies
 
-  // NextTrack tracking
-  const initialNextTrack = useCallback(async () => {
-    // console.log("initialNextTrack called");
-    try {
-      const nextTrack = await spotifyService.getNextSong();
-      // console.log(`next track:${nextTrack}`)
-      setNextTrackData(nextTrack);
-    } catch (error) {
-      console.error("Error fetching next track:", error);
-    }
-  }, []);
-
+  
   useEffect(() => {
     initialNextTrack();
     const debounceTimeout = setTimeout(async () => {
@@ -188,7 +190,7 @@ const SpotifyMain: React.FC<SpotifyMainProps> = (
 
   // Getting Avg Colors
   const [colors, setColors] = useState<string[]>([]);
-
+  
   useEffect(() => {
     const getColors = async () => {
 
@@ -202,7 +204,7 @@ const SpotifyMain: React.FC<SpotifyMainProps> = (
           palette.LightMuted?.hex, // [4]
           palette.DarkMuted?.hex, // [5]
         ].filter((color): color is string => !!color);
-
+        
         setColors(extractedColors); // Set the state with extracted colors
       } catch (error) {
         console.error('Error extracting colors:', error);
