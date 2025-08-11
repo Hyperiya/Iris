@@ -8,7 +8,7 @@ import { setupHoyoAuthHandlers } from './handlers/hoyoAuth.ts';
 import { setupLoadingHandlers } from './handlers/loading.ts';
 import { setupSnapshotHandler } from './handlers/snapshots.ts';
 import { SnapshotManager } from '../utils/snapshotUtil.ts';
-import { setupMusicRPCHandlers } from './handlers/musicRpc.ts';
+import { setupMusicRPCHandlers } from './handlers/musicrpc.ts';
 import { setupSettingsHandlers } from './handlers/settings.ts';
 import { setupMsxHandlers } from './handlers/msx.ts';
 
