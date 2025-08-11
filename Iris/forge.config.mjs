@@ -1,5 +1,4 @@
 import path from "path";
-import { fileURLToPath } from "url";
 
 const config = {
   packagerConfig: {
@@ -40,7 +39,7 @@ const config = {
     {
       executableName: "iris",
       name: "@electron-forge/maker-zip",
-      platforms: ["darwin"],
+      platforms: ["darwin", "win32"],
     },
     {
       name: "@electron-forge/maker-deb",

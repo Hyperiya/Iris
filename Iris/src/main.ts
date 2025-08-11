@@ -30,6 +30,16 @@ global.logger = {
   }
 };
 
+console.log('DEBUG_MODE:', process.env.DEBUG_MODE, 'isDebugMode:', isDebugMode); // Add this
+
+console.log('HOYO_ONLINE:', process.env.HOYO_ONLINE, 'global.HOYO_ONLINE:', global.HOYO_ONLINE); // Add this
+
+console.log('DEBUG_MODE raw:', JSON.stringify(process.env.DEBUG_MODE));
+console.log('Comparison result:', process.env.DEBUG_MODE === 'true');
+console.log('Type of DEBUG_MODE:', typeof process.env.DEBUG_MODE);
+console.log('Length of DEBUG_MODE:', process.env.DEBUG_MODE?.length);
+
+
 let mainWindow: BrowserWindow | null = null;
 let discordRPC: DiscordRPC | null = null;
 let snapshotManager: SnapshotManager | null = null;

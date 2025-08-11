@@ -15,8 +15,8 @@ const HoyoMain: React.FC<AppProps> = ({ ViewState }) => {
     useEffect(() => {
         const performLogin = async () => {
             try {
-                if (window.dev.enabled) {
-                    return;
+                if (!window.dev.hoyo.online) {
+                    return console.warn('Hoyolab online mode is disabled. Please enable it in the dev settings.');
                 }
 
                 if (window.settings.get('hoyolab.cookie') && window.settings.get('hoyolab.uid')) {
@@ -24,15 +24,11 @@ const HoyoMain: React.FC<AppProps> = ({ ViewState }) => {
                     const uid = window.settings.get('hoyolab.uid');
 
                     if (!cookie || !uid) {
-                        throw new Error('Cookie or UID not found in storage');
+                        throw new Error('Cookie or UID not found in storage, but you somehow have them set (WTF)');
                     }
 
                     await window.hoyoAPI.initialize(cookie, uid);
-                    console.log('HoyoAPI initialized with existing cookie and UID');
-
-                    // Optionally, you can fetch user info or other data here
-                    console.log(await window.hoyoAPI.callMethod('genshin.getInfo', ''));
-                    
+                    console.log('HoyoAPI initialized with existing cookie and UID');                    
                 } else {
                     const username = window.settings.get('hoyolab.username');
                     const password = window.settings.get('hoyolab.password');
