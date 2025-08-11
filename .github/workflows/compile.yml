@@ -26,14 +26,9 @@ jobs:
           npm install
       - name: build
         working-directory: ./Iris
+        env:
+          NODE_ENV: 'development'
         run: |
-          echo "=== Building with Vite first ==="
-          npx vite build --config vite.main.config.mjs
-          npx vite build --config vite.preload.config.mjs  
-          npx vite build --config vite.renderer.config.mjs
-          echo "=== Checking .vite directory ==="
-          ls -la .vite/ 2>/dev/null || echo "Still no .vite directory"
-          echo "=== Running make ==="
           npm run make
       - name: Upload Linux Artifacts
         uses: actions/upload-artifact@v4
