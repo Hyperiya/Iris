@@ -50,6 +50,7 @@ jobs:
           ls -la .vite/ 2>/dev/null || echo "No .vite directory"
           echo "=== Current directory ==="
           pwd && ls -la
+          npm run make
 
   build_on_mac:
     runs-on: macos-latest

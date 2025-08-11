@@ -49,6 +49,8 @@ export default defineConfig({
     minify: false,
   },
   resolve: {
-    // Add any resolve configurations if needed
+    alias: {
+      "@": path.resolve(__dirname, "src"),
+    },
   },
 });
