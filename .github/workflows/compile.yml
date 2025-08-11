@@ -33,6 +33,17 @@ jobs:
           name: linux-builds
           path: ./Iris/out/make/**/*
           retention-days: 7
+      - name: Debug file structure on failure
+        if: failure()
+        run: |
+          echo "=== Full directory tree ==="
+          find . -type f | head -50
+          echo "=== Looking for main.js files ==="
+          find . -name "*main*" -type f
+          echo "=== .vite contents ==="
+          ls -la .vite/ 2>/dev/null || echo "No .vite directory"
+          echo "=== Current directory ==="
+          pwd && ls -la
 
   build_on_mac:
     runs-on: macos-latest
