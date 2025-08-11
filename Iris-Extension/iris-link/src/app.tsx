@@ -1,126 +1,384 @@
-var interval: number = 100
-const workerCode =
-  `
-let intervalId;
-self.onmessage = function(e) {
-  if (e.data === 'start') {
-    intervalId = setInterval(() => {
-      self.postMessage('tick');
-    }, ${interval});
-  } else if (e.data === 'stop') {
-    clearInterval(intervalId);
-  }
-};
-`
-  ;
-/*
-Hyperiya comments are back
-This worker is just to get the song progress *really* often because (as stated far below) get onsongprogress is slow when tabbed out.
-*/
+// Constants
+const WEBSOCKET_URL = 'ws://localhost:5001';
+const HEALTH_CHECK_URL = 'http://127.0.0.1:5001/health';
+const PROGRESS_UPDATE_INTERVAL = 100;
+const RECONNECT_DELAY = 1000;
+const MAX_RECONNECT_ATTEMPTS = 5;
+const SERVER_CHECK_INTERVAL = 5000;
 
-interface progressManager {
-  progress: number
-  prevProgress: number
+// Types
+interface ProgressState {
+  current: number;
+  previous: number;
 }
 
-class Iris {
-  // Websocket to send info back to the app
+interface DurationState {
+  current: number;
+  previous: number;
+}
+
+interface WebSocketMessage {
+  type: string;
+  action?: string;
+  value?: any;
+}
+
+// Progress tracking worker
+const createProgressWorker = (interval: number) => {
+  const workerCode = `
+    let intervalId;
+    self.onmessage = function(e) {
+      if (e.data === 'start') {
+        intervalId = setInterval(() => {
+          self.postMessage('tick');
+        }, ${interval});
+      } else if (e.data === 'stop') {
+        clearInterval(intervalId);
+      }
+    };
+  `;
+  
+  const blob = new Blob([workerCode], { type: 'application/javascript' });
+  const workerUrl = URL.createObjectURL(blob);
+  const worker = new Worker(workerUrl);
+  URL.revokeObjectURL(workerUrl);
+  return worker;
+};
+
+class IrisSpotifyExtension {
   private ws: WebSocket | null = null;
-
-  // In case connections fail, made a few vars with this kinda stuff
-  private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
-  private reconnectDelay = 1000; // Start with 1 second
-  private isServerCheckInProgress = false;
-
   private progressWorker: Worker | null = null;
-
-  private wasAutoSwitchedThisSong: boolean = false;
-  private timingSwitch: boolean = false;
-
-  private progress: progressManager = {
-    progress: 0,
-    prevProgress: 0
-  }
-
-  private duration = {
-    duration: 0,
-    prevDuration: 0
-  }
-
-  private loopSwitch: boolean = false
-  private cleanupTimers: any[] = []
+  private reconnectAttempts = 0;
+  private isServerCheckInProgress = false;
+  private cleanupTimers: NodeJS.Timeout[] = [];
+  
+  // State tracking
+  private progress: ProgressState = { current: 0, previous: 0 };
+  private duration: DurationState = { current: 0, previous: 0 };
+  private wasAutoSwitched = false;
+  private timingSwitch = false;
+  private loopSwitch = false;
 
   constructor() {
-    this.main();
+    this.initialize();
   }
 
-
-
-  private setupProgressWorker() {
-    // Create a Blob containing the worker code
-    const blob = new Blob([workerCode], { type: 'application/javascript' });
-    const workerUrl = URL.createObjectURL(blob);
-
-    // Create and start the worker
-    this.progressWorker = new Worker(workerUrl);
-
-    Spicetify.Player.addEventListener('onplaypause', (event) => {
-      if (event?.data.isPaused) this.timingSwitch = true
-    })
-
-
-
-    // Listen for worker messages - optimized for performance
-    this.progressWorker.onmessage = () => {
-      if (
-        this.duration.prevDuration - this.progress.prevProgress >= 1000 
-        && this.progress.progress <= 500 
-        && Spicetify.Player.getRepeat() === 2) this.loopSwitch = true;
-
-      let subtract = 0;
-      if ((this.wasAutoSwitchedThisSong || this.loopSwitch) && !this.timingSwitch) {
-        subtract = -750;
-      }
-      
-      const progress = Math.max((Spicetify.Player.getProgress() + subtract), 0);
-      const duration = Spicetify.Player.getDuration();
-      this.progress.prevProgress = this.progress.progress;
-      this.progress.progress = progress;
-
-      // Send progress data (keeping high frequency as requested)
-      this.sendMessage(JSON.stringify({
-        type: 'progress',
-        data: {
-          progress,
-          duration,
-          percentage: (progress / duration) * 100
-        }
-      }));
-    };
-
-    // Start the worker
-    this.progressWorker.postMessage('start');
-
-    // Clean up the URL
-    URL.revokeObjectURL(workerUrl);
+  // Initialization
+  private async initialize(): Promise<void> {
+    await this.waitForSpicetify();
+    await this.connectWebSocket();
+    this.setupEventListeners();
+    Spicetify.showNotification("Hello from Iris!");
   }
 
-  private convertSpotifyImageUriToUrl(uri: string): string {
-    // Extract the image ID from the URI
-    const imageId = uri.split(':').pop();
-    if (!imageId) return '';
-
-    return `https://i.scdn.co/image/${imageId}`;
-  }
-
-  private startProgressTracking() {
-    if (!this.progressWorker) {
-      this.setupProgressWorker();
+  private async waitForSpicetify(): Promise<void> {
+    while (!Spicetify?.showNotification) {
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
   }
 
-  private stopProgressTracking() {
+  // WebSocket Management
+  private async connectWebSocket(): Promise<void> {
+    if (this.isServerCheckInProgress) return;
+    
+    this.isServerCheckInProgress = true;
+
+    try {
+      if (!(await this.checkServerHealth())) {
+        console.log('Server not available, retrying...');
+        this.scheduleReconnect(SERVER_CHECK_INTERVAL);
+        return;
+      }
+
+      this.ws = new WebSocket(WEBSOCKET_URL);
+      this.setupWebSocketHandlers();
+    } catch (error) {
+      console.error('Failed to create WebSocket:', error);
+      this.handleReconnect();
+    }
+  }
+
+  private async checkServerHealth(): Promise<boolean> {
+    try {
+      await fetch(HEALTH_CHECK_URL, { method: 'HEAD', mode: 'no-cors' });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private setupWebSocketHandlers(): void {
+    if (!this.ws) return;
+
+    this.ws.onopen = () => {
+      console.log('Connected to WebSocket server');
+      this.reconnectAttempts = 0;
+      this.isServerCheckInProgress = false;
+      Spicetify.showNotification("WebSocket Connected!");
+    };
+
+    this.ws.onmessage = (event) => this.handleWebSocketMessage(event);
+    this.ws.onclose = () => this.handleWebSocketClose();
+    this.ws.onerror = (error) => this.handleWebSocketError(error);
+  }
+
+  private handleWebSocketMessage(event: MessageEvent): void {
+    try {
+      const data: WebSocketMessage = JSON.parse(event.data);
+      
+      if (data.type === 'playback') {
+        this.handlePlaybackMessage(data);
+      } else if (data.type === 'info') {
+        this.handleInfoMessage(data);
+      }
+    } catch (error) {
+      console.error('Error parsing WebSocket message:', error);
+    }
+  }
+
+  private handleWebSocketClose(): void {
+    console.log('WebSocket connection closed');
+    this.isServerCheckInProgress = false;
+    this.handleReconnect();
+  }
+
+  private handleWebSocketError(error: Event): void {
+    console.error('WebSocket error:', error);
+    this.isServerCheckInProgress = false;
+  }
+
+  // Message Handlers
+  private handlePlaybackMessage(data: WebSocketMessage): void {
+    const { action, value } = data;
+
+    switch (action) {
+      case 'volume':
+        Spicetify.Player.setVolume(value / 100);
+        break;
+      case 'seek':
+        Spicetify.Player.seek(value);
+        break;
+      case 'play':
+        Spicetify.Player.play();
+        break;
+      case 'play-uri':
+        Spicetify.Player.playUri(value);
+        break;
+      case 'pause':
+        Spicetify.Player.pause();
+        break;
+      case 'next':
+        Spicetify.Player.next();
+        break;
+      case 'prev':
+        Spicetify.Player.back();
+        break;
+      case 'toggle':
+        Spicetify.Player.togglePlay();
+        break;
+      case 'shuffle':
+        Spicetify.Player.toggleShuffle();
+        break;
+      case 'setRepeat':
+        this.handleSetRepeat(value);
+        break;
+      case 'toggleRepeat':
+        this.handleToggleRepeat();
+        break;
+      default:
+        console.log('Unknown playback action:', action);
+    }
+  }
+
+  private handleInfoMessage(data: WebSocketMessage): void {
+    const { action } = data;
+
+    switch (action) {
+      case 'token':
+        this.sendTokenInfo();
+        break;
+      case 'next':
+        this.sendNextTrackInfo();
+        break;
+      case 'current':
+        this.sendCurrentTrackInfo();
+        break;
+    }
+  }
+
+  private handleSetRepeat(value: string): void {
+    const repeatMap: Record<string, number> = {
+      'off': 0,
+      'context': 1,
+      'track': 2
+    };
+
+    const repeatValue = repeatMap[value] ?? 0;
+    Spicetify.Player.setRepeat(repeatValue);
+
+    this.sendMessage({
+      type: 'response',
+      action: 'repeatState',
+      data: { state: value }
+    });
+  }
+
+  private handleToggleRepeat(): void {
+    const currentState = Spicetify.Player.getRepeat();
+    const stateMap = ['off', 'context', 'track'];
+    const newState = (currentState + 1) % 3;
+    
+    Spicetify.Player.setRepeat(newState);
+
+    this.sendMessage({
+      type: 'response',
+      action: 'repeatState',
+      data: { state: stateMap[newState] }
+    });
+  }
+
+  // Info Senders
+  private sendTokenInfo(): void {
+    this.sendMessage({
+      type: 'response',
+      action: 'token',
+      data: {
+        token: Spicetify.Platform.Session.accessToken,
+        expiration: Spicetify.Platform.Session.accessTokenExpirationTimestampMs
+      }
+    });
+  }
+
+  private sendNextTrackInfo(): void {
+    const nextTrack = Spicetify.Queue.nextTracks[0]?.contextTrack?.metadata;
+    if (!nextTrack) return;
+
+    this.sendMessage({
+      type: 'response',
+      action: 'next',
+      data: {
+        name: nextTrack.title,
+        artist: nextTrack.artist_name,
+        album: nextTrack.album_title,
+        duration: nextTrack.duration,
+        album_cover: this.convertSpotifyImageUri(nextTrack.image_xlarge_url),
+        year: nextTrack.album_name || 'Unknown'
+      }
+    });
+  }
+
+  private sendCurrentTrackInfo(): void {
+    const currentTrack = Spicetify.Player.data.item;
+    
+    if (!currentTrack) {
+      this.sendMessage({
+        type: 'response',
+        action: 'current',
+        data: { name: 'No Song Playing' }
+      });
+      return;
+    }
+
+    this.duration.current = currentTrack.duration.milliseconds;
+
+    this.sendMessage({
+      type: 'response',
+      action: 'current',
+      data: {
+        name: currentTrack.name,
+        artist: currentTrack.artists?.[0]?.name || 'Unknown Artist',
+        album: currentTrack.album?.name || 'Unknown',
+        duration_ms: currentTrack.duration?.milliseconds || 0,
+        album_cover: this.convertSpotifyImageUri(currentTrack.metadata?.image_xlarge_url || ''),
+        volume: Math.round(Spicetify.Player.getVolume() * 100),
+        is_playing: Spicetify.Player.isPlaying(),
+        repeat_state: Spicetify.Player.getRepeat(),
+        shuffle_state: Spicetify.Player.getShuffle(),
+        progress_ms: Spicetify.Player.getProgress(),
+        progress_percentage: Math.round(Spicetify.Player.getProgressPercent() * 100),
+        id: (currentTrack.uri || '').split(':').pop() || ''
+      }
+    });
+  }
+
+  // Event Listeners
+  private setupEventListeners(): void {
+    this.startProgressTracking();
+    this.setupSongChangeListener();
+  }
+
+  private setupSongChangeListener(): void {
+    this.duration.previous = Spicetify.Player.getDuration();
+
+    Spicetify.Player.addEventListener("songchange", () => {
+      this.loopSwitch = false;
+      
+      // Detect auto-switch (song ended naturally)
+      if (this.progress.previous > (this.duration.previous - 3550)) {
+        this.wasAutoSwitched = true;
+        const timer = setTimeout(() => {
+          this.wasAutoSwitched = false;
+        }, 2000);
+        this.cleanupTimers.push(timer);
+      } else {
+        this.wasAutoSwitched = false;
+      }
+
+      this.duration.previous = Spicetify.Player.getDuration();
+      this.timingSwitch = false;
+    });
+
+    Spicetify.Player.addEventListener('onplaypause', (event) => {
+      if (event?.data.isPaused) {
+        this.timingSwitch = true;
+      }
+    });
+  }
+
+  // Progress Tracking
+  private startProgressTracking(): void {
+    if (this.progressWorker) return;
+
+    this.progressWorker = createProgressWorker(PROGRESS_UPDATE_INTERVAL);
+    
+    this.progressWorker.onmessage = () => {
+      this.updateProgress();
+    };
+
+    this.progressWorker.postMessage('start');
+  }
+
+  private updateProgress(): void {
+    // Handle loop detection
+    if (this.duration.previous - this.progress.previous >= 1000 && 
+        this.progress.current <= 500 && 
+        Spicetify.Player.getRepeat() === 2) {
+      this.loopSwitch = true;
+    }
+
+    // Calculate progress with timing adjustments
+    let subtract = 0;
+    if ((this.wasAutoSwitched || this.loopSwitch) && !this.timingSwitch) {
+      subtract = -750;
+    }
+
+    const progress = Math.max(Spicetify.Player.getProgress() + subtract, 0);
+    const duration = Spicetify.Player.getDuration();
+    
+    this.progress.previous = this.progress.current;
+    this.progress.current = progress;
+
+    this.sendMessage({
+      type: 'progress',
+      data: {
+        progress,
+        duration,
+        percentage: (progress / duration) * 100
+      }
+    });
+  }
+
+  private stopProgressTracking(): void {
     if (this.progressWorker) {
       this.progressWorker.postMessage('stop');
       this.progressWorker.terminate();
@@ -128,448 +386,46 @@ class Iris {
     }
   }
 
-
-  private async checkServerAvailable(): Promise<boolean> {
-    try {
-      // Checking if the server is actually alive before attempting connection
-      const response = await fetch('http://127.0.0.1:5001/health', {
-        method: 'HEAD',
-        mode: 'no-cors'
-      });
-      return true;
-    } catch (error) {
-      // it'll fail if its not up, so we'll just return false
-      return false;
-    }
-  }
-
-
-  private async connectWebSocket() {
-    // If we're already checking, don't start another check
-    if (this.isServerCheckInProgress) {
-      return;
-    }
-
-    this.isServerCheckInProgress = true;
-
-    try {
-      // Check if server is available before attempting connection
-      const isAvailable = await this.checkServerAvailable();
-      if (!isAvailable) {
-        console.log('Server not available, waiting...');
-        this.isServerCheckInProgress = false;
-        // Try again in 5 seconds
-        setTimeout(() => this.connectWebSocket(), 5000);
-        return;
-      }
-
-      this.ws = new WebSocket('ws://localhost:5001');
-
-      this.ws.onopen = () => {
-        console.log('Connected to WebSocket server');
-        this.reconnectAttempts = 0; // Reset attempts on successful connection
-        this.isServerCheckInProgress = false;
-        Spicetify.showNotification("WebSocket Connected!");
-      };
-
-      this.ws.onmessage = async (event) => {
-        // Handle incoming messages here
-        const data = JSON.parse(event.data);
-
-
-
-        // Handle structured messages with type and action
-        switch (data.type) {
-          case 'playback':
-            switch (data.action) {
-              case 'volume':
-                Spicetify.Player.setVolume(data.value / 100);
-                break;
-              case 'seek':
-                console.log(data.value)
-                Spicetify.Player.seek(data.value)
-                break;
-              case 'play':
-                Spicetify.Player.play();
-                break;
-              case 'play-uri':
-                Spicetify.Player.playUri(data.value)
-                break;
-              case 'pause':
-                Spicetify.Player.pause();
-                break;
-              case 'next':
-                Spicetify.Player.next();
-                break;
-              case 'prev':
-                Spicetify.Player.back();
-                break;
-              case 'toggle':
-                Spicetify.Player.togglePlay();
-                break;
-              case 'shuffle':
-                Spicetify.Player.toggleShuffle();
-                break;
-              case 'setRepeat':
-                // Convert RepeatState string to Spicetify number value
-                let repeatValue: number;
-                switch (data.value) {
-                  case 'off':
-                    repeatValue = 0;
-                    break;
-                  case 'context':
-                    repeatValue = 1;
-                    break;
-                  case 'track':
-                    repeatValue = 2;
-                    break;
-                  default:
-                    repeatValue = 0;
-                }
-
-                // Set the repeat state
-                Spicetify.Player.setRepeat(repeatValue);
-
-                // Send back confirmation
-                this.sendMessage(JSON.stringify({
-                  type: 'response',
-                  action: 'repeatState',
-                  data: {
-                    state: data.value
-                  }
-                }));
-                break;
-              case 'toggleRepeat':
-                const currentState = Spicetify.Player.getRepeat();
-                let newState;
-
-                // Toggle between states: off -> context -> track -> off
-                switch (currentState) {
-                  case 0: // off
-                    newState = 1; // context (playlist/album repeat)
-                    break;
-                  case 1: // context
-                    newState = 2; // track (single song repeat)
-                    break;
-                  case 2: // track
-                    newState = 0; // off
-                    break;
-                  default:
-                    newState = 0;
-                }
-
-                Spicetify.Player.setRepeat(newState);
-
-                // Send back the new state
-                this.sendMessage(JSON.stringify({
-                  type: 'response',
-                  action: 'repeatState',
-                  data: {
-                    state: newState === 0 ? 'off' :
-                      newState === 1 ? 'context' :
-                        'track'
-                  }
-                }));
-                break;
-              default:
-                console.log('Unknown playback action:', data.action);
-            }
-            break;
-          case 'info':
-            switch (data.action) {
-              case 'token':
-                this.sendMessage(JSON.stringify({
-                  type: 'response',
-                  action: 'token',
-                  data: {
-                    token: Spicetify.Platform.Session.accessToken,
-                    expiration: Spicetify.Platform.Session.accessTokenExpirationTimestampMs
-                  }
-                }))
-                break;
-              case 'next':
-                // Handle getting next track info
-                const nextTrack = Spicetify.Queue.nextTracks[0]['contextTrack']['metadata'];
-
-
-                this.sendMessage(JSON.stringify({
-                  type: 'response',
-                  action: 'next',
-                  data: {
-                    name: nextTrack.title,
-                    artist: nextTrack.artist_name,
-                    album: nextTrack.album_title,
-                    duration: nextTrack.duration,
-                    album_cover: this.convertSpotifyImageUriToUrl(nextTrack.image_xlarge_url),
-                    year: nextTrack.album_name || 'Unknown',
-                  }
-                }));
-                break;
-              case 'current':
-                /*
-                {
-                  "type": "track",
-                  "uri": "spotify:track:2EiJ8L7AFkiKXHqqU6x96K",
-                  "uid": "5d7691ae0c51fde1",
-                  "name": "Red Light",
-                  "mediaType": "audio",
-                  "duration": {
-                    "milliseconds": 124000
-                  },
-                  "album": {
-                    "type": "album",
-                    "uri": "spotify:album:3Ow1LjWwNkxd2VpJiS9gdc",
-                    "name": "Red Light",
-                    "images": [
-                      {
-                        "url": "spotify:image:ab67616d00001e02b805db0afcb1e919ebf1548b",
-                        "label": "standard"
-                      },
-                      {
-                        "url": "spotify:image:ab67616d00004851b805db0afcb1e919ebf1548b",
-                        "label": "small"
-                      },
-                      {
-                        "url": "spotify:image:ab67616d0000b273b805db0afcb1e919ebf1548b",
-                        "label": "large"
-                      },
-                      {
-                        "url": "spotify:image:ab67616d0000b273b805db0afcb1e919ebf1548b",
-                        "label": "xlarge"
-                      }
-                    ]
-                  },
-                  "artists": [
-                    {
-                      "type": "artist",
-                      "uri": "spotify:artist:5pTDhtjL1lF9Mft8TYCjv6",
-                      "name": "QKReign"
-                    },
-                    {
-                      "type": "artist",
-                      "uri": "spotify:artist:3BTY807ipaaT6QHW1tHTt0",
-                      "name": "RJ Pasin"
-                    }
-                  ],
-                  "isLocal": false,
-                  "isExplicit": false,
-                  "is19PlusOnly": false,
-                  "hasAssociatedVideo": false,
-                  "provider": "context",
-                  "metadata": {
-                    "album_uri": "spotify:album:3Ow1LjWwNkxd2VpJiS9gdc",
-                    "interaction_id": "6A8D174C-8117-48E7-B813-93E6494DAE44",
-                    "canvas.id": "ffa63edec79b4d21ba10b2e647ad5f06",
-                    "context_uri": "spotify:playlist:1ZV8LNpHE9A9fP6cojtj0T",
-                    "collection.can_add": "true",
-                    "canvas.artist.name": "QKReign",
-                    "actions.skipping_next_past_track": "resume",
-                    "popularity": "66",
-                    "album_disc_number": "1",
-                    "canvas.type": "VIDEO_LOOPING_RANDOM",
-                    "collection.can_ban": "true",
-                    "canvas.url": "https://canvaz.scdn.co/upload/artist/5pTDhtjL1lF9Mft8TYCjv6/video/ffa63edec79b4d21ba10b2e647ad5f06.cnvs.mp4",
-                    "canvas.entityUri": "spotify:track:2EiJ8L7AFkiKXHqqU6x96K",
-                    "entity_uri": "spotify:playlist:1ZV8LNpHE9A9fP6cojtj0T",
-                    "image_small_url": "spotify:image:ab67616d00004851b805db0afcb1e919ebf1548b",
-                    "collection.in_collection": "false",
-                    "album_disc_count": "1",
-                    "collection.artist.is_banned": "false",
-                    "duration": "124000",
-                    "canvas.artist.avatar": "https://open.spotify.com/image/ab6761610000f17883629564c38a28c28771d0e1",
-                    "image_url": "spotify:image:ab67616d00001e02b805db0afcb1e919ebf1548b",
-                    "artist_name": "QKReign",
-                    "canvas.fileId": "368cdaff8a813ed9b5aa840a099613f0",
-                    "marked_for_download": "false",
-                    "album_title": "Red Light",
-                    "original_index": "46",
-                    "canvas.uploadedBy": "artist",
-                    "title": "Red Light",
-                    "artist_name:1": "RJ Pasin",
-                    "album_track_count": "0",
-                    "image_large_url": "spotify:image:ab67616d0000b273b805db0afcb1e919ebf1548b",
-                    "has_lyrics": "true",
-                    "album_track_number": "1",
-                    "image_xlarge_url": "spotify:image:ab67616d0000b273b805db0afcb1e919ebf1548b",
-                    "artist_uri:1": "spotify:artist:3BTY807ipaaT6QHW1tHTt0",
-                    "page_instance_id": "ABC83BF4-39FD-460E-8913-743124D45CF5",
-                    "added_at": "1739610556",
-                    "album_artist_name": "QKReign",
-                    "canvas.explicit": "false",
-                    "canvas.canvasUri": "spotify:canvas:7Mp16wHJy24S8bYkiMAM2G",
-                    "canvas.artist.uri": "spotify:artist:5pTDhtjL1lF9Mft8TYCjv6",
-                    "iteration": "4",
-                    "artist_uri": "spotify:artist:5pTDhtjL1lF9Mft8TYCjv6",
-                    "track_player": "audio",
-                    "collection.is_banned": "false",
-                    "actions.skipping_prev_past_track": "resume"
-                  },
-                  "images": [
-                    {
-                      "url": "spotify:image:ab67616d00001e02b805db0afcb1e919ebf1548b",
-                      "label": "standard"
-                    },
-                    {
-                      "url": "spotify:image:ab67616d00004851b805db0afcb1e919ebf1548b",
-                      "label": "small"
-                    },
-                    {
-                      "url": "spotify:image:ab67616d0000b273b805db0afcb1e919ebf1548b",
-                      "label": "large"
-                    },
-                    {
-                      "url": "spotify:image:ab67616d0000b273b805db0afcb1e919ebf1548b",
-                      "label": "xlarge"
-                    }
-                  ]
-                }
-                */
-
-
-                // Handle getting current track info - optimized payload
-                const currentTrack = Spicetify.Player.data.item;
-                if (!currentTrack) {
-                  this.sendMessage(JSON.stringify({
-                    type: 'response',
-                    action: 'current',
-                    data: { name: 'No Song Playing' }
-                  }));
-                  break;
-                }
-                
-                this.duration.duration = currentTrack.duration.milliseconds;
-                
-                this.sendMessage(JSON.stringify({
-                  type: 'response',
-                  action: 'current',
-                  data: {
-                    name: currentTrack.name,
-                    artist: currentTrack.artists?.[0]?.name || 'Unknown Artist',
-                    album: currentTrack.album?.name || 'Unknown',
-                    duration_ms: currentTrack?.duration?.milliseconds || 0,
-                    album_cover: this.convertSpotifyImageUriToUrl(currentTrack.metadata?.image_xlarge_url || ''),
-                    volume: Math.round(Spicetify.Player.getVolume() * 100),
-                    is_playing: Spicetify.Player.isPlaying(),
-                    repeat_state: Spicetify.Player.getRepeat(),
-                    shuffle_state: Spicetify.Player.getShuffle(),
-                    progress_ms: Spicetify.Player.getProgress(),
-                    progress_percentage: Math.round(Spicetify.Player.getProgressPercent() * 100),
-                    id: (currentTrack.uri || '').split(':').pop() || '',
-                  }
-                }));
-
-                break;
-            }
-        }
-      };
-
-
-      this.ws.onclose = () => {
-        console.log('WebSocket connection closed');
-        this.isServerCheckInProgress = false;
-        this.handleReconnect();
-      };
-
-      this.ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
-        this.isServerCheckInProgress = false;
-        // Don't try to reconnect here - let onclose handle it
-      };
-    } catch (error) {
-      console.error('Failed to create WebSocket:', error);
-      this.isServerCheckInProgress = false;
-      this.handleReconnect();
-    }
-  }
-
-  private async handleReconnect() {
-    if (this.reconnectAttempts < this.maxReconnectAttempts) {
+  // Reconnection Logic
+  private handleReconnect(): void {
+    if (this.reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
       this.reconnectAttempts++;
-      const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1); // Exponential backoff
-      console.log(`Attempting to reconnect in ${delay}ms... (Attempt ${this.reconnectAttempts})`);
-
-      setTimeout(() => {
-        this.connectWebSocket();
-      }, delay);
+      const delay = RECONNECT_DELAY * Math.pow(2, this.reconnectAttempts - 1);
+      console.log(`Reconnecting in ${delay}ms... (Attempt ${this.reconnectAttempts})`);
+      this.scheduleReconnect(delay);
     } else {
-      console.log('Max reconnection attempts reached. Will try again when server becomes available.');
-      this.reconnectAttempts = 0; // Reset attempts
-      // Check periodically if server becomes available
-      setTimeout(() => {
-        this.connectWebSocket();
-      }, 5000); // Check every 5 seconds
+      console.log('Max reconnection attempts reached. Checking server periodically...');
+      this.reconnectAttempts = 0;
+      this.scheduleReconnect(SERVER_CHECK_INTERVAL);
     }
   }
 
-  public async main() {
-    // Wait for Spicetify to be ready
-    while (!Spicetify?.showNotification) {
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
-
-    // Initialize WebSocket connection
-    await this.connectWebSocket();
-    await this.establishListeners()
-    // Show initial message
-    Spicetify.showNotification("Hello from Iris!");
+  private scheduleReconnect(delay: number): void {
+    this.isServerCheckInProgress = false;
+    setTimeout(() => this.connectWebSocket(), delay);
   }
 
-  // Method to safely send messages
-  public async sendMessage(message: string) {
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      this.ws.send(message);
+  // Utilities
+  private convertSpotifyImageUri(uri: string): string {
+    const imageId = uri.split(':').pop();
+    return imageId ? `https://i.scdn.co/image/${imageId}` : '';
+  }
+
+  private sendMessage(message: any): void {
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify(message));
     } else {
-      console.warn('WebSocket is not connected. Message not sent:', message);
+      console.warn('WebSocket not connected. Message not sent:', message);
     }
   }
 
-  private async establishListeners() {
-
-    this.startProgressTracking();
-
-    /*
-    Deprecated- Short lived due to electron's background tab throttling, slowing the messages
-
-    this.listenForProgressChange(); 
-    */
-    this.listenForSongChange();
-  }
-
-  private async listenForSongChange() {
-    this.duration.prevDuration = Spicetify.Player.getDuration();
-
-    Spicetify.Player.addEventListener("songchange", (event) => {
-      this.loopSwitch = false;
-      
-      // Optimized song change detection
-      if (this.progress.prevProgress > (this.duration.prevDuration - 3550)) {
-        this.wasAutoSwitchedThisSong = true;
-        const timerId = setTimeout(() => {
-          this.wasAutoSwitchedThisSong = false;
-        }, 2000) as any;
-        this.cleanupTimers.push(timerId);
-      } else {
-        this.wasAutoSwitchedThisSong = false;
-      }
-
-      // Store current values for next change
-      this.duration.prevDuration = Spicetify.Player.getDuration();
-      
-      // Reset timing switch
-      this.timingSwitch = false;
-    });
-  }
-
-  // Enhanced cleanup method
-  public cleanup() {
-    // Stop progress tracking
+  // Cleanup
+  public cleanup(): void {
     this.stopProgressTracking();
     
-    // Clear all timers
-    this.cleanupTimers.forEach(timerId => clearTimeout(timerId as any));
+    this.cleanupTimers.forEach(timer => clearTimeout(timer));
     this.cleanupTimers = [];
     
-    // Close WebSocket
     if (this.ws) {
       this.ws.close();
       this.ws = null;
@@ -577,9 +433,6 @@ class Iris {
   }
 }
 
-const iris = new Iris();
+// Initialize extension
+const iris = new IrisSpotifyExtension();
 export default iris;
-
-
-
-
