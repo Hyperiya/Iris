@@ -17,7 +17,6 @@ export default defineConfig({
       external: ['electron'],
       output: {
         format: 'es',
-        entryFileNames: '[name].js'
       }
     },
     emptyOutDir: false,
