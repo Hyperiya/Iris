@@ -129,13 +129,22 @@ class SettingsService {
         let current: any = this.settings;
 
         for (let i = 0; i < keys.length - 1; i++) {
-            if (!current[keys[i]]) {
-                current[keys[i]] = {};
+            const k = keys[i];
+            if (k === '__proto__' || k === 'constructor' || k === 'prototype') {
+                throw new Error('Invalid key: prototype pollution attempt');
             }
-            current = current[keys[i]];
+            if (!current[k]) {
+                current[k] = {};
+            }
+            current = current[k];
         }
 
-        current[keys[keys.length - 1]] = value;
+        const finalKey = keys[keys.length - 1];
+        if (finalKey === '__proto__' || finalKey === 'constructor' || finalKey === 'prototype') {
+            throw new Error('Invalid key: prototype pollution attempt');
+        }
+
+        current[finalKey] = value;
         this.saveSettings();
 
         // Emit change event
@@ -143,6 +152,7 @@ class SettingsService {
             this.mainWindow.webContents.send('settings:changed', key, value);
         }
     }
+
 
     getAll(): AppSettings {
         return { ...this.settings };
