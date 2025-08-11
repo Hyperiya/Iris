@@ -120,5 +120,6 @@ jobs:
             combined-builds/linux/deb/x64/*
             combined-builds/linux/AppImage/x64/*
             combined-builds/macos/zip/darwin/arm64/*
+            combined-builds/windows/zip/win32/x64/*
             combined-builds/windows/squirrel.windows/x64/iris-setup.exe
           tag_name: ${{ github.event_name == 'release' && github.ref_name || format('manual-{0}', github.run_number) }}

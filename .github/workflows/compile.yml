@@ -26,8 +26,6 @@ jobs:
           npm install
       - name: build
         working-directory: ./Iris
-        env:
-          NODE_ENV: 'development'
         run: |
           npm run make
       - name: Upload Linux Artifacts
