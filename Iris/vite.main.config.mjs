@@ -6,7 +6,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   build: {
-    outDir: ".vite/build",
+    outDir: path.resolve(__dirname, '.vite/build'),
     target: "es2020",
     lib: {
       entry: path.resolve(__dirname, "src/main.ts"),
