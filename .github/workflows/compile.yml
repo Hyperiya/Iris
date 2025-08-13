@@ -36,7 +36,7 @@ jobs:
       - name: tar-gz packaged ver
         working-directory: ./Iris/out
         run: |
-          tar -czvf Iris-1.2.0-linux-x64.tar.gz -C Iris-linux-x64
+          tar -czvf Iris-1.2.0-linux-x64.tar.gz -C Iris-linux-x64 .
       - name: Upload Linux Artifacts
         uses: actions/upload-artifact@v4
         with:
