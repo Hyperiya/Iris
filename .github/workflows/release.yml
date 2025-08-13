@@ -33,13 +33,17 @@ jobs:
           npx vite build --config vite.renderer.config.mjs
           npm run make
           ls -la .vite/build/ || echo "Build directory not found"
-
-
+      - name: tar-gz packaged ver
+        working-directory: ./Iris/out
+        run: |
+          tar -czvf Iris-1.2.0-linux-x64.tar.gz -C out Iris-linux-x64
       - name: Upload Linux Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: linux-builds
-          path: ./Iris/out/make/**/*
+          path: |
+            ./Iris/out/make/**/*
+            ./Iris/out/Iris-1.2.0-linux-x64.tar.gz
           retention-days: 7
 
   build_on_mac:
@@ -125,7 +129,7 @@ jobs:
           files: |
             combined-builds/linux/rpm/x64/*
             combined-builds/linux/deb/x64/*
-            combined-builds/linux/AppImage/x64/*
+            combined-builds/linux/Iris-1.2.0-linux-x64.tar.gz
             combined-builds/macos/zip/darwin/arm64/*
             combined-builds/windows/zip/win32/x64/*
             combined-builds/windows/squirrel.windows/x64/iris-setup.exe

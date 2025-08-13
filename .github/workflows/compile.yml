@@ -33,11 +33,17 @@ jobs:
           npm run make
           
           ls -la .vite/build/ || echo "Build directory not found"
+      - name: tar-gz packaged ver
+        working-directory: ./Iris/out
+        run: |
+          tar -czvf Iris-1.2.0-linux-x64.tar.gz -C out Iris-linux-x64
       - name: Upload Linux Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: linux-builds
-          path: ./Iris/out/make/**/*
+          path: |
+            ./Iris/out/make/**/*
+            ./Iris/out/Iris-1.2.0-linux-x64.tar.gz
           retention-days: 7
       - name: Debug file structure on failure
         if: failure()
