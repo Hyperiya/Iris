@@ -27,16 +27,6 @@ const config = {
       },
     },
     {
-      name: "@reforged/maker-appimage",
-      config: {
-        options: {
-          bin: "iris", // Add this line
-          categories: ["AudioVideo", "Audio", "Player"],
-          icon: path.join(process.cwd(), "src", "assets", "icons", "Iris.svg"),
-        },
-      },
-    },
-    {
       executableName: "iris",
       name: "@electron-forge/maker-zip",
       platforms: ["darwin", "win32"],
