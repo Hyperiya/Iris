@@ -10,7 +10,7 @@ export class HoyoManager {
   // API endpoints
   public readonly userInfoUrl = "https://bbs-api-os.hoyolab.com/game_record/card/wapi/getGameRecordCard";
 
-  // ZZZ
+  // ZZZp
   public readonly zzzInfoUrl = "https://sg-public-api.hoyolab.com/event/game_record_zzz/api/zzz/index";
   public readonly zzzBatteryUrl = "https://sg-public-api.hoyolab.com/event/game_record_zzz/api/zzz/note";
   public readonly deadlyAssaultUrl = "https://sg-public-api.hoyolab.com/event/game_record_zzz/api/zzz/mem_detail";

@@ -7,9 +7,6 @@ interface AppProps {
     ViewState: ViewState
 }
 
-
-type GameType = 'genshin' | 'starrail' | 'zenless';
-
 const HoyoMain: React.FC<AppProps> = ({ ViewState }) => {
 
     useEffect(() => {
@@ -55,7 +52,7 @@ const HoyoMain: React.FC<AppProps> = ({ ViewState }) => {
 
                     await window.hoyoAPI.initialize(cookieString, uid);
 
-                    console.log(await window.hoyoAPI.callMethod('genshin.getInfo', ''))
+                    console.log(await window.hoyoAPI.callMethod('genshin.getInfo'))
                 }
 
 

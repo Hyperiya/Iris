@@ -137,7 +137,8 @@ const GameAccountDashboard: React.FC<GameAccountDashboardProps> = ({ viewState }
 
     const fetchBaseInfo = async () => {
       try {
-        baseInfo = await window.hoyoAPI.callMethod('HoyoManager', 'getBaseDetails');
+        logger.log('Fetching base details...');
+        baseInfo = await window.hoyoAPI.callMethod('getBaseDetails');
         baseInfo.data.list.forEach((game: baseInfo.GameRecordDetail) => {
           switch (game.game_id) {
             case 2: // Genshin
@@ -291,14 +292,14 @@ const GameAccountDashboard: React.FC<GameAccountDashboardProps> = ({ viewState }
     refreshStats = async () => {
       try {
         await fetchBaseInfo()
-        const zzzBattery: zenlessBattery.zenlessBattery = await window.hoyoAPI.callMethod('zenless.getBattery', '');
+        const zzzBattery: zenlessBattery.zenlessBattery = await window.hoyoAPI.callMethod('zenless.getBattery');
         // const zzzInfo: zenlessInfo.zenlessInfo = await window.hoyoAPI.callMethod('zenless.getInfo', '');
 
         // const starrailInfo: starrailInfo.starrailInfo = await window.hoyoAPI.callMethod('starrail.getInfo', '');
-        const starrailBattery: starrailBattery.starrailBattery = await window.hoyoAPI.callMethod('starrail.getStamina', '');
+        const starrailBattery: starrailBattery.starrailBattery = await window.hoyoAPI.callMethod('starrail.getStamina');
 
         // const genshinInfo: genshinInfo.genshinInfo = await window.hoyoAPI.callMethod('genshin.getInfo', '');
-        const genshinNotes: genshinNotes.genshinNotes = await window.hoyoAPI.callMethod('genshin.getNotes', '');
+        const genshinNotes: genshinNotes.genshinNotes = await window.hoyoAPI.callMethod('genshin.getNotes');
 
         const games: Game[] = [];
 

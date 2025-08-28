@@ -7,8 +7,8 @@ const hoyoAPI = {
   getSToken: async (username: string, password: string) => {
     return await ipcRenderer.invoke('hoyo:getSToken', username, password);
   },
-  callMethod: async (className: string, methodName: string, ...args: any[]) => {
-    return await ipcRenderer.invoke('hoyo:callMethod', className, methodName, ...args);
+  callMethod: async (methodPath: string, ...args: any[]) => {
+    return await ipcRenderer.invoke('hoyo:callMethod', methodPath, ...args);
   },
   initialize: async (cookie: string, user_id: string) => {
     return await ipcRenderer.invoke('hoyo:initialize', cookie, user_id);
