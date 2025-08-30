@@ -20,7 +20,9 @@ export function setupHoyoHandlers() {
     async (_, methodPath: string, ...args: any[]) => {
       try {
         if (!hoyoManager) {
-            throw new Error('HoyoManager not initialized. Call initialize() first.');
+          throw new Error(
+            "HoyoManager not initialized. Call initialize() first."
+          );
         }
 
         // Handle nested class calls (like starrail.getInfo())

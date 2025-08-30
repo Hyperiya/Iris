@@ -11,6 +11,9 @@ const electronAPI = {
       callback(notification);
     });
   },
+  onOpenSettings: (callback: () => void) => {
+    ipcRenderer.on('open-settings', callback);
+  },
   window: {
     windowTitle: (title: string) => ipcRenderer.invoke('window-title', title),
     minimize: () => ipcRenderer.invoke('window-minimize'),

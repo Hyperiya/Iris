@@ -83,8 +83,8 @@ function createWebSocketServer() {
         }
     });
 
-    healthServer.listen(5001, '127.0.0.1', () => {
-        logger.log('Health check server listening on port 5001');
+    healthServer.listen(5002, '127.0.0.1', () => {
+        logger.log('Health check server listening on port 5002');
     });
 }
 

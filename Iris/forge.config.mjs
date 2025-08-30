@@ -4,7 +4,10 @@ const config = {
   packagerConfig: {
     derefSymlinks: true,
     asar: true,
-    extraResource: ["src/assets/extension"],
+    extraResource: [
+      "src/assets/extension",
+      "binaries/"
+    ],
     appId: "hyperiya.app.iris",
     icon: path.join(process.cwd(), "src", "assets", "icons", "Iris"),
     executableName: "iris",

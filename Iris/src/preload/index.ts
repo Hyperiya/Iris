@@ -10,6 +10,7 @@ import './loaders/spotifyLoader.ts';
 import './loaders/versionsLoader.ts';
 import './loaders/msxLoader.ts';
 import './loaders/devLoader.ts';
+import './loaders/irisVaLoader.ts';
 // In preload/index.ts
 export type { ElectronAPI } from './loaders/electronLoader.ts';
 export type { DiscordAPI } from './loaders/discordLoader.ts';
@@ -22,3 +23,4 @@ export type { HoyoAPI } from './loaders/hoyoLoader.ts';
 export type { SnapshotAPI } from './loaders/snapshotLoader.ts';
 export type { MsxAPI } from './loaders/msxLoader.ts';
 export type { DevAPI } from './loaders/devLoader.ts';
+export type { IrisVaAPI } from './loaders/irisVaLoader.ts';

@@ -1,6 +1,6 @@
 // Constants
 const WEBSOCKET_URL = 'ws://localhost:5001';
-const HEALTH_CHECK_URL = 'http://127.0.0.1:5001/health';
+const HEALTH_CHECK_URL = 'http://127.0.0.1:5002/health';
 const PROGRESS_UPDATE_INTERVAL = 100;
 const RECONNECT_DELAY = 1000;
 const MAX_RECONNECT_ATTEMPTS = 5;

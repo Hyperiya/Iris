@@ -32,7 +32,7 @@ export class MsXService {
                 if (preferredLanguage) {
                     const trackId = apiResult.message?.body?.macro_calls?.['matcher.track.get']?.message?.body?.track?.track_id;
                     if (trackId) {
-                        const translations = await this.queryTranslation(trackId, preferredLanguage);
+                        const translations = await this.queryTranslation(trackId, preferredLanguage, metadata.title);
                         if (translations && translations.length > 0) {
                             translations.forEach((translation: any, index: number) => {
                                 if (result[index]) {
@@ -40,7 +40,7 @@ export class MsXService {
                                 }
                             });
                         } else {
-                            logger.warn('No translations found for the track');
+                            logger.warn(`No translations found for "${metadata.title}"`);
                         }
                     }
                 }
@@ -116,7 +116,7 @@ export class MsXService {
         return [];
     }
 
-    async queryTranslation(trackId: string, language: string[]): Promise<any> {
+    async queryTranslation(trackId: string, language: string[], songTitle:string): Promise<any> {
         const queryParams = {
             format: 'json',
             comment_format: 'text',
@@ -126,7 +126,8 @@ export class MsXService {
             selected_language: language[0], // You can make this configurable
         };
 
-        logger.log('Querying translations with params:', queryParams);
+
+        logger.log(`Querying translations with params for song "${songTitle}":`, queryParams);
         const result = await this.queryMusixmatch('crowd.track.translations.get', queryParams);
         return result?.message?.body?.translations_list;
     }

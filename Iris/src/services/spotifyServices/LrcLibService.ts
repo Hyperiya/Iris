@@ -55,7 +55,7 @@ export class LrcLibApi {
           const response = await fetch(urlWithAlbum);
           if (response.ok) {
             result = await response.json();
-            logger.log('Found lyrics with album!');
+            logger.log(`Found ${result?.syncedLyrics ? 'unsynced' : 'synced'} lyrics with album!`, urlWithAlbum);
           }
         } catch (error) {
           logger.log('First attempt failed, trying without album...');
@@ -65,13 +65,13 @@ export class LrcLibApi {
       // Second attempt without album
       if (!result) {
         const urlWithoutAlbum = `${this.baseUrl}/get?artist_name=${cleanArtist}&track_name=${cleanTrack}`;
-        logger.log('Trying second attempt without album:', urlWithoutAlbum);
+        logger.log(`Trying second attempt without album:`, urlWithoutAlbum);
 
         try {
           const response = await fetch(urlWithoutAlbum);
           if (response.ok) {
             result = await response.json();
-            logger.log('Found lyrics without album!');
+            logger.log(`Found ${result?.syncedLyrics ? 'unsynced' : 'synced'} lyrics without album!`, urlWithoutAlbum);
           }
         } catch (error) {
           logger.log('Second attempt failed, trying with primary artist only...');
@@ -92,7 +92,7 @@ export class LrcLibApi {
 
         if (response.ok) {
           result = await response.json();
-          logger.log('Found lyrics with primary artist!');
+          logger.log(`Found ${result?.syncedLyrics ? 'unsynced' : 'synced'} lyrics with primary artist!`, urlPrimaryArtist);
         } else {
           const errorText = await response.text();
           logger.error('API Error Response, third:', {
