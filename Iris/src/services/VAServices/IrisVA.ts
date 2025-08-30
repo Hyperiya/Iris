@@ -2,13 +2,12 @@ import settingsUtil from "../../utils/settingsUtil.ts";
 import type { AppSettings } from "../../utils/settingsUtil.ts";
 
 import { app } from "electron";
-import { spawn } from "child_process";
+import { spawn, ChildProcessWithoutNullStreams } from "child_process";
 import path from "path";
 import fs from "fs";
 
 import https from "https";
 
-import { createReadStream } from "fs";
 import yauzl from "yauzl";
 
 type VoiceAssistantSettings = AppSettings["voiceAssistant"];
@@ -25,6 +24,7 @@ export class IrisVA {
     private platform: string;
     private arch: string;
     private globalDisable: boolean = false;
+    private irisVA: ChildProcessWithoutNullStreams | undefined;
 
     constructor() {
         this.settings = settingsUtil.get("voiceAssistant");
@@ -332,18 +332,46 @@ export class IrisVA {
             "--model",
             this.getModelPath(),
         ];
-        const irisVA = spawn(this.binaryPath, args);
+        this.irisVA = spawn(this.binaryPath, args);
 
-        irisVA.stdout.on("data", (data) => {
+        this.irisVA.stdout.on("data", (data) => {
             logger.log(`stdout: ${data}`);
+            this.handleVoiceAssistantData(data)
         });
 
-        irisVA.stderr.on("data", (data) => {
+        this.irisVA.stderr.on("data", (data) => {
             logger.log(`stderr: ${data}`);
         });
 
-        irisVA.on("close", (code) => {
+        this.irisVA.on("close", (code) => {
             logger.log(`child process exited with code ${code}`);
         });
+    }
+
+    private async handleVoiceAssistantData(data: string) {
+        const lines = data.split("\n");
+
+        for (const line of lines) {
+            if (line.includes("[DEVICE]")) {
+                const device = line.match(/\[DEVICE\]\((.+?)\)/)?.[1];
+                console.log("Using device:", device);
+            } else if (line.includes("[LISTENING]")) {
+                console.log("Voice assistant is listening...");
+            } else if (line.includes("[SWAP]")) {
+                console.log("Recognizer swapped");
+            } else if (line.includes("[WAITING]")) {
+                console.log("Waiting for command...");
+            } else if (line.includes("[COMMAND]")) {
+                const command = line.match(/\[COMMAND\]\((.+?)\)/)?.[1];
+                console.log("Command detected:", command);
+                // Handle the voice command here
+            } else if (line.includes("[PROCESSED]")) {
+                console.log("Command processed");
+            } else if (line.includes("[RESETTING]")) {
+                console.log("Voice assistant resetting");
+            } else if (line.includes("[ERR]")) {
+                console.error("Voice assistant error:", line);
+            }
+        }
     }
 }
