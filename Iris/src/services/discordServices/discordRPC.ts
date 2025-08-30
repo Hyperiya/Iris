@@ -519,8 +519,6 @@ class DiscordRPC extends EventEmitter {
 class VoiceManager {
     private rpc: DiscordRPC;
     private channel_id: string = '';
-    private guild_id: string | null | void = '';
-
 
     constructor(rpc: DiscordRPC) {
         this.rpc = rpc;

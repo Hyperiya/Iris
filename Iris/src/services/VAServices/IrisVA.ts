@@ -1,6 +1,8 @@
 import settingsUtil from "../../utils/settingsUtil.ts";
 import type { AppSettings } from "../../utils/settingsUtil.ts";
 
+import { CommandProcessor } from "./CommandProcessor.ts";
+
 import { app } from "electron";
 import { spawn, ChildProcessWithoutNullStreams } from "child_process";
 import path from "path";
@@ -24,7 +26,7 @@ export class IrisVA {
     private globalDisable: boolean = false;
     private irisVA: ChildProcessWithoutNullStreams | undefined | null;
 
-    constructor() {
+    constructor(private commandProcessor: CommandProcessor | null) {
         this.settings = settingsUtil.get("voiceAssistant");
         this.binaryPath = this.getBinaryPath();
     }
@@ -345,6 +347,7 @@ export class IrisVA {
 
             this.irisVA.stdout.on("data", (data) => {
                 const output = data.toString(); // Convert Buffer to string
+                logger.log(`data: ${data}`)
                 this.handleVoiceAssistantData(output);
             });
 
@@ -388,9 +391,10 @@ export class IrisVA {
                     console.log("Waiting for command...");
                     break;
                 case "COMMAND":
-                    const command = line.match(/\[COMMAND\]\((.+?)\)/)?.[1];
+                    const command = line.match(/\[COMMAND\]\((.+?)\)/)?.[1].replaceAll('hey iris', '').trim();
+
                     console.log("Command detected:", command);
-                    // Handle the voice command here
+                    this.commandProcessor?.processCommand(command || '')
                     break;
                 case "PROCESSED":
                     console.log("Command processed");

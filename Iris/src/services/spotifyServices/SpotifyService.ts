@@ -21,7 +21,6 @@ class SpotifyService {
     } | null = null;
 
     private prevVolume
-    private rpcConnected = false;
 
     get currentProgress() {
         try {
@@ -64,7 +63,6 @@ class SpotifyService {
         try {
             await this.waitForWindow();
             await window.musicRPC.connect('1403055837311926443');
-            this.rpcConnected = true;
         } catch (error) {
             console.error('Failed to connect Music RPC:', error);
         }
@@ -414,7 +412,7 @@ class SpotifyService {
                 action: 'play'
             });
         } catch (error) {
-            console.error('Error pausing playback:', error);
+            console.error('Error resuming playback:', error);
             throw error;
         }
     }

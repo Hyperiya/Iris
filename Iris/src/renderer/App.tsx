@@ -6,7 +6,6 @@ import {
     AppSettings,
     EnabledModules,
 } from "../utils/settingsUtil.ts";
-import "../index.scss";
 import { ViewState } from "../types/viewState.ts";
 import SpotifyMain from "./components/spotify/SpotifyMain.tsx";
 import HoyoMain from "./components/hoyo/HoyoMain.tsx";
@@ -17,9 +16,15 @@ import { logger } from "./utils/logger.ts";
 import { LoadingProvider, useLoading } from "./context/LoadingContext.tsx";
 import LoadingScreen from "./components/LoadingScreen.tsx";
 
+import "../index.scss";
+import "./App.scss";
+
 interface AppProps {}
 
 function AppContent() {
+    const [showFullscreenTip, setShowFullscreenTip] = useState(false);
+
+    
     const [showSettings, setShowSettings] = useState<boolean>(false);
     const [isFullScreen, setIsFullScreen] = useState(false);
     const [enabledModules, setEnabledModules] = useState<EnabledModules>(() => {
@@ -94,14 +99,13 @@ function AppContent() {
     }, []);
 
     useEffect(() => {
-      if (isIrisEnabled) {
-        window.irisVA.start()
-        logger.log("iris enabled")
-      } else {
-        logger.log("iris not enabled")
-      }
-    }, [])
-    
+        if (isIrisEnabled) {
+            window.irisVA.start();
+            logger.log("iris enabled");
+        } else {
+            logger.log("iris not enabled");
+        }
+    }, []);
 
     const handleOutsideClick = (e: React.MouseEvent) => {
         // Only close if clicking the container itself, not its children
@@ -117,6 +121,30 @@ function AppContent() {
         });
     }, []);
 
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            const isDocFullscreen = !!document.fullscreenElement;
+            window.electron.window
+                .isFullScreen()
+                .then((isElectronFullscreen: boolean) => {
+                    const isFullscreen =
+                        isDocFullscreen || isElectronFullscreen;
+                    setIsFullScreen(isFullscreen);
+
+                    // Show tip on first fullscreen
+                    if (
+                        isFullscreen &&
+                        !window.settings.get("ui.hasSeenFullscreenTip")
+                    ) {
+                        setShowFullscreenTip(true);
+                        window.settings.set("ui.hasSeenFullscreenTip", true);
+                    }
+                });
+        };
+
+        window.electron.window.onFullScreen(handleFullscreenChange);
+        handleFullscreenChange();
+    }, []);
 
     return (
         <>
@@ -129,6 +157,20 @@ function AppContent() {
                 className={`App ${isFullScreen ? "fullscreen" : ""}`}
                 onClick={showSettings ? handleOutsideClick : undefined}
             >
+                {true && (
+                    <div className={`fullscreen-tip ${showFullscreenTip ? 'show': 'hide'}`}>
+                        <div className="tip-content">
+                            <h3>Fullscreen Mode</h3>
+                            <p>
+                                Press <kbd>F11</kbd> to
+                                exit fullscreen
+                            </p>
+                            <button onClick={() => setShowFullscreenTip(false)}>
+                                Got it!
+                            </button>
+                        </div>
+                    </div>
+                )}
                 <Titlebar
                     isSettings={showSettings}
                     setIsSettings={setShowSettings}

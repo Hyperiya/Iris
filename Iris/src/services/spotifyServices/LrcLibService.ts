@@ -16,15 +16,6 @@ interface LrcLibResponse {
 }
 
 /**
- * Interface for search query parameters
- */
-interface SearchParams {
-  artist: string;
-  track: string;
-  album?: string;
-}
-
-/**
  * Main class for interacting with the LrcLib API
  */
 export class LrcLibApi {
@@ -55,7 +46,7 @@ export class LrcLibApi {
           const response = await fetch(urlWithAlbum);
           if (response.ok) {
             result = await response.json();
-            logger.log(`Found ${result?.syncedLyrics ? 'unsynced' : 'synced'} lyrics with album!`, urlWithAlbum);
+            logger.log(`Found ${result?.syncedLyrics ? 'synced' : 'unsynced'} lyrics with album!`, urlWithAlbum);
           }
         } catch (error) {
           logger.log('First attempt failed, trying without album...');

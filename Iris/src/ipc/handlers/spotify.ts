@@ -7,7 +7,8 @@ import * as http from 'http';
 
 let wss: WebSocketServer | null = null;
 let healthServer: http.Server | null = null;
-const clients = new Set<WebSocket>();
+export const clients = new Set<WebSocket>();
+
 
 function createWebSocketServer() {
     if (wss) {
@@ -44,9 +45,7 @@ function createWebSocketServer() {
                         client.send(messageStr);
                     }
                 });
-
-                const response = await handleSpicetifyMessage(messageString);
-
+                
                 // Echo back the message
                 // ws.send(`Server received: ${messageString}`);
             } catch (error) {
@@ -155,4 +154,8 @@ export function cleanupSpotifyHandlers() {
 
         resolve();
     });
+}
+
+export function getClients() {
+    return clients;
 }

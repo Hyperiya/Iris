@@ -22,6 +22,7 @@ import { setupIpcHandlers } from "./ipc/index.ts";
 import { cleanupSpotifyHandlers } from "./ipc/handlers/spotify.ts";
 
 import { saveWindowState, restoreWindowState } from "./utils/windowState.ts";
+import { CommandProcessor } from "./services/VAServices/CommandProcessor.ts";
 
 const isDebugMode = process.env.DEBUG_MODE?.trim() === "true";
 global.DEBUG_MODE = isDebugMode;
@@ -54,11 +55,13 @@ console.log("Comparison result:", process.env.DEBUG_MODE === "true");
 console.log("Type of DEBUG_MODE:", typeof process.env.DEBUG_MODE);
 console.log("Length of DEBUG_MODE:", process.env.DEBUG_MODE?.length);
 
+let commandProcessor: CommandProcessor | null = null;
 let mainWindow: BrowserWindow | null = null;
 let discordRPC: DiscordRPC | null = null;
 let snapshotManager: SnapshotManager | null = null;
 
-let irisVA: IrisVA = new IrisVA;
+commandProcessor = new CommandProcessor(discordRPC)
+let irisVA: IrisVA = new IrisVA(commandProcessor);
 
 ipcMain.setMaxListeners(20); // Or whatever number is appropriate
 

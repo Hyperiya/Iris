@@ -32,11 +32,6 @@ const SpotifyPlaylists: React.FC<SpotifyPlaylistsProps> = ({
         };
     }, []);
 
-    useEffect(() => {
-        logger.log(playlists)
-        console.log(`Iris window size: ${window.innerWidth}x${window.innerHeight}`);
-    }, [playlists])
-
     return (
         <>
             <div className={`playlist ${showPlaylistMenu ? '' : 'hide'} ${isResizing ? 'moving' : ''}`}>

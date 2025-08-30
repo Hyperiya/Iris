@@ -24,6 +24,7 @@ export interface AppSettings {
     uid?: string;
   };
   ui: {
+    hasSeenFullscreenTip: boolean;
     modules: EnabledModules;
   };
   music: {
@@ -45,6 +46,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     username: "",
   },
   ui: {
+    hasSeenFullscreenTip: false,
     modules: {
       spotify: true,
       discord: true,
