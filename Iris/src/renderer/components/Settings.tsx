@@ -627,7 +627,7 @@ function IrisVA({}) {
         setIrisEnabled((prevState) => {
             const newState = !prevState;
 
-            window.settings.set("VoiceAssistant.enabled", newState);
+            window.settings.set("voiceAssistant.enabled", newState);
             return newState;
         });
     };

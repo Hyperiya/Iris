@@ -13,6 +13,7 @@ import HoyoMain from "./components/hoyo/HoyoMain.tsx";
 import DiscordMain from "./components/discord/DiscordMain.tsx";
 import AppSelector from "./components/AppSelector.tsx";
 
+import { logger } from "./utils/logger.ts";
 import { LoadingProvider, useLoading } from "./context/LoadingContext.tsx";
 import LoadingScreen from "./components/LoadingScreen.tsx";
 
@@ -42,12 +43,8 @@ function AppContent() {
         return false;
     });
 
-    const [activeDevice, setActiveDevice] = useState<string>(
-        () => String(window.settings.get("audio.device")) || ""
-    );
-
     const [isIrisEnabled, setIsIrisEnabled] = useState<boolean>(
-        () => Boolean(window.settings.get("audio.enabled")) || false
+        () => Boolean(window.settings.get("voiceAssistant.enabled")) || false
     );
 
     const { isLoading, progress, message } = useLoading();
@@ -82,11 +79,8 @@ function AppContent() {
 
     useEffect(() => {
         const handleSettingsChange = (key: string, value: any) => {
-            if (key === "audio.selectedDevice") {
-                setActiveDevice(value || "");
-            }
-            if (key === "audio.irisEnabled") {
-                setIsIrisEnabled(Boolean(value));
+            if (key === "voiceAssistant.enabled") {
+                setIsIrisEnabled(value);
             }
         };
 
@@ -99,9 +93,15 @@ function AppContent() {
         };
     }, []);
 
-    // useEffect(() => {
-    //   window.electron.window.toggleClickThrough(true);
-    // }, [])
+    useEffect(() => {
+      if (isIrisEnabled) {
+        window.irisVA.start()
+        logger.log("iris enabled")
+      } else {
+        logger.log("iris not enabled")
+      }
+    }, [])
+    
 
     const handleOutsideClick = (e: React.MouseEvent) => {
         // Only close if clicking the container itself, not its children

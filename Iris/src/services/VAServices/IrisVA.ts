@@ -21,16 +21,12 @@ enum executables {
 export class IrisVA {
     private settings: VoiceAssistantSettings;
     private binaryPath: string;
-    private platform: string;
-    private arch: string;
     private globalDisable: boolean = false;
-    private irisVA: ChildProcessWithoutNullStreams | undefined;
+    private irisVA: ChildProcessWithoutNullStreams | undefined | null;
 
     constructor() {
         this.settings = settingsUtil.get("voiceAssistant");
         this.binaryPath = this.getBinaryPath();
-        this.platform = process.platform;
-        this.arch = process.arch;
     }
 
     private getModelPath(): string {
@@ -43,14 +39,19 @@ export class IrisVA {
         let folderName: string;
         let executableName: string;
 
-        if (this.platform === "win32") {
+        const platform = process.platform; // Get it here instead
+        const arch = process.arch; // Get it here instead
+
+        logger.log("Platform:", platform, "Arch:", arch); // Add this debug
+
+        if (platform === "win32") {
             folderName = "windows";
             executableName = executables.windows;
-        } else if (this.platform === "linux") {
-            if (this.arch === "x64") {
+        } else if (platform === "linux") {
+            if (arch === "x64") {
                 folderName = "linux_x86_64";
                 executableName = executables.linux_x86_64;
-            } else if (this.arch === "ia32") {
+            } else if (arch === "ia32") {
                 folderName = "linux_x86";
                 executableName = executables.linux_x86;
             } else {
@@ -66,17 +67,23 @@ export class IrisVA {
             ? process.resourcesPath
             : app.getAppPath();
 
+        logger.log(
+            "binary path:",
+            path.join(basePath, "binaries", folderName, executableName)
+        );
         return path.join(basePath, "binaries", folderName, executableName);
     }
 
     private getVoskApiUrl(): string {
-        logger.log(this.platform, this.arch);
-        if (this.platform === "win32") {
+        const platform = process.platform; // Get it here instead
+        const arch = process.arch; // Get it here instead
+        logger.log(platform, arch);
+        if (platform === "win32") {
             return "https://github.com/alphacep/vosk-api/releases/download/v0.3.45/vosk-win64-0.3.45.zip";
-        } else if (this.platform === "linux") {
-            if (this.arch === "x64") {
+        } else if (platform === "linux") {
+            if (arch === "x64") {
                 return "https://github.com/alphacep/vosk-api/releases/download/v0.3.45/vosk-linux-x86_64-0.3.45.zip";
-            } else if (this.arch === "ia32") {
+            } else if (arch === "ia32") {
                 return "https://github.com/alphacep/vosk-api/releases/download/v0.3.45/vosk-linux-x86-0.3.45.zip";
             }
         }
@@ -326,51 +333,74 @@ export class IrisVA {
     }
 
     public startVA() {
-        const args = [
-            "--device",
-            this.settings.device || "default",
-            "--model",
-            this.getModelPath(),
-        ];
-        this.irisVA = spawn(this.binaryPath, args);
+        try {
+            const args = [
+                "--device",
+                this.settings.device || "default",
+                "--model",
+                this.getModelPath(),
+            ];
+            logger.log("Starting voice assistant with args:", args);
+            this.irisVA = spawn(this.binaryPath, args);
 
-        this.irisVA.stdout.on("data", (data) => {
-            logger.log(`stdout: ${data}`);
-            this.handleVoiceAssistantData(data)
-        });
+            this.irisVA.stdout.on("data", (data) => {
+                const output = data.toString(); // Convert Buffer to string
+                this.handleVoiceAssistantData(output);
+            });
 
-        this.irisVA.stderr.on("data", (data) => {
-            logger.log(`stderr: ${data}`);
-        });
+            this.irisVA.stderr.on("data", (data) => {
+                logger.log(`stderr: ${data}`);
+            });
 
-        this.irisVA.on("close", (code) => {
-            logger.log(`child process exited with code ${code}`);
-        });
+            this.irisVA.on("close", (code) => {
+                logger.log(`child process exited with code ${code}`);
+            });
+        } catch (error) {
+            logger.error("Failed to start voice assistant:", error);
+        }
+    }
+
+    public stopVA() {
+        if (this.irisVA) {
+            this.irisVA.kill();
+            this.irisVA = null;
+        }
     }
 
     private async handleVoiceAssistantData(data: string) {
         const lines = data.split("\n");
 
         for (const line of lines) {
-            if (line.includes("[DEVICE]")) {
-                const device = line.match(/\[DEVICE\]\((.+?)\)/)?.[1];
-                console.log("Using device:", device);
-            } else if (line.includes("[LISTENING]")) {
-                console.log("Voice assistant is listening...");
-            } else if (line.includes("[SWAP]")) {
-                console.log("Recognizer swapped");
-            } else if (line.includes("[WAITING]")) {
-                console.log("Waiting for command...");
-            } else if (line.includes("[COMMAND]")) {
-                const command = line.match(/\[COMMAND\]\((.+?)\)/)?.[1];
-                console.log("Command detected:", command);
-                // Handle the voice command here
-            } else if (line.includes("[PROCESSED]")) {
-                console.log("Command processed");
-            } else if (line.includes("[RESETTING]")) {
-                console.log("Voice assistant resetting");
-            } else if (line.includes("[ERR]")) {
-                console.error("Voice assistant error:", line);
+            const tag = line.match(/\[(\w+)\]/)?.[1];
+
+            switch (tag) {
+                case "DEVICE":
+                    const device = line.match(/\[DEVICE\]\((.+?)\)/)?.[1];
+                    console.log("Using device:", device);
+                    break;
+                case "LISTENING":
+                    console.log("Voice assistant is listening...");
+                    break;
+                case "SWAP":
+                    console.log("Recognizer swapped");
+                    break;
+                case "WAITING":
+                    console.log("Waiting for command...");
+                    break;
+                case "COMMAND":
+                    const command = line.match(/\[COMMAND\]\((.+?)\)/)?.[1];
+                    console.log("Command detected:", command);
+                    // Handle the voice command here
+                    break;
+                case "PROCESSED":
+                    console.log("Command processed");
+                    break;
+                case "RESETTING":
+                    console.log("Voice assistant resetting");
+                    break;
+                case "ERR":
+                    console.error("Voice assistant error:", line);
+                    break;
             }
         }
     }

@@ -12,8 +12,9 @@ import { setupMusicRPCHandlers } from './handlers/musicRpcHandler.ts';
 import { setupSettingsHandlers } from './handlers/settings.ts';
 import { setupMsxHandlers } from './handlers/msx.ts';
 import { setupIrisVAHandlers } from './handlers/irisVaHandler.ts';
+import { IrisVA } from '../services/VAServices/IrisVA.ts';
 
-export function setupIpcHandlers(mainWindow: BrowserWindow, snapshotManager: SnapshotManager | null) {
+export function setupIpcHandlers(mainWindow: BrowserWindow, snapshotManager: SnapshotManager | null, irisVa: IrisVA | null) {
     setupWindowHandlers(mainWindow);
     setupDiscordHandlers(mainWindow);
     setupSpotifyHandlers();
@@ -25,5 +26,5 @@ export function setupIpcHandlers(mainWindow: BrowserWindow, snapshotManager: Sna
     setupMusicRPCHandlers();
     setupSettingsHandlers(mainWindow);
     setupMsxHandlers();
-    setupIrisVAHandlers();
+    setupIrisVAHandlers(irisVa);
 }

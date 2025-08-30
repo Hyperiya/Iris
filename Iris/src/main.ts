@@ -11,6 +11,8 @@ import {
 import DiscordRPC from "./services/discordServices/discordRPC.ts";
 import { SnapshotManager } from "./utils/snapshotUtil.ts";
 import { fileURLToPath } from "url";
+import { IrisVA } from './services/VAServices/IrisVA.ts';
+
 
 import fs from "fs";
 
@@ -55,6 +57,8 @@ console.log("Length of DEBUG_MODE:", process.env.DEBUG_MODE?.length);
 let mainWindow: BrowserWindow | null = null;
 let discordRPC: DiscordRPC | null = null;
 let snapshotManager: SnapshotManager | null = null;
+
+let irisVA: IrisVA = new IrisVA;
 
 ipcMain.setMaxListeners(20); // Or whatever number is appropriate
 
@@ -205,7 +209,7 @@ const createWindow = async (): Promise<void> => {
         });
     }
 
-    setupIpcHandlers(mainWindow, snapshotManager);
+    setupIpcHandlers(mainWindow, snapshotManager, irisVA);
     ipcMain.handle("get-debug-mode", () => isDebugMode);
 
     mainWindow.on("maximize", () => {
@@ -394,6 +398,7 @@ app.whenReady().then(async () => {
 app.on("before-quit", async () => {
     globalShortcut.unregisterAll();
     await cleanupSpotifyHandlers();
+    await irisVA.stopVA()
     if (discordRPC) {
         await discordRPC.disconnect();
         discordRPC = null;
