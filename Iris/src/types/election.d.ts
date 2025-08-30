@@ -2,23 +2,27 @@ import { AppSettings } from "../utils/settingsUtil.ts";
 import type * as PreloadTypes from '../preload/index.ts';
 
 // Type helper to get nested property types
-type NestedKeyOf<ObjectType extends object> = {
-    [Key in keyof ObjectType & (string | number)]: ObjectType[Key] extends object
-    ? `${Key}` | `${Key}.${NestedKeyOf<ObjectType[Key]>}`
-    : `${Key}`;
-}[keyof ObjectType & (string | number)];
-
-type SettingValue<T extends NestedKeyOf<AppSettings>> =
-    T extends `${infer K}.${infer Rest}`
-    ? K extends keyof AppSettings
-    ? Rest extends NestedKeyOf<AppSettings[K]>
-    ? SettingValue<Rest>
+type NestedKeyOf<T> = T extends object ? {
+  [K in keyof T]: K extends string 
+    ? T[K] extends object
+      ? `${K}` | `${K}.${NestedKeyOf<T[K]>}`
+      : `${K}`
     : never
-    : never
-    : T extends keyof AppSettings
-    ? AppSettings[T]
-    : never;
+}[keyof T] : never;
 
+type GetNestedValue<T, K extends string> = 
+  K extends `${infer First}.${infer Rest}`
+    ? First extends keyof T
+      ? GetNestedValue<T[First], Rest>
+      : never
+    : K extends keyof T
+      ? T[K]
+      : never;
+      
+interface SettingsAPI extends Omit<PreloadTypes.SettingsAPI, 'get' | 'set'> {
+  get<K extends NestedKeyOf<AppSettings>>(key: K): GetNestedValue<AppSettings, K>;
+  set<K extends NestedKeyOf<AppSettings>>(key: K, value: GetNestedValue<AppSettings, K>): void;
+}
     
 declare global {
     interface Window {
@@ -26,7 +30,7 @@ declare global {
         musicRPC: PreloadTypes.MusicRPCAPI;
         electron: PreloadTypes.ElectronAPI;
         discord: PreloadTypes.DiscordAPI;
-        settings: PreloadTypes.SettingsAPI;
+        settings: SettingsAPI;
         loading: PreloadTypes.LoadingAPI;
         lrc: PreloadTypes.LrcAPI;
         hoyoAPI: PreloadTypes.HoyoAPI;

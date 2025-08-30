@@ -27,7 +27,7 @@ export interface AppSettings {
     modules: EnabledModules;
   };
   music: {
-    prefferredLangauge?: string[]; // Optional, can be undefined
+    prefferredLangauge: string[]; // Optional, can be undefined
   };
   voiceAssistant: {
     enabled: boolean;

@@ -271,17 +271,17 @@ function Spotify({}: SpotifyProps) {
                 onChange={(e) =>
                     window.settings.set(
                         "music.prefferredLangauge",
-                        e.target.value
+                        e.target.value.split("-") // Split 'en-us' into ['en', 'us']
                     )
                 }
             >
-                <option value="en">English</option>
-                <option value="es">Spanish</option>
-                <option value="fr">French</option>
-                <option value="de">German</option>
-                <option value="ja">Japanese</option>
-                <option value="ko">Korean</option>
-                <option value="zh">Chinese</option>
+                <option value="en-us">English</option>
+                <option value="es-es">Spanish</option>
+                <option value="fr-fr">French</option>
+                <option value="de-de">German</option>
+                <option value="ja-jp">Japanese</option>
+                <option value="ko-kr">Korean</option>
+                <option value="zh-cn">Chinese</option>
             </select>
         </div>
     );
@@ -555,7 +555,9 @@ function IrisVA({}) {
 
     const handleMicSelect = (deviceId: string) => {
         setSelectedDevice(deviceId);
-        window.settings.set("audio.device", deviceId);
+        window.settings.set("voiceAssistant.device", deviceId);
+        window.irisVA.stop();
+        window.irisVA.start();
     };
 
     const getAudioDevices = async () => {
@@ -613,7 +615,7 @@ function IrisVA({}) {
                 getAudioDevices
             );
         };
-    }, []);
+    }, [irisEnabled]);
 
     useEffect(() => {
         const checkModel = async () => {
@@ -628,6 +630,12 @@ function IrisVA({}) {
             const newState = !prevState;
 
             window.settings.set("voiceAssistant.enabled", newState);
+            if (newState === true && irisInstalled === true) {
+                window.irisVA.start();
+            } else if (newState === false) {
+                window.irisVA.stop();
+            }
+
             return newState;
         });
     };
@@ -636,6 +644,27 @@ function IrisVA({}) {
         setInstallStatus("Installing model...");
         setInstallStatus(await window.irisVA.downloadModel());
         setIrisEnabled(await window.irisVA.checkForModel());
+    };
+
+    const cleanMicrophoneName = (name: string) => {
+        const suffixesToRemove = [
+            "analog stereo",
+            "mono",
+            "stereo",
+            "digital stereo",
+            "analog",
+            "digital",
+        ];
+
+        const lowerName = name.toLowerCase();
+
+        for (const suffix of suffixesToRemove) {
+            if (lowerName.endsWith(suffix)) {
+                return name.slice(0, -suffix.length).trim();
+            }
+        }
+
+        return name;
     };
 
     return (
@@ -668,7 +697,12 @@ function IrisVA({}) {
                                     <h3>Input Device</h3>
                                 </span>
                                 <select
-                                    className="select"
+                                    className="base-input"
+                                    style={{
+                                        cursor: "pointer",
+                                        backgroundColor: "#2a2a2a",
+                                        borderColor: "#3a3a3a",
+                                    }}
                                     value={selectedDevice}
                                     onChange={(e) =>
                                         handleMicSelect(e.target.value)
@@ -679,7 +713,9 @@ function IrisVA({}) {
                                             key={device.deviceId}
                                             value={device.deviceId}
                                         >
-                                            {device.label ||
+                                            {cleanMicrophoneName(
+                                                device.label
+                                            ) ||
                                                 `Microphone ${device.deviceId.slice(0, 5)}...`}
                                         </option>
                                     ))}
@@ -698,7 +734,9 @@ function IrisVA({}) {
                         {installStatus && (
                             <div
                                 className={`install-status ${
-                                    installStatus.toLowerCase().includes("error")
+                                    installStatus
+                                        .toLowerCase()
+                                        .includes("error")
                                         ? "error"
                                         : "success"
                                 }`}
