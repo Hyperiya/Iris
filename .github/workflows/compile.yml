@@ -39,7 +39,7 @@ jobs:
                   tar -czvf Iris-linux-x64.tar.gz -C Iris-linux-x64 .
             - name: Download appimagetool
               run: |
-                  wget https://github.com/AppImage/AppImageKit/releases/latest/download/appimagetool-x86_64.AppImage -O appimagetool
+                  wget https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage -O appimagetool
                   chmod +x appimagetool
                   sudo mv appimagetool /usr/local/bin/
             - name: Create AppImage(s)
