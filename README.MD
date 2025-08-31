@@ -9,15 +9,7 @@ Features:
 - Hoyoverse game tracking for Genshin Impact, Honkai: Star Rail, and Zenless Zone Zero with real-time resin/stamina monitoring
 - Customizable modular interface that allows users to enable/disable specific features
 - System-native window controls with frameless design
-
-## Examples
-![Image 1](https://github.com/Hyperiya/Iris/blob/da18eed75956b7928aeb049c36602955208145f8/Examples/image.png)
-![Image 2](https://github.com/Hyperiya/Iris/blob/da18eed75956b7928aeb049c36602955208145f8/Examples/image2.png)
-![Image 3](https://github.com/Hyperiya/Iris/blob/da18eed75956b7928aeb049c36602955208145f8/Examples/iris_69Iy4UD0lD.png)
-![Image 4](https://github.com/Hyperiya/Iris/blob/da18eed75956b7928aeb049c36602955208145f8/Examples/iris_E2PDZnuHfR.png)
-![Image 5](https://github.com/Hyperiya/Iris/blob/da18eed75956b7928aeb049c36602955208145f8/Examples/iris_JdUeIJzDIa.png)
-![Image 6](https://github.com/Hyperiya/Iris/blob/da18eed75956b7928aeb049c36602955208145f8/Examples/iris_t9hXk70aar.png)
-![Image 7](https://github.com/Hyperiya/Iris/blob/da18eed75956b7928aeb049c36602955208145f8/Examples/iris_yTjK48g3Nl.png)
+- Voice Assistant for Discord and Spotify
 
 ## Repository Structure
 ```
@@ -86,6 +78,43 @@ npm start
    - Discord: Enter in your client ID and client Secret from https://discord.com/developers/applications (Make a new application) and grant permissions when prompted
    - Hoyoverse: Log in through the settings menu
 
+## Voice Commands
+
+Iris supports voice commands (when enabled) using the wake word "Hey Iris" followed by any of these commands:
+
+### Discord Commands
+| Command | Aliases | Action |
+|---------|---------|--------|
+| `leave call` | hang up, disconnect | Leave current voice channel |
+| `deafen` | stephen, duffin, devon, death and, and, death in | Deafen yourself |
+| `undeafen` | under often, under and, under fun, under under oven | Undeafen yourself |
+| `mute` | *word matching* | Mute your microphone |
+| `unmute` | *word matching* | Unmute your microphone |
+
+### Spotify Commands
+| Command | Aliases | Action |
+|---------|---------|--------|
+| `play` | resume, continue | Resume playback |
+| `pause` | stop | Pause playback |
+| `next song` | next, skip | Skip to next track |
+| `previous song` | previous, back | Go to previous track |
+| `shuffle` | mix | Toggle shuffle mode |
+| `repeat` | repeat playlist, repeat album | Repeat playlist/album |
+| `repeat song` | repeat track | Repeat current track |
+| `stop repeating` | | Turn off repeat |
+
+### Command Types
+- **Exact Match**: Command must be spoken exactly as listed
+- **Word Match** (*italicized*): All words must be present but can be in any order with additional words
+- **Aliases**: Alternative phrases that trigger the same action
+
+### Examples
+- "Hey Iris play" → Resumes Spotify playback
+- "Hey Iris please play some music" → Also resumes playback (word matching)
+- "Hey Iris stephen" → Deafens you in Discord (common misheard word)
+
+> **Note**: Many Discord commands have multiple aliases due to speech recognition challenges with technical terms like "deafen" and "undeafen".
+
 ### More Detailed Examples
 #### Spotify Controls
 ```typescript
@@ -138,5 +167,5 @@ Key interactions:
 - UI updates are managed through React state management
 - Theme colors are dynamically extracted from album artwork
 
-# Lisense
+# License
 Iris © 2025 is licensed under CC BY-NC-SA 4.0 
