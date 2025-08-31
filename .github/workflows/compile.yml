@@ -1,141 +1,146 @@
 name: Compile
 on:
-  workflow_dispatch:
-  push:
+    workflow_dispatch:
+    push:
 
 permissions:
-  contents: write
+    contents: write
 
 jobs:
-  build_on_linux:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: install dependencies
-        working-directory: ./Iris
-        run: |
-          pwd
-          ls
-          ls ./src
-          ls ./src/assets
-          ls ./src/assets/icons
-          ls -la ..
-          npm install
-      - name: build
-        working-directory: ./Iris
-        run: |
-          npx vite build --config vite.main.config.mjs
-          npx vite build --config vite.preload.config.mjs
-          npx vite build --config vite.renderer.config.mjs
-          npm run make
-          
-          ls -la .vite/build/ || echo "Build directory not found"
-      - name: tar-gz packaged ver
-        working-directory: ./Iris/out
-        run: |
-          tar -czvf Iris-linux-x64.tar.gz -C Iris-linux-x64 .
-      - name: Create AppImage(s)
-        working-directory: ./Iris
-        run: |
-          ./AppImageMaker.sh
-      - name: Upload Linux Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-builds
-          path: |
-            ./Iris/out/make/**/*
-            ./Iris/out/*.tar.gz
-            ./Iris/out/Iris-x86_64.AppImage
-            ./Iris/out/Iris-i386.AppImage
-          retention-days: 7
-      - name: Debug file structure on failure
-        if: failure()
-        run: |
-          echo "=== Full directory tree ==="
-          find . -type f | head -50
-          echo "=== Looking for main.js files ==="
-          find . -name "*main*" -type f
-          echo "=== .vite contents ==="
-          ls -la .vite/ 2>/dev/null || echo "No .vite directory"
-          echo "=== Current directory ==="
-          pwd && ls -la
-          npm run make
+    build_on_linux:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+            - name: install dependencies
+              working-directory: ./Iris
+              run: |
+                  pwd
+                  ls
+                  ls ./src
+                  ls ./src/assets
+                  ls ./src/assets/icons
+                  ls -la ..
+                  npm install
+            - name: build
+              working-directory: ./Iris
+              run: |
+                  npx vite build --config vite.main.config.mjs
+                  npx vite build --config vite.preload.config.mjs
+                  npx vite build --config vite.renderer.config.mjs
+                  npm run make
 
-  build_on_mac:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: install dependencies
-        working-directory: ./Iris
-        run: |
-          ls
-          npm install
-      - name: build
-        working-directory: ./Iris
-        run: npm run make
-      - name: Upload macOS Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-builds
-          path: ./Iris/out/make/**/*
-          retention-days: 7
+                  ls -la .vite/build/ || echo "Build directory not found"
+            - name: tar-gz packaged ver
+              working-directory: ./Iris/out
+              run: |
+                  tar -czvf Iris-linux-x64.tar.gz -C Iris-linux-x64 .
+            - name: Download appimagetool
+              run: |
+                  wget https://github.com/AppImage/AppImageKit/releases/latest/download/appimagetool-x86_64.AppImage -O appimagetool
+                  chmod +x appimagetool
+                  sudo mv appimagetool /usr/local/bin/
+            - name: Create AppImage(s)
+              working-directory: ./Iris
+              run: |
+                  ./AppImageMaker.sh
+            - name: Upload Linux Artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                  name: linux-builds
+                  path: |
+                      ./Iris/out/make/**/*
+                      ./Iris/out/*.tar.gz
+                      ./Iris/out/Iris-x86_64.AppImage
+                      ./Iris/out/Iris-i386.AppImage
+                  retention-days: 7
+            - name: Debug file structure on failure
+              if: failure()
+              run: |
+                  echo "=== Full directory tree ==="
+                  find . -type f | head -50
+                  echo "=== Looking for main.js files ==="
+                  find . -name "*main*" -type f
+                  echo "=== .vite contents ==="
+                  ls -la .vite/ 2>/dev/null || echo "No .vite directory"
+                  echo "=== Current directory ==="
+                  pwd && ls -la
+                  npm run make
 
-  build_on_win:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: install dependencies
-        working-directory: ./Iris
-        run: |
-          ls
-          npm install
-      - name: build
-        working-directory: ./Iris
-        run: npm run make
-      - name: Upload Windows Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-builds
-          path: ./Iris/out/make/**/*
-          retention-days: 7
+    build_on_mac:
+        runs-on: macos-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+            - name: install dependencies
+              working-directory: ./Iris
+              run: |
+                  ls
+                  npm install
+            - name: build
+              working-directory: ./Iris
+              run: npm run make
+            - name: Upload macOS Artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                  name: macos-builds
+                  path: ./Iris/out/make/**/*
+                  retention-days: 7
 
-  combine_artifacts:
-    needs: [build_on_linux, build_on_mac, build_on_win]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Create combined directory
-        run: mkdir -p combined-builds/{linux,macos,windows}
+    build_on_win:
+        runs-on: windows-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+            - name: install dependencies
+              working-directory: ./Iris
+              run: |
+                  ls
+                  npm install
+            - name: build
+              working-directory: ./Iris
+              run: npm run make
+            - name: Upload Windows Artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                  name: windows-builds
+                  path: ./Iris/out/make/**/*
+                  retention-days: 7
 
-      - name: Download Linux artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: linux-builds
-          path: combined-builds/linux
+    combine_artifacts:
+        needs: [build_on_linux, build_on_mac, build_on_win]
+        runs-on: ubuntu-latest
+        steps:
+            - name: Create combined directory
+              run: mkdir -p combined-builds/{linux,macos,windows}
 
-      - name: Download macOS artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: macos-builds
-          path: combined-builds/macos
+            - name: Download Linux artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  name: linux-builds
+                  path: combined-builds/linux
 
-      - name: Download Windows artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: windows-builds
-          path: combined-builds/windows
+            - name: Download macOS artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  name: macos-builds
+                  path: combined-builds/macos
 
-      - name: Upload combined artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: iris-all-platforms
-          path: combined-builds
-          retention-days: 7
+            - name: Download Windows artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  name: windows-builds
+                  path: combined-builds/windows
+
+            - name: Upload combined artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                  name: iris-all-platforms
+                  path: combined-builds
+                  retention-days: 7
