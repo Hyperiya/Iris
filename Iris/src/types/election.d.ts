@@ -2,6 +2,7 @@ import { AppSettings } from "../utils/settingsUtil.ts";
 import type * as PreloadTypes from '../preload/index.ts';
 
 // Type helper to get nested property types
+// Specifically for AppSettings
 type NestedKeyOf<T> = T extends object ? {
   [K in keyof T]: K extends string 
     ? T[K] extends object

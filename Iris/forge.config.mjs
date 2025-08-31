@@ -18,7 +18,6 @@ const config = {
     {
       name: "@electron-forge/maker-squirrel",
       config: {
-        // Add these configurations
         name: "Iris",
         authors: "Hyperiya",
         description: "Music & Game Stat Displayer",

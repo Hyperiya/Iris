@@ -9,6 +9,12 @@ I'm BAAAACKKK
 Dynamic signatures. We need this for HSR for some reason.
 I don't know how it works, but it does.
 I'm not sure if it's needed for other games, but I'm not going to bother with it.
+(unknown date-time)
+-------------
+Back again- more mature this time
+Dynamic signatures are needed to log in and run a few operations, most notably for HSR
+I "stole" most of this code from TukanDev after I asked him about it
+(2025-08-30 20:36:03)
 */
 
 export const DS_SALT = {
@@ -19,8 +25,6 @@ export const DS_SALT = {
   cn_passport: "JwYDpKvLj6MrMqqYU6jTKF17KNO2PXoS",
 };
 
-
-let dsGenerator: DSGenerator | null = null;
 
 // Borrowed from TukanDev (https://github.com/TukanDev/qingyi/) 
 export function generateDynamicSecret(salt: string = DS_SALT[Region.OVERSEAS]): string {

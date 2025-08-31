@@ -24,3 +24,10 @@ export type { SnapshotAPI } from './loaders/snapshotLoader.ts';
 export type { MsxAPI } from './loaders/msxLoader.ts';
 export type { DevAPI } from './loaders/devLoader.ts';
 export type { IrisVaAPI } from './loaders/irisVaLoader.ts';
+
+/*
+Hyperiya here-
+I made this index file & the loaders avoid bloating the preload file over expansion of the project
+Whenever I make a new IPC, I put it in a new file, import it, import the type I generated, and go on.
+(2025-08-30 20:38:51)
+*/

@@ -9,6 +9,7 @@ Features:
 - Hoyoverse game tracking for Genshin Impact, Honkai: Star Rail, and Zenless Zone Zero with real-time resin/stamina monitoring
 - Customizable modular interface that allows users to enable/disable specific features
 - System-native window controls with frameless design
+- Voice Assistant for Discord and Spotify
 
 ## Repository Structure
 ```
@@ -77,6 +78,43 @@ npm start
    - Discord: Enter in your client ID and client Secret from https://discord.com/developers/applications (Make a new application) and grant permissions when prompted
    - Hoyoverse: Log in through the settings menu
 
+## Voice Commands
+
+Iris supports voice commands (when enabled) using the wake word "Hey Iris" followed by any of these commands:
+
+### Discord Commands
+| Command | Aliases | Action |
+|---------|---------|--------|
+| `leave call` | hang up, disconnect | Leave current voice channel |
+| `deafen` | stephen, duffin, devon, death and, and, death in | Deafen yourself |
+| `undeafen` | under often, under and, under fun, under under oven | Undeafen yourself |
+| `mute` | *word matching* | Mute your microphone |
+| `unmute` | *word matching* | Unmute your microphone |
+
+### Spotify Commands
+| Command | Aliases | Action |
+|---------|---------|--------|
+| `play` | resume, continue | Resume playback |
+| `pause` | stop | Pause playback |
+| `next song` | next, skip | Skip to next track |
+| `previous song` | previous, back | Go to previous track |
+| `shuffle` | mix | Toggle shuffle mode |
+| `repeat` | repeat playlist, repeat album | Repeat playlist/album |
+| `repeat song` | repeat track | Repeat current track |
+| `stop repeating` | | Turn off repeat |
+
+### Command Types
+- **Exact Match**: Command must be spoken exactly as listed
+- **Word Match** (*italicized*): All words must be present but can be in any order with additional words
+- **Aliases**: Alternative phrases that trigger the same action
+
+### Examples
+- "Hey Iris play" → Resumes Spotify playback
+- "Hey Iris please play some music" → Also resumes playback (word matching)
+- "Hey Iris stephen" → Deafens you in Discord (common misheard word)
+
+> **Note**: Many Discord commands have multiple aliases due to speech recognition challenges with technical terms like "deafen" and "undeafen".
+
 ### More Detailed Examples
 #### Spotify Controls
 ```typescript
@@ -129,5 +167,5 @@ Key interactions:
 - UI updates are managed through React state management
 - Theme colors are dynamically extracted from album artwork
 
-# Lisense
+# License
 Iris © 2025 is licensed under CC BY-NC-SA 4.0 

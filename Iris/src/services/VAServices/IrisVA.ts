@@ -23,7 +23,7 @@ enum executables {
 export class IrisVA {
     private settings: VoiceAssistantSettings;
     private binaryPath: string;
-    private globalDisable: boolean = false;
+    private globalDisable: boolean = false; // Disables VA if platform/arch unsupported
     private irisVA: ChildProcessWithoutNullStreams | undefined | null;
 
     constructor(private commandProcessor: CommandProcessor | null, private mainWindow: BrowserWindow) {
@@ -41,8 +41,9 @@ export class IrisVA {
         let folderName: string;
         let executableName: string;
 
-        const platform = process.platform; // Get it here instead
-        const arch = process.arch; // Get it here instead
+        // Get platform/arch at runtime to avoid undefined values
+        const platform = process.platform;
+        const arch = process.arch;
 
         logger.log("Platform:", platform, "Arch:", arch); // Add this debug
 
@@ -77,8 +78,8 @@ export class IrisVA {
     }
 
     private getVoskApiUrl(): string {
-        const platform = process.platform; // Get it here instead
-        const arch = process.arch; // Get it here instead
+        const platform = process.platform; 
+        const arch = process.arch; 
         logger.log(platform, arch);
         if (platform === "win32") {
             return "https://github.com/alphacep/vosk-api/releases/download/v0.3.45/vosk-win64-0.3.45.zip";
@@ -168,7 +169,7 @@ export class IrisVA {
             const download = (downloadUrl: string) => {
                 https
                     .get(downloadUrl, (response) => {
-                        // Handle redirects
+                        // Handle GitHub redirects for release downloads
                         if (
                             response.statusCode === 302 ||
                             response.statusCode === 301
@@ -242,6 +243,7 @@ export class IrisVA {
         return false;
     }
 
+    // Downloads and extracts Vosk speech recognition model and API
     public async downloadVoskModel(): Promise<string | void> {
         try {
             const modelDir = this.getModelPath();
@@ -281,7 +283,7 @@ export class IrisVA {
             fs.mkdirSync(tempDir, { recursive: true });
             await this.extractZip(modelZipPath, tempDir);
 
-            // Move model contents to root
+            // Extract nested folder contents to model root directory
             const modelSubDir = fs
                 .readdirSync(tempDir)
                 .find((dir) => dir.startsWith("vosk-"));
@@ -334,6 +336,7 @@ export class IrisVA {
         return true;
     }
 
+    // Spawns the Rust voice assistant binary and sets up event handlers
     public startVA() {
         try {
             const args = [
@@ -370,6 +373,7 @@ export class IrisVA {
         }
     }
 
+    // Parses voice assistant output and triggers appropriate actions
     private async handleVoiceAssistantData(data: string) {
         const lines = data.split("\n");
 
@@ -393,6 +397,7 @@ export class IrisVA {
                     break;
                 case "COMMAND":
                     this.mainWindow?.webContents.send('va:command')
+                    // Strip wake word and process the actual command
                     const command = line.match(/\[COMMAND\]\((.+?)\)/)?.[1].replaceAll('hey iris', '').trim();
                     logger.log("Command detected:", command);
                     this.commandProcessor?.processCommand(command || '')

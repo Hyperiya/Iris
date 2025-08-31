@@ -28,3 +28,8 @@ export function setupIpcHandlers(mainWindow: BrowserWindow, snapshotManager: Sna
     setupMsxHandlers();
     setupIrisVAHandlers(irisVa);
 }
+
+/*
+Hyperiya here- This is pretty much the same as the preload less bloat thing (check ../preload/index.ts)
+Just a bit more complicated because this is closer to main and I need to carry along a lot of things
+*/

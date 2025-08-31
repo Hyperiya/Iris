@@ -3,7 +3,7 @@ import DiscordRPC from "../discordServices/discordRPC.ts";
 import { clients } from "../../ipc/handlers/spotify.ts";
 
 export class CommandProcessor {
-    private commands = new Map<string, () => Promise<void>>();
+    private commands = new Map<string, () => Promise<void>>(); // Maps command strings to action functions
 
     constructor(private discordRPC: DiscordRPC | null) {
         this.registerCommands();
@@ -15,7 +15,7 @@ export class CommandProcessor {
          */
         this.registerMultiple(["leave call", "hang up", "disconnect"], async () => this.discordRPC?.voice.leaveCall());
 
-        // This and undeafen are going to have a lot of alternatives, as they're rarely properly understood by vosk
+        // Deafen/undeafen have many aliases due to Vosk speech recognition errors
         this.registerMultiple(["deafen", "stephen", "duffin", "devon", "death and", "and", "death in"], async () =>
             this.discordRPC?.voice.deafen()
         );
@@ -38,6 +38,13 @@ export class CommandProcessor {
             async () => this.sendSpotifyCommand("pause")
         );
 
+        /*
+        SpotifyService was made when I just started this project.
+        As such, I was completely idiotic and made it so that main hosts the websocket, -
+        and renderer and Spotify connect to it. I've now programmed SpotifyService so far that this can't be undone -
+        without rewriting a lot of code. So, I'm just going to send commands directly to the clients connected to the main process.
+        (2025-08-30 20:29:53) 
+        */
         this.registerMultiple(["next song", "next", ["skip", true]], async () => this.sendSpotifyCommand("next"));
         this.registerMultiple(["previous song", "previous", ["back", true]], async () =>
             this.sendSpotifyCommand("prev")
@@ -59,7 +66,7 @@ export class CommandProcessor {
      * @param action Function to execute when command is triggered
      *
      * @example
-     * // Exact matches only
+     * Exact matches only
      * this.registerMultiple(["play", "resume"], () => this.sendSpotifyCommand('play'));
      *
      *
@@ -82,6 +89,7 @@ export class CommandProcessor {
         });
     }
 
+    // Sends commands directly to connected Spicetify clients via WebSocket
     private sendSpotifyCommand(action: string, value?: number | string) {
         const message = JSON.stringify({ type: "playback", action: action, ...(value !== undefined && { value }) });
         clients.forEach((client) => {
@@ -92,6 +100,7 @@ export class CommandProcessor {
         });
     }
 
+    // Processes voice commands with fallback from exact to word matching
     async processCommand(command: string) {
         const normalizedCommand = command.toLowerCase().trim();
 
@@ -107,7 +116,7 @@ export class CommandProcessor {
                     const searchPhrase = key.replace("words:", "");
                     const searchWords = searchPhrase.split(" ");
 
-                    // Check if all search words are present in command
+                    // Word matching: all search words must be present in any order
                     const allWordsPresent = searchWords.every((word) => commandWords.includes(word));
 
                     if (allWordsPresent) {

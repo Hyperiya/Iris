@@ -1,4 +1,10 @@
-import React, { useState, useEffect, use } from "react";
+/*
+Hyperiya here-
+I don't do comments for tsx/jsx.
+Sorry, it's just a lot to do and I can't be bothered.
+*/
+
+import React, { useState, useEffect } from "react";
 import { EnabledModules } from "../utils/settingsUtil.ts";
 import { ViewState } from "../types/viewState.ts";
 
