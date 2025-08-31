@@ -36,7 +36,7 @@ jobs:
       - name: tar-gz packaged ver
         working-directory: ./Iris/out
         run: |
-          tar -czvf Iris-linux-x64.tar.gz -C out Iris-linux-x64
+          tar -czvf Iris-linux-x64.tar.gz -C Iris-linux-x64
       - name: Download appimagetool
         run: |
           wget https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage -O appimagetool
