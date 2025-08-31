@@ -5,36 +5,6 @@
   "description": "Music & Game Stat Displayer",
   "main": "./.vite/build/main.js",
   "type": "module",
-  "build": {
-    "appId": "hyperiya.app.iris",
-    "productName": "Iris",
-    "files": [
-      "dist/**/*",
-      "package.json"
-    ],
-    "directories": {
-      "output": "release"
-    },
-    "win": {
-      "target": [
-        "nsis"
-      ],
-      "icon": "src/assets/icons/Iris.ico"
-    },
-    "mac": {
-      "target": [
-        "dmg"
-      ],
-      "icon": "src/assets/icons/Iris.icns"
-    },
-    "linux": {
-      "target": [
-        "AppImage",
-        "deb"
-      ],
-      "icon": "src/assets/icons/Iris.png"
-    }
-  },
   "scripts": {
     "start": "cross-env DEBUG_MODE=false HOYO_ONLINE=false electron-forge start",
     "start-hoyo": "cross-env DEBUG_MODE=true HOYO_ONLINE=true electron-forge start",

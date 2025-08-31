@@ -36,14 +36,20 @@ jobs:
       - name: tar-gz packaged ver
         working-directory: ./Iris/out
         run: |
-          tar -czvf Iris-1.2.0-linux-x64.tar.gz -C Iris-linux-x64 .
+          tar -czvf Iris-linux-x64.tar.gz -C Iris-linux-x64 .
+      - name: Create AppImage(s)
+        working-directory: ./Iris
+        run: |
+          ./AppImageMaker.sh
       - name: Upload Linux Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: linux-builds
           path: |
             ./Iris/out/make/**/*
-            ./Iris/out/Iris-1.2.0-linux-x64.tar.gz
+            ./Iris/out/*.tar.gz
+            ./Iris/out/Iris-x86_64.AppImage
+            ./Iris/out/Iris-i386.AppImage
           retention-days: 7
       - name: Debug file structure on failure
         if: failure()
