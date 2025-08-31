@@ -22,15 +22,6 @@ function createWebSocketServer() {
         logger.log('WebSocket server is listening on port 5001');
     });
 
-    const handleSpicetifyMessage = (message: string): Promise<any> => {
-        return new Promise((resolve) => {
-            // You can route different message types here
-            SpotifyService.handleMessage(message)
-                .then(result => resolve(result))
-                .catch(error => resolve({ error: error.message }));
-        });
-    };
-
     wss.on('connection', async (ws: WebSocket) => {
         await clients.add(ws);
         logger.log('New Spicetify client connected');
@@ -45,7 +36,7 @@ function createWebSocketServer() {
                         client.send(messageStr);
                     }
                 });
-                
+
                 // Echo back the message
                 // ws.send(`Server received: ${messageString}`);
             } catch (error) {

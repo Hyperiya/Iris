@@ -1,0 +1,39 @@
+.fullscreen-border {
+    --border-width: 10px;
+    
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0;
+    background: linear-gradient(0deg, 
+        rgba(255, 255, 255, 1) 0px, 
+        rgba(255, 255, 255, 0) var(--border-width),
+        rgba(255, 255, 255, 0) calc(100% - var(--border-width)),
+        rgba(255, 255, 255, 1) 100%
+    ),
+    linear-gradient(90deg, 
+        rgba(255, 255, 255, 1) 0px, 
+        rgba(255, 255, 255, 0) var(--border-width),
+        rgba(255, 255, 255, 0) calc(100% - var(--border-width)),
+        rgba(255, 255, 255, 1) 100%
+    );
+    transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fullscreen-border.listening {
+    opacity: 1;
+    animation: bright-pulse 1s ease-in-out infinite alternate;
+}
+
+@keyframes bright-pulse {
+    0% {
+        filter: brightness(1.2) drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));
+    }
+    100% {
+        filter: brightness(1.8) drop-shadow(0 0 20px rgba(255, 255, 255, 0.8));
+    }
+}

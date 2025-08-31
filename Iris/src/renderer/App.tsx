@@ -1,20 +1,18 @@
 import React, { useState, useEffect, use } from "react";
-import Titlebar from "./components/Titlebar.tsx";
-import Settings, { DEFAULT_MODULES } from "./components/Settings.tsx";
-import {
-    DEFAULT_SETTINGS,
-    AppSettings,
-    EnabledModules,
-} from "../utils/settingsUtil.ts";
+import { EnabledModules } from "../utils/settingsUtil.ts";
 import { ViewState } from "../types/viewState.ts";
+
+import { logger } from "./utils/logger.ts";
+
+import Titlebar from "./components/Titlebar.tsx";
+import Settings from "./components/Settings.tsx";
 import SpotifyMain from "./components/spotify/SpotifyMain.tsx";
 import HoyoMain from "./components/hoyo/HoyoMain.tsx";
 import DiscordMain from "./components/discord/DiscordMain.tsx";
 import AppSelector from "./components/AppSelector.tsx";
-
-import { logger } from "./utils/logger.ts";
-import { LoadingProvider, useLoading } from "./context/LoadingContext.tsx";
 import LoadingScreen from "./components/LoadingScreen.tsx";
+import { LoadingProvider, useLoading } from "./context/LoadingContext.tsx";
+import WakeBorder from "./components/voice/WakeBorder.tsx";
 
 import "../index.scss";
 import "./App.scss";
@@ -24,7 +22,6 @@ interface AppProps {}
 function AppContent() {
     const [showFullscreenTip, setShowFullscreenTip] = useState(false);
 
-    
     const [showSettings, setShowSettings] = useState<boolean>(false);
     const [isFullScreen, setIsFullScreen] = useState(false);
     const [enabledModules, setEnabledModules] = useState<EnabledModules>(() => {
@@ -65,11 +62,9 @@ function AppContent() {
     useEffect(() => {
         const handleFullscreenChange = () => {
             const isDocFullscreen = !!document.fullscreenElement;
-            window.electron.window
-                .isFullScreen()
-                .then((isElectronFullscreen: boolean) => {
-                    setIsFullScreen(isDocFullscreen || isElectronFullscreen);
-                });
+            window.electron.window.isFullScreen().then((isElectronFullscreen: boolean) => {
+                setIsFullScreen(isDocFullscreen || isElectronFullscreen);
+            });
         };
 
         window.electron.window.onFullScreen(handleFullscreenChange);
@@ -124,22 +119,16 @@ function AppContent() {
     useEffect(() => {
         const handleFullscreenChange = () => {
             const isDocFullscreen = !!document.fullscreenElement;
-            window.electron.window
-                .isFullScreen()
-                .then((isElectronFullscreen: boolean) => {
-                    const isFullscreen =
-                        isDocFullscreen || isElectronFullscreen;
-                    setIsFullScreen(isFullscreen);
+            window.electron.window.isFullScreen().then((isElectronFullscreen: boolean) => {
+                const isFullscreen = isDocFullscreen || isElectronFullscreen;
+                setIsFullScreen(isFullscreen);
 
-                    // Show tip on first fullscreen
-                    if (
-                        isFullscreen &&
-                        !window.settings.get("ui.hasSeenFullscreenTip")
-                    ) {
-                        setShowFullscreenTip(true);
-                        window.settings.set("ui.hasSeenFullscreenTip", true);
-                    }
-                });
+                // Show tip on first fullscreen
+                if (isFullscreen && !window.settings.get("ui.hasSeenFullscreenTip")) {
+                    setShowFullscreenTip(true);
+                    window.settings.set("ui.hasSeenFullscreenTip", true);
+                }
+            });
         };
 
         window.electron.window.onFullScreen(handleFullscreenChange);
@@ -148,58 +137,37 @@ function AppContent() {
 
     return (
         <>
-            <LoadingScreen
-                isVisible={isLoading}
-                progress={progress}
-                message={message}
-            />
+            <LoadingScreen isVisible={isLoading} progress={progress} message={message} />
             <div
                 className={`App ${isFullScreen ? "fullscreen" : ""}`}
                 onClick={showSettings ? handleOutsideClick : undefined}
             >
                 {true && (
-                    <div className={`fullscreen-tip ${showFullscreenTip ? 'show': 'hide'}`}>
+                    <div className={`fullscreen-tip ${showFullscreenTip ? "show" : "hide"}`}>
                         <div className="tip-content">
                             <h3>Fullscreen Mode</h3>
                             <p>
-                                Press <kbd>F11</kbd> to
-                                exit fullscreen
+                                Press <kbd>F11</kbd> to exit fullscreen
                             </p>
-                            <button onClick={() => setShowFullscreenTip(false)}>
-                                Got it!
-                            </button>
+                            <button onClick={() => setShowFullscreenTip(false)}>Got it!</button>
                         </div>
                     </div>
                 )}
-                <Titlebar
-                    isSettings={showSettings}
-                    setIsSettings={setShowSettings}
-                />
+                <Titlebar isSettings={showSettings} setIsSettings={setShowSettings} />
 
                 <div className={`content-wrapper ${viewState}`}>
-                    <AppSelector
-                        viewState={viewState}
-                        setViewState={setViewState}
-                        hide={hide}
-                    />
+                    <WakeBorder />
+                    <AppSelector viewState={viewState} setViewState={setViewState} hide={hide} />
                     {showSettings && (
-                        <div
-                            className="settings-backdrop"
-                            onClick={handleOutsideClick}
-                        >
-                            <Settings
-                                isSettings={showSettings}
-                                setIsSettings={setShowSettings}
-                            />
+                        <div className="settings-backdrop" onClick={handleOutsideClick}>
+                            <Settings isSettings={showSettings} setIsSettings={setShowSettings} />
                         </div>
                     )}
 
                     {enabledModules.discord && <DiscordMain />}
 
                     {enabledModules.spotify && (
-                        <div
-                            className={`spotify-section ${viewState === ViewState.SPOTIFY_FULL ? "full" : ""}`}
-                        >
+                        <div className={`spotify-section ${viewState === ViewState.SPOTIFY_FULL ? "full" : ""}`}>
                             <SpotifyMain ViewState={viewState} />
                         </div>
                     )}

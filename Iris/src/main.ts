@@ -59,9 +59,9 @@ let commandProcessor: CommandProcessor | null = null;
 let mainWindow: BrowserWindow | null = null;
 let discordRPC: DiscordRPC | null = null;
 let snapshotManager: SnapshotManager | null = null;
+let irisVA: IrisVA | null = null;
 
 commandProcessor = new CommandProcessor(discordRPC)
-let irisVA: IrisVA = new IrisVA(commandProcessor);
 
 ipcMain.setMaxListeners(20); // Or whatever number is appropriate
 
@@ -212,6 +212,7 @@ const createWindow = async (): Promise<void> => {
         });
     }
 
+    irisVA = new IrisVA(commandProcessor, mainWindow);
     setupIpcHandlers(mainWindow, snapshotManager, irisVA);
     ipcMain.handle("get-debug-mode", () => isDebugMode);
 
@@ -401,7 +402,7 @@ app.whenReady().then(async () => {
 app.on("before-quit", async () => {
     globalShortcut.unregisterAll();
     await cleanupSpotifyHandlers();
-    await irisVA.stopVA()
+    await irisVA?.stopVA()
     if (discordRPC) {
         await discordRPC.disconnect();
         discordRPC = null;

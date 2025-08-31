@@ -3,7 +3,7 @@ import type { AppSettings } from "../../utils/settingsUtil.ts";
 
 import { CommandProcessor } from "./CommandProcessor.ts";
 
-import { app } from "electron";
+import { app, BrowserWindow } from "electron";
 import { spawn, ChildProcessWithoutNullStreams } from "child_process";
 import path from "path";
 import fs from "fs";
@@ -26,7 +26,7 @@ export class IrisVA {
     private globalDisable: boolean = false;
     private irisVA: ChildProcessWithoutNullStreams | undefined | null;
 
-    constructor(private commandProcessor: CommandProcessor | null) {
+    constructor(private commandProcessor: CommandProcessor | null, private mainWindow: BrowserWindow) {
         this.settings = settingsUtil.get("voiceAssistant");
         this.binaryPath = this.getBinaryPath();
     }
@@ -379,31 +379,33 @@ export class IrisVA {
             switch (tag) {
                 case "DEVICE":
                     const device = line.match(/\[DEVICE\]\((.+?)\)/)?.[1];
-                    console.log("Using device:", device);
+                    logger.log("Using device:", device);
                     break;
                 case "LISTENING":
-                    console.log("Voice assistant is listening...");
+                    logger.log("Voice assistant is listening...");
                     break;
                 case "SWAP":
-                    console.log("Recognizer swapped");
+                    logger.log("Recognizer swapped");
                     break;
                 case "WAITING":
-                    console.log("Waiting for command...");
+                    logger.log("Waiting for command...");
+                    this.mainWindow?.webContents.send('va:waiting');
                     break;
                 case "COMMAND":
+                    this.mainWindow?.webContents.send('va:command')
                     const command = line.match(/\[COMMAND\]\((.+?)\)/)?.[1].replaceAll('hey iris', '').trim();
-
-                    console.log("Command detected:", command);
+                    logger.log("Command detected:", command);
                     this.commandProcessor?.processCommand(command || '')
                     break;
                 case "PROCESSED":
-                    console.log("Command processed");
+                    logger.log("Command processed");
                     break;
                 case "RESETTING":
-                    console.log("Voice assistant resetting");
+                    logger.log("Voice assistant resetting");
+                    this.mainWindow?.webContents.send('va:resetting')
                     break;
                 case "ERR":
-                    console.error("Voice assistant error:", line);
+                    logger.error("Voice assistant error:", line);
                     break;
             }
         }
