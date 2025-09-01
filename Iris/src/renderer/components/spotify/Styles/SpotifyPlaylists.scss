@@ -12,6 +12,7 @@
     }
     transition: ease translate 0.3s;
 
+    font-family: Urbanist;
 }
 
 .playlist-container {
@@ -86,11 +87,13 @@
     flex-direction: column;
     gap: 2px;
     min-width: 0;
+    font-family: Urbanist;
 
     .playlist-name {
         color: white;
         font-size: 14px;
         font-weight: 500;
+        font-family: Urbanist;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -98,6 +101,7 @@
 
     .playlist-count {
         color: #b3b3b3;
+        font-family: Urbanist;
         font-size: 12px;
     }
 }
