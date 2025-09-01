@@ -26,7 +26,10 @@ export class IrisVA {
     private globalDisable: boolean = false; // Disables VA if platform/arch unsupported
     private irisVA: ChildProcessWithoutNullStreams | undefined | null;
 
-    constructor(private commandProcessor: CommandProcessor | null, private mainWindow: BrowserWindow) {
+    constructor(
+        private commandProcessor: CommandProcessor | null,
+        private mainWindow: BrowserWindow
+    ) {
         this.settings = settingsUtil.get("voiceAssistant");
         this.binaryPath = this.getBinaryPath();
     }
@@ -66,20 +69,15 @@ export class IrisVA {
             return "";
         }
 
-        const basePath = app.isPackaged
-            ? process.resourcesPath
-            : app.getAppPath();
+        const basePath = app.isPackaged ? process.resourcesPath : app.getAppPath();
 
-        logger.log(
-            "binary path:",
-            path.join(basePath, "binaries", folderName, executableName)
-        );
+        logger.log("binary path:", path.join(basePath, "binaries", folderName, executableName));
         return path.join(basePath, "binaries", folderName, executableName);
     }
 
     private getVoskApiUrl(): string {
-        const platform = process.platform; 
-        const arch = process.arch; 
+        const platform = process.platform;
+        const arch = process.arch;
         logger.log(platform, arch);
         if (platform === "win32") {
             return "https://github.com/alphacep/vosk-api/releases/download/v0.3.45/vosk-win64-0.3.45.zip";
@@ -94,10 +92,7 @@ export class IrisVA {
         return "";
     }
 
-    private async extractZip(
-        zipPath: string,
-        extractDir: string
-    ): Promise<void> {
+    private async extractZip(zipPath: string, extractDir: string): Promise<void> {
         return new Promise((resolve, reject) => {
             yauzl.open(zipPath, { lazyEntries: true }, (err, zipfile) => {
                 if (err) return reject(err);
@@ -115,10 +110,7 @@ export class IrisVA {
                         zipfile.openReadStream(entry, (err, readStream) => {
                             if (err) return reject(err);
 
-                            const filePath = path.join(
-                                extractDir,
-                                entry.fileName
-                            );
+                            const filePath = path.join(extractDir, entry.fileName);
                             fs.mkdirSync(path.dirname(filePath), {
                                 recursive: true,
                             });
@@ -139,10 +131,7 @@ export class IrisVA {
         });
     }
 
-    private async moveContentsToRoot(
-        sourceDir: string,
-        targetDir: string
-    ): Promise<void> {
+    private async moveContentsToRoot(sourceDir: string, targetDir: string): Promise<void> {
         const items = fs.readdirSync(sourceDir);
 
         for (const item of items) {
@@ -162,6 +151,35 @@ export class IrisVA {
         }
     }
 
+    private async symlinkModelFiles(): Promise<void> {
+        if (process.platform !== "win32") return;
+
+        const modelDir = this.getModelPath();
+        const executableDir = path.join(this.getBinaryPath(), '..');
+
+        logger.log(`Attempting symlinks from ${modelDir} to ${executableDir}`);
+
+        if (!fs.existsSync(modelDir)) return;
+
+        const items = fs.readdirSync(modelDir).filter((item) => fs.statSync(path.join(modelDir, item)).isFile());
+
+        for (const item of items) {
+            const sourcePath = path.join(modelDir, item);
+            const targetPath = path.join(executableDir, item);
+
+            if (!fs.existsSync(targetPath)) {
+                try {
+                    fs.symlinkSync(sourcePath, targetPath, "file");
+                    logger.log(`Symlinked ${item} successfully`);
+                } catch (error) {
+                    logger.log(`Symlink failed for ${item}:`, error);
+                    fs.copyFileSync(sourcePath, targetPath);
+                    logger.log(`Copied ${item} instead`);
+                }
+            }
+        }
+    }
+
     private async downloadFile(url: string, filePath: string): Promise<void> {
         return new Promise((resolve, reject) => {
             const file = fs.createWriteStream(filePath);
@@ -170,10 +188,7 @@ export class IrisVA {
                 https
                     .get(downloadUrl, (response) => {
                         // Handle GitHub redirects for release downloads
-                        if (
-                            response.statusCode === 302 ||
-                            response.statusCode === 301
-                        ) {
+                        if (response.statusCode === 302 || response.statusCode === 301) {
                             const redirectUrl = response.headers.location;
                             if (redirectUrl) {
                                 logger.log(`Redirecting to: ${redirectUrl}`);
@@ -183,26 +198,18 @@ export class IrisVA {
                         }
 
                         if (response.statusCode !== 200) {
-                            reject(
-                                new Error(
-                                    `HTTP ${response.statusCode}: ${response.statusMessage}`
-                                )
-                            );
+                            reject(new Error(`HTTP ${response.statusCode}: ${response.statusMessage}`));
                             return;
                         }
 
-                        const totalSize = parseInt(
-                            response.headers["content-length"] || "0"
-                        );
+                        const totalSize = parseInt(response.headers["content-length"] || "0");
                         let downloadedSize = 0;
 
                         response.pipe(file);
 
                         response.on("data", (chunk) => {
                             downloadedSize += chunk.length;
-                            const progress = Math.round(
-                                (downloadedSize / totalSize) * 100
-                            );
+                            const progress = Math.round((downloadedSize / totalSize) * 100);
                             logger.log(`Download progress: ${progress}%`);
                         });
 
@@ -227,8 +234,7 @@ export class IrisVA {
             fs.existsSync(path.join(modelDir, "conf")) &&
             fs.existsSync(path.join(modelDir, "ivector")) &&
             fs.existsSync(path.join(modelDir, "graph")) &&
-            (fs.existsSync(path.join(modelDir, "libvosk.so")) ||
-                fs.existsSync(path.join(modelDir, "libvosk.dll")))
+            (fs.existsSync(path.join(modelDir, "libvosk.so")) || fs.existsSync(path.join(modelDir, "libvosk.dll")))
         ) {
             return true;
         }
@@ -247,8 +253,7 @@ export class IrisVA {
     public async downloadVoskModel(): Promise<string | void> {
         try {
             const modelDir = this.getModelPath();
-            const modelUrl =
-                "https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip";
+            const modelUrl = "https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip";
             const voskApiUrl = this.getVoskApiUrl();
             logger.log(`api url: ${voskApiUrl}`);
 
@@ -266,10 +271,10 @@ export class IrisVA {
             // Check if already downloaded
             if (
                 fs.existsSync(path.join(modelDir, "am")) &&
-                (fs.existsSync(path.join(modelDir, "libvosk.so")) ||
-                    fs.existsSync(path.join(modelDir, "libvosk.dll")))
+                (fs.existsSync(path.join(modelDir, "libvosk.so")) || fs.existsSync(path.join(modelDir, "libvosk.dll")))
             ) {
                 logger.log("Vosk model and API already exist");
+                await this.symlinkModelFiles();
                 return;
             }
 
@@ -284,14 +289,9 @@ export class IrisVA {
             await this.extractZip(modelZipPath, tempDir);
 
             // Extract nested folder contents to model root directory
-            const modelSubDir = fs
-                .readdirSync(tempDir)
-                .find((dir) => dir.startsWith("vosk-"));
+            const modelSubDir = fs.readdirSync(tempDir).find((dir) => dir.startsWith("vosk-"));
             if (modelSubDir) {
-                await this.moveContentsToRoot(
-                    path.join(tempDir, modelSubDir),
-                    modelDir
-                );
+                await this.moveContentsToRoot(path.join(tempDir, modelSubDir), modelDir);
             }
 
             logger.log("Extracting API...");
@@ -300,14 +300,9 @@ export class IrisVA {
             await this.extractZip(apiZipPath, apiTempDir);
 
             // Move API contents to root
-            const apiSubDir = fs
-                .readdirSync(apiTempDir)
-                .find((dir) => dir.startsWith("vosk-"));
+            const apiSubDir = fs.readdirSync(apiTempDir).find((dir) => dir.startsWith("vosk-"));
             if (apiSubDir) {
-                await this.moveContentsToRoot(
-                    path.join(apiTempDir, apiSubDir),
-                    modelDir
-                );
+                await this.moveContentsToRoot(path.join(apiTempDir, apiSubDir), modelDir);
             }
 
             // Cleanup
@@ -321,6 +316,9 @@ export class IrisVA {
             });
             fs.unlinkSync(modelZipPath);
             fs.unlinkSync(apiZipPath);
+
+            // Create symlinks to executable directory
+            await this.symlinkModelFiles();
 
             return `Successfully installed Vosk model to ${modelDir}!`;
         } catch (error) {
@@ -339,18 +337,13 @@ export class IrisVA {
     // Spawns the Rust voice assistant binary and sets up event handlers
     public startVA() {
         try {
-            const args = [
-                "--device",
-                this.settings.device || "default",
-                "--model",
-                this.getModelPath(),
-            ];
+            const args = ["--device", this.settings.device || "default", "--model", this.getModelPath()];
             logger.log("Starting voice assistant with args:", args);
             this.irisVA = spawn(this.binaryPath, args);
 
             this.irisVA.stdout.on("data", (data) => {
                 const output = data.toString(); // Convert Buffer to string
-                logger.log(`data: ${data}`)
+                logger.log(`data: ${data}`);
                 this.handleVoiceAssistantData(output);
             });
 
@@ -393,21 +386,24 @@ export class IrisVA {
                     break;
                 case "WAITING":
                     logger.log("Waiting for command...");
-                    this.mainWindow?.webContents.send('va:waiting');
+                    this.mainWindow?.webContents.send("va:waiting");
                     break;
                 case "COMMAND":
-                    this.mainWindow?.webContents.send('va:command')
+                    this.mainWindow?.webContents.send("va:command");
                     // Strip wake word and process the actual command
-                    const command = line.match(/\[COMMAND\]\((.+?)\)/)?.[1].replaceAll('hey iris', '').trim();
+                    const command = line
+                        .match(/\[COMMAND\]\((.+?)\)/)?.[1]
+                        .replaceAll("hey iris", "")
+                        .trim();
                     logger.log("Command detected:", command);
-                    this.commandProcessor?.processCommand(command || '')
+                    this.commandProcessor?.processCommand(command || "");
                     break;
                 case "PROCESSED":
                     logger.log("Command processed");
                     break;
                 case "RESETTING":
                     logger.log("Voice assistant resetting");
-                    this.mainWindow?.webContents.send('va:resetting')
+                    this.mainWindow?.webContents.send("va:resetting");
                     break;
                 case "ERR":
                     logger.error("Voice assistant error:", line);
