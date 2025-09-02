@@ -17,7 +17,7 @@
 
 .playlist-container {
     width: clamp(200px, 25vw, 350px);
-    height: 500px;
+    height: clamp(190px, 45vh, 500px);
     background-color: #121212;
     border: 1px solid #333;
     border-radius: 8px;

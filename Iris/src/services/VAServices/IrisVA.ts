@@ -260,7 +260,7 @@ export class IrisVA {
 
     public async checkForModel(): Promise<boolean> {
         const modelDir = this.getModelPath();
-        if (!this.checkForSymlinks()) this.symlinkModelFiles();
+        if (this.checkForSymlinks() === false) this.symlinkModelFiles();
         if ((await this.checkRequiredFiles(modelDir)) === true) {
             return true;
         }
@@ -353,9 +353,10 @@ export class IrisVA {
     }
 
     // Spawns the Rust voice assistant binary and sets up event handlers
-    public startVA() {
+    public async startVA() {
         try {
-            const args = ["--device", this.settings.device || "default", "--model", this.getModelPath()];
+            if (await this.checkForModel() === false) return;
+            const args = ["--device", this.settings.device || "default", "--model", await this.getModelPath()];
             logger.log("Starting voice assistant with args:", args);
             this.irisVA = spawn(this.binaryPath, args);
 
