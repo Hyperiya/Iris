@@ -26,10 +26,7 @@ export class IrisVA {
     private globalDisable: boolean = false; // Disables VA if platform/arch unsupported
     private irisVA: ChildProcessWithoutNullStreams | undefined | null;
 
-    constructor(
-        private commandProcessor: CommandProcessor | null,
-        private mainWindow: BrowserWindow
-    ) {
+    constructor(private commandProcessor: CommandProcessor | null, private mainWindow: BrowserWindow) {
         this.settings = settingsUtil.get("voiceAssistant");
         this.binaryPath = this.getBinaryPath();
     }
@@ -155,7 +152,7 @@ export class IrisVA {
         if (process.platform !== "win32") return;
 
         const modelDir = this.getModelPath();
-        const executableDir = path.join(this.getBinaryPath(), '..');
+        const executableDir = path.join(this.getBinaryPath(), "..");
 
         logger.log(`Attempting symlinks from ${modelDir} to ${executableDir}`);
 
@@ -241,8 +238,29 @@ export class IrisVA {
         return false;
     }
 
+    private checkForSymlinks(): boolean {
+        if (process.platform !== "win32") return true; // Only check on Windows
+        const binaryPath = this.getBinaryPath();
+
+        try {
+            const files = fs.readdirSync(binaryPath);
+            return files.some((file) => {
+                try {
+                    const filePath = path.join(path.join(binaryPath, ".."), file);
+                    const stats = fs.lstatSync(filePath);
+                    return stats.isSymbolicLink();
+                } catch {
+                    return false;
+                }
+            });
+        } catch {
+            return false;
+        }
+    }
+
     public async checkForModel(): Promise<boolean> {
         const modelDir = this.getModelPath();
+        if (!this.checkForSymlinks()) this.symlinkModelFiles();
         if ((await this.checkRequiredFiles(modelDir)) === true) {
             return true;
         }
