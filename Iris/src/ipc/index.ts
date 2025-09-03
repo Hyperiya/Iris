@@ -17,7 +17,7 @@ import { IrisVA } from '../services/VAServices/IrisVA.ts';
 export function setupIpcHandlers(mainWindow: BrowserWindow, snapshotManager: SnapshotManager | null, irisVa: IrisVA | null) {
     setupWindowHandlers(mainWindow);
     setupDiscordHandlers(mainWindow);
-    setupSpotifyHandlers();
+    setupSpotifyHandlers(mainWindow);
     setupHoyoHandlers();
     setupSpicetifyHandlers();
     setupHoyoAuthHandlers();

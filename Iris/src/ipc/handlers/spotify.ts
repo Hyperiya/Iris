@@ -1,144 +1,85 @@
-import { ipcMain } from 'electron';
-import SpotifyService from '../../services/spotifyServices/SpotifyService.ts';
-import WebSocket, { WebSocketServer } from 'ws';
-import { LrcLibApi } from '../../services/spotifyServices/LrcLibService.ts';
-import * as http from 'http';
-
+import { ipcMain } from "electron";
+import spotifyService from "../../services/spotifyServices/SpotifyService.ts";
+import WebSocket, { WebSocketServer } from "ws";
+import { LrcLibApi } from "../../services/spotifyServices/LrcLibService.ts";
+import * as http from "http";
 
 let wss: WebSocketServer | null = null;
 let healthServer: http.Server | null = null;
 export const clients = new Set<WebSocket>();
 
+const lrcLibApi = new LrcLibApi();
 
-function createWebSocketServer() {
-    if (wss) {
-        logger.log('WebSocket server already running');
-        return;
-    }
+export function setupSpotifyHandlers(mainWindow) {
+    ipcMain.handle("spotify:play", () => spotifyService.resumePlayback());
+    ipcMain.handle("spotify:pause", () => spotifyService.pausePlayback());
+    ipcMain.handle("spotify:next", () => spotifyService.playNextSong());
+    ipcMain.handle("spotify:previous", () => spotifyService.playPreviousSong());
+    ipcMain.handle("spotify:toggleShuffle", () => spotifyService.toggleShuffle());
+    ipcMain.handle("spotify:toggleRepeat", () => spotifyService.toggleRepeatMode());
+    ipcMain.handle("spotify:setRepeat", (_, mode) => spotifyService.setRepeatMode(mode));
 
-    wss = new WebSocketServer({ port: 5001 });
+    // Volume controls
+    ipcMain.handle("spotify:setVolume", (_, volume) => spotifyService.setVolume(volume));
+    ipcMain.handle("spotify:increaseVolume", () => spotifyService.increaseVolume());
+    ipcMain.handle("spotify:decreaseVolume", () => spotifyService.decreaseVolume());
 
-    wss.on('listening', () => {
-        logger.log('WebSocket server is listening on port 5001');
-    });
+    // Track info
+    ipcMain.handle("spotify:getCurrentTrack", () => spotifyService.getCurrentTrack());
+    ipcMain.handle("spotify:getNextSong", () => spotifyService.getNextSong());
+    ipcMain.handle("spotify:getPlaylists", () => spotifyService.getPlaylists());
 
-    wss.on('connection', async (ws: WebSocket) => {
-        await clients.add(ws);
-        logger.log('New Spicetify client connected');
+    // Other
+    ipcMain.handle("spotify:seek", (_, position) => spotifyService.seek(position));
+    ipcMain.handle("spotify:playUri", (_, uri) => spotifyService.playUri(uri));
 
-        ws.on('message', async (message) => {
-            try {
-                const messageString = message.toString();
-                const messageStr = message.toString();
+    // Websocket Start
+    ipcMain.handle("spotify:startLink", (_) => spotifyService.createWebSocketServer(mainWindow))
 
-                clients.forEach(client => {
-                    if (client !== ws && client.readyState === WebSocket.OPEN) {
-                        client.send(messageStr);
-                    }
-                });
-
-                // Echo back the message
-                // ws.send(`Server received: ${messageString}`);
-            } catch (error) {
-                logger.error('Error handling message:', error);
-            }
-        });
-
-        ws.on('close', () => {
-            clients.delete(ws);
-            logger.log('Client disconnected');
-        });
-
-        ws.on('error', (error) => {
-            logger.error('WebSocket error:', error);
-            clients.delete(ws);
-
-        });
-
-        // Send initial connection confirmation
-        ws.send('Connected to Electron WebSocket Server');
-    });
-
-    wss.on('error', (error) => {
-        logger.error('WebSocket server error:', error);
-    });
-
-    const healthServer = http.createServer((req, res) => {
-        if (req.url === '/health') {
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ status: 'ok' }));
-        } else {
-            res.writeHead(404);
-            res.end();
-        }
-    });
-
-    healthServer.listen(5002, '127.0.0.1', () => {
-        logger.log('Health check server listening on port 5002');
-    });
-}
-
-export function setupSpotifyHandlers() {
-    ipcMain.handle('spotify-link', async () => {
-        await createWebSocketServer()
-    })
-
-    ipcMain.handle('spotify:start-link', async () => {
+    ipcMain.handle("lrc:search", async (_, params: { artist: string; track: string; album: string }) => {
         try {
-            await SpotifyService.startLinkWs();
-            return true;
-        } catch (error) {
-            logger.error('Failed to start Spotify link:', error);
-            throw error;
-        }
-    })
-
-    ipcMain.handle('lrc:search', async (_, params: { artist: string, track: string, album: string }) => {
-        try {
-            const lrcLibApi = new LrcLibApi();
             const response = await lrcLibApi.searchLyrics({
                 artist: params.artist,
                 track: params.track,
-                album: params.album
+                album: params.album,
             });
             return response;
         } catch (error) {
-            logger.error('Error searching lyrics:', error);
+            logger.error("Error searching lyrics:", error);
             throw error;
         }
-    })
+    });
 
-    ipcMain.handle('lrc:parse-lyrics', async (_, syncedLyrics: string) => {
+    ipcMain.handle("lrc:parse-lyrics", async (_, syncedLyrics: string) => {
         try {
-            const lrcLibApi = new LrcLibApi();
             const response = await lrcLibApi.parseSyncedLyrics(syncedLyrics);
             return response;
         } catch (error) {
-            logger.error('Error parsing lyrics:', error);
+            logger.error("Error parsing lyrics:", error);
             throw error;
         }
-    })
+    });
 }
 
 export function cleanupSpotifyHandlers() {
     return new Promise<void>((resolve) => {
         if (wss) {
             // Close all client connections
-            clients.forEach(client => {
+            clients.forEach((client) => {
                 client.close();
             });
             clients.clear();
 
             // Close WebSocket server
             wss.close(() => {
-                logger.log('WebSocket server closed');
+                logger.log("WebSocket server closed");
                 wss = null;
             });
         }
 
         if (healthServer) {
             healthServer.close(() => {
-                logger.log('Health check server closed');
+                logger.log("Health check server closed");
                 healthServer = null;
             });
         }

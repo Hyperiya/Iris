@@ -1,147 +1,191 @@
-import { isEqual, omit } from 'lodash';
-import { logger } from '../../renderer/utils/logger.ts';
-import { Song, RepeatState, Token, Playlist, originalPlaylist } from './types/types.ts';
+import { BrowserWindow } from "electron";
+import { isEqual, omit } from "lodash";
+import { logger } from "../../renderer/utils/logger.ts";
+import { Song, RepeatState, Token, Playlist, originalPlaylist } from "./types/types.ts";
+import MusicRPC from "../discordServices/musicRPC.ts";
+import WebSocket, { WebSocketServer } from "ws";
+import * as http from "http";
+import { EventEmitter } from "stream";
 
-class SpotifyService {
+class SpotifyService extends EventEmitter {
     private existingTrackData: Song | null = null;
 
-    private ws: WebSocket | null = null;
-    private readonly WS_URL = 'ws://localhost:5001';
+    private wss: WebSocketServer | null = null;
+    private healthServer: http.Server | null = null;
+    private clients = new Set<WebSocket>();
+    private mainWindow: undefined | BrowserWindow;
 
-    private reconnectAttempts = 0;
-    private readonly MAX_RECONNECT_ATTEMPTS = 5;
-    private token: string = ''
-    private tokenExpire: number = 0
-    private tokenTime: number = 0
+    private token: string = "";
+    private tokenExpire: number = 0;
+    private tokenTime: number = 0;
 
     private _currentProgress: {
         progress_ms: number;
         duration_ms: number;
         percentage: number;
     } | null = null;
+    private RPC = new MusicRPC("1403055837311926443");
 
-    private prevVolume
+    private prevVolume;
 
     get currentProgress() {
         try {
             return this._currentProgress;
         } catch (error) {
-            console.error('Error in currentProgress getter:', error);
+            console.error("Error in currentProgress getter:", error);
             return null;
         }
     }
 
-
-
     constructor() {
-        this.initializeRPC();
+        super();
+        this.RPC.connect();
     }
 
-
-    private async waitForWindow(): Promise<void> {
-        return new Promise((resolve) => {
-            if (typeof window !== 'undefined' && window.musicRPC) {
-                resolve();
-                logger.log('Window is ready, musicRPC is available');
-                return;
-            }
-
-            const checkWindow = () => {
-                if (typeof window !== 'undefined' && window.musicRPC) {
-                    resolve();
-                } else {
-                    setTimeout(checkWindow, 100);
-                }
-            };
-
-            checkWindow();
-        });
-    }
-
-
-    private async initializeRPC() {
-        try {
-            await this.waitForWindow();
-            await window.musicRPC.connect('1403055837311926443');
-        } catch (error) {
-            console.error('Failed to connect Music RPC:', error);
-        }
-    }
-
-
-
-    private connectWebSocket() {
-        try {
-            this.ws = new WebSocket(this.WS_URL);
-
-            this.ws.onopen = () => {
-                console.log('SpotifyService WebSocket connected');
-                this.reconnectAttempts = 0; // Reset attempts on successful connection
-            };
-
-            this.ws.onclose = (event) => {
-                console.log('SpotifyService WebSocket closed:', event);
-                if (this.reconnectAttempts < this.MAX_RECONNECT_ATTEMPTS) {
-                    this.reconnectAttempts++;
-                    const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 10000);
-                    console.log(`Attempting to reconnect in ${delay}ms...`);
-                    setTimeout(() => this.connectWebSocket(), delay);
-                }
-            };
-
-            this.ws.onerror = (error) => {
-                console.error('SpotifyService WebSocket error:', error);
-            };
-
-            this.ws.onmessage = (event) => {
-                try {
-                    // This is for the progress update thingies)
-
-                    // Use a try-catch block to handle potential JSON parsing errors
-                    let response;
-                    try {
-                        response = JSON.parse(event.data);
-                    } catch (parseError) {
-                        logger.error('Error parsing WebSocket message:', parseError);
-                        return; // Exit the function if parsing fails
-                    }
-
-
-                    if (response.type === 'progress') this.handleProgress(response)
-                    // Handle any responses from app.tsx here if needed
-                } catch (error) {
-                    console.error('Error processing WebSocket message:', error);
-                }
-            };
-            console.log('SpotifyService WebSocket created:', this.ws)
-        } catch (error) {
-
-            console.error('Failed to create WebSocket:', error);
-        }
-    }
-
-    public async startLinkWs() {
-        if (!window.electron) {
-            console.error('Electron API is not available');
+    public createWebSocketServer(mainWindow: BrowserWindow) {
+        this.mainWindow = mainWindow;
+        if (this.wss) {
+            logger.log("WebSocket server already running");
             return;
         }
 
-        await window.spotify.spotifyLink()
-        await this.connectWebSocket()
+        this.wss = new WebSocketServer({ port: 5001 });
+
+        this.wss.on("listening", () => {
+            logger.log("WebSocket server is listening on port 5001");
+        });
+
+        this.wss.on("connection", async (ws: WebSocket) => {
+            await this.clients.add(ws);
+            logger.log("New Spicetify client connected");
+
+            ws.on("message", async (message) => {
+                try {
+                    const messageString = message.toString('utf8')
+
+                    // Check if message is valid before parsing
+                    if (!messageString || messageString === "undefined") {
+                        console.warn("Received invalid message:", messageString);
+                        return;
+                    }
+
+                    const parsedMessage = JSON.parse(messageString);
+
+                    if (parsedMessage.type === "progress") {
+                        this.handleProgress(parsedMessage)
+                    } else {
+                        this.emit("response", message);
+                    }
+                    // Handle the parsed message...
+                } catch (error) {
+                    console.error("Error handling message:", error);
+                    console.log("Raw message:", message.toString());
+                }
+            });
+
+            ws.on("close", () => {
+                this.clients.delete(ws);
+                logger.log("Client disconnected");
+            });
+
+            ws.on("error", (error) => {
+                logger.error("WebSocket error:", error);
+                this.clients.delete(ws);
+            });
+
+            // Send initial connection confirmation
+            ws.send("Connected to Electron WebSocket Server");
+        });
+
+        this.wss.on("error", (error) => {
+            logger.error("WebSocket server error:", error);
+        });
+
+        const healthServer = http.createServer((req, res) => {
+            if (req.url === "/health") {
+                res.writeHead(200, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ status: "ok" }));
+            } else {
+                res.writeHead(404);
+                res.end();
+            }
+        });
+
+        healthServer.listen(5002, "127.0.0.1", () => {
+            logger.log("Health check server listening on port 5002");
+        });
     }
 
+    // private connectWebSocket() {
+    //     try {
+    //         this.ws = new WebSocket(this.WS_URL);
+
+    //         this.ws.onopen = () => {
+    //             console.log("SpotifyService WebSocket connected");
+    //             this.reconnectAttempts = 0; // Reset attempts on successful connection
+    //         };
+
+    //         this.ws.onclose = (event) => {
+    //             console.log("SpotifyService WebSocket closed:", event);
+    //             if (this.reconnectAttempts < this.MAX_RECONNECT_ATTEMPTS) {
+    //                 this.reconnectAttempts++;
+    //                 const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 10000);
+    //                 console.log(`Attempting to reconnect in ${delay}ms...`);
+    //                 setTimeout(() => this.connectWebSocket(), delay);
+    //             }
+    //         };
+
+    //         this.ws.onerror = (error) => {
+    //             console.error("SpotifyService WebSocket error:", error);
+    //         };
+
+    //         this.ws.onmessage = (event) => {
+    //             try {
+    //                 // This is for the progress update thingies)
+
+    //                 // Use a try-catch block to handle potential JSON parsing errors
+    //                 let response;
+    //                 try {
+    //                     response = JSON.parse(event.data);
+    //                 } catch (parseError) {
+    //                     logger.error("Error parsing WebSocket message:", parseError);
+    //                     return; // Exit the function if parsing fails
+    //                 }
+
+    //                 if (response.type === "progress") this.handleProgress(response);
+    //                 // Handle any responses from app.tsx here if needed
+    //             } catch (error) {
+    //                 console.error("Error processing WebSocket message:", error);
+    //             }
+    //         };
+    //         console.log("SpotifyService WebSocket created:", this.ws);
+    //     } catch (error) {
+    //         console.error("Failed to create WebSocket:", error);
+    //     }
+    // }
+
+    // public async startLinkWs() {
+    //     if (!window.electron) {
+    //         console.error("Electron API is not available");
+    //         return;
+    //     }
+
+    //     await window.spotify.spotifyLink();
+    //     await this.connectWebSocket();
+    // }
+
     private sendWsMessage(message: any): void {
-        if (this.ws?.readyState === WebSocket.OPEN) {
-            try {
-                this.ws.send(JSON.stringify(message));
-            } catch (error) {
-                console.error('Error sending WebSocket message:', error);
-                throw error;
-            }
-        } else {
-            console.error('WebSocket is not connected');
-            throw new Error('WebSocket is not connected');
+        if (this.clients.size === 0) {
+            console.warn("No Spicetify clients connected");
+            return;
         }
+
+        const messageStr = JSON.stringify(message);
+        this.clients.forEach((client) => {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(messageStr);
+            }
+        });
     }
 
     async handleMessage(message: string) {
@@ -149,11 +193,10 @@ class SpotifyService {
             const data = message;
 
             // console.log(data)
-            return data
-
+            return data;
         } catch (error) {
-            console.error('Error in handleMessage:', error);
-            return { error: 'Failed to process message' };
+            console.error("Error in handleMessage:", error);
+            return { error: "Failed to process message" };
         }
     }
 
@@ -162,29 +205,27 @@ class SpotifyService {
         try {
             // Send the request for current track info
             this.sendWsMessage({
-                type: 'info',
-                action: 'current'
+                type: "info",
+                action: "current",
             });
             // Create a promise that will resolve when we get the response
             return new Promise((resolve, reject) => {
-                const messageHandler = (event: MessageEvent) => {
+                const messageHandler = (event: Buffer) => {
                     try {
                         // console.log(`event: ${event.data}`)
                         // Use a try-catch block to handle potential JSON parsing errors
                         let response;
                         try {
-                            response = JSON.parse(event.data);
+                            response = JSON.parse(event.toString('utf8'));;
                         } catch (parseError) {
-                            console.error('Error parsing JSON:', parseError);
-                            reject(new Error('Invalid JSON data received'));
+                            console.error("Error parsing JSON:", parseError);
+                            reject(new Error("Invalid JSON data received"));
                             return;
                         }
 
                         // Check if this is the response we're waiting for
-                        if (response.type === 'response' && response.action === 'current') {
-
+                        if (response.type === "response" && response.action === "current") {
                             // Remove the message handler
-                            this.ws?.removeEventListener('message', messageHandler);
 
                             const lastTrack = this.existingTrackData;
                             // Format the data into Song interface
@@ -202,39 +243,38 @@ class SpotifyService {
                                 shuffle_state: response.data.shuffle_state,
                             };
 
-                            if (!isEqual(omit(song, 'progress_ms'), omit(lastTrack, 'progress_ms'))) {
+                            if (!isEqual(omit(song, "progress_ms"), omit(lastTrack, "progress_ms"))) {
                                 const now = Date.now();
                                 const startTime = now - (song.progress_ms || 0);
                                 const endTime = startTime + (song.duration_ms || 0);
 
-                                window.musicRPC.setActivity({
+                                this.RPC.setActivity({
                                     type: 2,
                                     status_display_type: 2,
                                     details: song.name,
                                     state: song.artist,
                                     assets: {
-                                        large_image: 'iristransparent',
+                                        large_image: "iristransparent",
                                         large_text: song.name,
-                                        small_image: 'playing',
-                                        small_text: song.artist
+                                        small_image: "playing",
+                                        small_text: song.artist,
                                     },
                                     timestamps: {
                                         start: startTime,
-                                        end: endTime
+                                        end: endTime,
                                     },
                                     buttons: [
                                         {
-                                            label: 'Listen on Spotify',
-                                            url: `https://open.spotify.com/track/${response.data.id}`
+                                            label: "Listen on Spotify",
+                                            url: `https://open.spotify.com/track/${response.data.id}`,
                                         },
                                         {
-                                            label: 'Download this app!',
-                                            url: 'https://github.com/Hyperiya/Iris'
-                                        }
-                                    ]
+                                            label: "Download this app!",
+                                            url: "https://github.com/Hyperiya/Iris",
+                                        },
+                                    ],
                                 });
                             }
-
 
                             this.existingTrackData = song;
                             // console.log(`song: ${JSON.stringify(song, null, 10)}`)
@@ -247,47 +287,48 @@ class SpotifyService {
                 };
 
                 // Add temporary message handler
-                this.ws?.addEventListener('message', messageHandler);
+                this.clients.forEach((client) => {
+                    client.on("message", messageHandler);
+                });
 
                 // Add timeout to prevent hanging
                 setTimeout(() => {
-                    this.ws?.removeEventListener('message', messageHandler);
-                    reject(new Error('Timeout waiting for current track info'));
+                    this.wss?.removeListener("message", messageHandler);
+                    reject(new Error("Timeout waiting for current track info"));
                 }, 5000); // 5 second timeout
             });
-
         } catch (error) {
-            logger.error('Error fetching current track:', error);
+            logger.error("Error fetching current track:", error);
             throw error;
         }
     }
-
 
     async getNextSong(): Promise<Song> {
         try {
             // Send the request for next song info
             this.sendWsMessage({
-                type: 'info',
-                action: 'next'
+                type: "info",
+                action: "next",
             });
 
             // Create a promise that will resolve when we get the response
             return new Promise((resolve, reject) => {
-                const messageHandler = (event: MessageEvent) => {
+                const messageHandler = (event: Buffer) => {
                     try {
                         let response;
                         try {
-                            response = JSON.parse(event.data);
+                            response = JSON.parse(event.toString('utf8'));
                         } catch (parseError) {
-                            console.error('Error parsing JSON:', parseError);
+                            console.error("Error parsing JSON:", parseError);
                             return; // Skip this message if it's not valid JSON
                         }
 
                         // Check if this is the response we're waiting for
-                        if (response.type === 'response' && response.action === 'next') {
-
+                        if (response.type === "response" && response.action === "next") {
                             // Remove the message handler
-                            this.ws?.removeEventListener('message', messageHandler);
+                            this.clients.forEach((client) => {
+                                client.removeListener("message", messageHandler);
+                            });
 
                             // Format the data into Song interface
                             const song: Song = {
@@ -297,7 +338,7 @@ class SpotifyService {
                                 year: response.data.year,
                                 album: response.data.album,
                                 duration_ms: response.data.duration,
-                                is_playing: false // Since it's the next song
+                                is_playing: false, // Since it's the next song
                             };
 
                             resolve(song);
@@ -308,17 +349,21 @@ class SpotifyService {
                 };
 
                 // Add temporary message handler
-                this.ws?.addEventListener('message', messageHandler);
+                this.clients.forEach((client) => {
+                    client.on("message", messageHandler);
+                });
 
                 // Add timeout to prevent hanging
                 setTimeout(() => {
-                    this.ws?.removeEventListener('message', messageHandler);
-                    reject(new Error('Timeout waiting for next song info'));
+                    this.clients.forEach((client) => {
+                        client.removeListener("message", messageHandler);
+                    });
+
+                    reject(new Error("Timeout waiting for next song info"));
                 }, 5000); // 5 second timeout
             });
-
         } catch (error) {
-            console.error('Error fetching next song:', error);
+            console.error("Error fetching next song:", error);
             throw error;
         }
     }
@@ -344,15 +389,14 @@ class SpotifyService {
         if (volume) this.setVolume(volume - 10);
     }
 
-
     async playNextSong(): Promise<void> {
         try {
             this.sendWsMessage({
-                type: 'playback',
-                action: 'next'
+                type: "playback",
+                action: "next",
             });
         } catch (error) {
-            console.error('Error playing next song:', error);
+            console.error("Error playing next song:", error);
             throw error;
         }
     }
@@ -360,12 +404,12 @@ class SpotifyService {
     async playUri(uri: string): Promise<void> {
         try {
             this.sendWsMessage({
-                type: 'playback',
-                action: 'play-uri',
-                value: uri
+                type: "playback",
+                action: "play-uri",
+                value: uri,
             });
         } catch (error) {
-            console.error('Error playing URI:', error);
+            console.error("Error playing URI:", error);
             throw error;
         }
     }
@@ -373,11 +417,11 @@ class SpotifyService {
     async playPreviousSong(): Promise<void> {
         try {
             this.sendWsMessage({
-                type: 'playback',
-                action: 'prev'
+                type: "playback",
+                action: "prev",
             });
         } catch (error) {
-            console.error('Error playing previous song:', error);
+            console.error("Error playing previous song:", error);
             throw error;
         }
     }
@@ -386,33 +430,33 @@ class SpotifyService {
         try {
             // Send message through WebSocket
             this.sendWsMessage({
-                type: 'playback',
-                action: 'pause'
+                type: "playback",
+                action: "pause",
             });
         } catch (error) {
-            console.error('Error pausing playback:', error);
+            console.error("Error pausing playback:", error);
             throw error;
         }
     }
 
     async muteVolume(): Promise<void> {
         this.prevVolume = (await this.getCurrentTrack()).volume;
-        this.setVolume(0)
+        this.setVolume(0);
     }
 
     async unmuteVolume(): Promise<void> {
-        this.setVolume(this.prevVolume)
+        this.setVolume(this.prevVolume);
     }
 
     async resumePlayback(): Promise<void> {
         try {
             // Send message through WebSocket
             this.sendWsMessage({
-                type: 'playback',
-                action: 'play'
+                type: "playback",
+                action: "play",
             });
         } catch (error) {
-            console.error('Error resuming playback:', error);
+            console.error("Error resuming playback:", error);
             throw error;
         }
     }
@@ -420,12 +464,12 @@ class SpotifyService {
     async setVolume(volume: number): Promise<void> {
         try {
             this.sendWsMessage({
-                type: 'playback',
-                action: 'volume',
-                value: volume
+                type: "playback",
+                action: "volume",
+                value: volume,
             });
         } catch (error) {
-            console.error('Error setting volume:', error);
+            console.error("Error setting volume:", error);
             throw error;
         }
     }
@@ -434,12 +478,12 @@ class SpotifyService {
     async seek(position: number): Promise<void> {
         try {
             this.sendWsMessage({
-                type: 'playback',
-                action: 'seek',
-                value: position
+                type: "playback",
+                action: "seek",
+                value: position,
             });
         } catch (error) {
-            console.error('Error seeking position:', error);
+            console.error("Error seeking position:", error);
             throw error;
         }
     }
@@ -448,29 +492,27 @@ class SpotifyService {
         try {
             // Send message through WebSocket
             this.sendWsMessage({
-                type: 'playback',
-                action: 'shuffle'
+                type: "playback",
+                action: "shuffle",
             });
         } catch (error) {
-            console.error('Error toggling shuffle:', error);
+            console.error("Error toggling shuffle:", error);
             throw error;
         }
-
     }
 
     async toggleRepeatMode(): Promise<void> {
         try {
             // Send message through WebSocket
             this.sendWsMessage({
-                type: 'playback',
-                action: 'toggleRepeat'
+                type: "playback",
+                action: "toggleRepeat",
             });
         } catch (error) {
-            console.error('Error toggling repeat mode:', error);
+            console.error("Error toggling repeat mode:", error);
             throw error;
         }
     }
-
 
     /**
      * Set a specific repeat mode
@@ -482,48 +524,49 @@ class SpotifyService {
     async setRepeatMode(mode: RepeatState | number): Promise<void> {
         try {
             this.sendWsMessage({
-                type: 'playback',
-                action: 'setRepeat',
-                value: mode
+                type: "playback",
+                action: "setRepeat",
+                value: mode,
             });
         } catch (error) {
-            console.error('Error setting repeat mode:', error);
+            console.error("Error setting repeat mode:", error);
             throw error;
         }
     }
 
     async getPlaylists(): Promise<Playlist[]> {
         try {
-            logger.log('Getting playlists')
+            logger.log("Getting playlists");
             this.sendWsMessage({
-                type: 'info',
-                action: 'playlists'
-            })
+                type: "info",
+                action: "playlists",
+            });
 
             return new Promise((resolve, reject) => {
-                const messageHandler = (event: MessageEvent) => {
+                const messageHandler = (event: Buffer) => {
                     try {
                         let response;
                         try {
-                            response = JSON.parse(event.data);
+                            response = JSON.parse(event.toString('utf8'));
                             response = { ...response } as originalPlaylist;
                         } catch (parseError) {
-                            console.error('Error parsing JSON:', parseError);
+                            console.error("Error parsing JSON:", parseError);
                             return; // Skip this message if it's not valid JSON
                         }
 
                         // Check if this is the response we're waiting for
-                        if (response.type === 'response' && response.action === 'playlists') {
-
+                        if (response.type === "response" && response.action === "playlists") {
                             // Remove the message handler
-                            this.ws?.removeEventListener('message', messageHandler);
+                            this.clients.forEach((client) => {
+                                client.removeListener("message", messageHandler);
+                            });
 
                             const playlists: Playlist[] = response.data.map((playlist: any) => ({
                                 link: playlist.link,
                                 name: playlist.name,
                                 totalLength: playlist.totalLength,
                                 picture: playlist.picture,
-                                mosaic: playlist.mosaic
+                                mosaic: playlist.mosaic,
                             }));
 
                             resolve(playlists);
@@ -534,16 +577,21 @@ class SpotifyService {
                 };
 
                 // Add temporary message handler
-                this.ws?.addEventListener('message', messageHandler);
+                this.clients.forEach((client) => {
+                    client.on("message", messageHandler);
+                });
 
                 // Add timeout to prevent hanging
                 setTimeout(() => {
-                    this.ws?.removeEventListener('message', messageHandler);
-                    reject(new Error('Timeout waiting for playlists'));
+                    this.clients.forEach((client) => {
+                        client.removeListener("message", messageHandler);
+                    });
+
+                    reject(new Error("Timeout waiting for playlists"));
                 }, 5000); // 5 second timeout
             });
         } catch (error) {
-            console.error('Error getting playlists:', error);
+            console.error("Error getting playlists:", error);
             throw error;
         }
     }
@@ -551,47 +599,46 @@ class SpotifyService {
     async getToken(): Promise<Token> {
         try {
             this.sendWsMessage({
-                type: 'info',
-                action: 'token'
-            })
+                type: "info",
+                action: "token",
+            });
 
             return new Promise((resolve, reject) => {
-
-                if (this.token && ((this.tokenTime + this.tokenExpire) >= Date.now())) {
+                if (this.token && this.tokenTime + this.tokenExpire >= Date.now()) {
                     resolve({
                         token: this.token,
                         tokenExpire: this.tokenExpire,
-                        tokenTime: this.tokenTime
+                        tokenTime: this.tokenTime,
                     });
                     return;
                 }
 
-                const messageHandler = (event: MessageEvent) => {
+                const messageHandler = (event: Buffer) => {
                     try {
                         let response;
                         try {
-                            response = JSON.parse(event.data);
+                            response = JSON.parse(event.toString('utf8'));
                         } catch (parseError) {
-                            console.error('Error parsing JSON:', parseError);
+                            console.error("Error parsing JSON:", parseError);
                             return; // Skip this message if it's not valid JSON
                         }
 
                         // Check if this is the response we're waiting for
-                        if (response.type === 'response' && response.action === 'token') {
-
+                        if (response.type === "response" && response.action === "token") {
                             // Remove the message handler
-                            this.ws?.removeEventListener('message', messageHandler);
+                            this.clients.forEach((client) => {
+                                client.removeListener("message", messageHandler);
+                            });
 
-                            this.token = response.data.token
-                            this.tokenExpire = response.data.expiration
-                            this.tokenTime = Date.now() * 1000
+                            this.token = response.data.token;
+                            this.tokenExpire = response.data.expiration;
+                            this.tokenTime = Date.now() * 1000;
 
                             resolve({
                                 token: this.token,
                                 tokenExpire: this.tokenExpire,
-                                tokenTime: this.tokenTime
+                                tokenTime: this.tokenTime,
                             });
-
                         }
                     } catch (error) {
                         reject(error);
@@ -599,16 +646,21 @@ class SpotifyService {
                 };
 
                 // Add temporary message handler
-                this.ws?.addEventListener('message', messageHandler);
+                this.clients.forEach((client) => {
+                    client.on("message", messageHandler);
+                });
 
                 // Add timeout to prevent hanging
                 setTimeout(() => {
-                    this.ws?.removeEventListener('message', messageHandler);
-                    reject(new Error('Timeout waiting for token'));
+                    this.clients.forEach((client) => {
+                        client.removeListener("message", messageHandler);
+                    });
+
+                    reject(new Error("Timeout waiting for token"));
                 }, 5000); // 5 second timeout
-            })
+            });
         } catch (error) {
-            console.error('Error getting token:', error);
+            console.error("Error getting token:", error);
             throw error;
         }
     }
@@ -616,17 +668,44 @@ class SpotifyService {
     // Track Progress?
     private handleProgress = (message: any) => {
         try {
-            if (message.type === 'progress' && message.data) {
+            if (message.type === "progress" && message.data) {
                 this._currentProgress = {
                     progress_ms: message.data.progress,
                     duration_ms: message.data.duration,
-                    percentage: message.data.percentage
+                    percentage: message.data.percentage,
                 };
+                this.mainWindow?.webContents.send("spotify:progress-update", this._currentProgress);
                 // console.log('Progress updated:', this._currentProgress);
             }
         } catch (error) {
-            console.error('Error handling progress:', error);
+            console.error("Error handling progress:", error);
         }
+    };
+    public cleanup() {
+        return new Promise<void>((resolve) => {
+            if (this.wss) {
+                // Close all client connections
+                this.clients.forEach((client) => {
+                    client.close();
+                });
+                this.clients.clear();
+
+                // Close WebSocket server
+                this.wss.close(() => {
+                    logger.log("WebSocket server closed");
+                    this.wss = null;
+                });
+            }
+
+            if (this.healthServer) {
+                this.healthServer.close(() => {
+                    logger.log("Health check server closed");
+                    this.healthServer = null;
+                });
+            }
+
+            resolve();
+        });
     }
 }
 

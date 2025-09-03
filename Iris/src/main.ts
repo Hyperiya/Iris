@@ -61,6 +61,7 @@ let discordRPC: DiscordRPC | null = null;
 let snapshotManager: SnapshotManager | null = null;
 let irisVA: IrisVA | null = null;
 
+
 commandProcessor = new CommandProcessor(discordRPC)
 
 ipcMain.setMaxListeners(20); // Or whatever number is appropriate
@@ -167,6 +168,8 @@ const createWindow = async (): Promise<void> => {
         paintWhenInitiallyHidden: true,
         show: false,
     });
+
+
 
     // Add this after creating the mainWindow and before loading the URL
     mainWindow.webContents.on("before-input-event", (event, input) => {

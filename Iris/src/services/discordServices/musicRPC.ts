@@ -13,8 +13,6 @@ class MusicRPC extends EventEmitter {
         this.CLIENT_ID = CLIENT_ID;
     }
 
-    
-
     public connect() {
         if (this.connected) return true;
 
