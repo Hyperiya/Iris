@@ -1,6 +1,5 @@
 import spotifyService from "../spotifyServices/SpotifyService.ts";
 import DiscordRPC from "../discordServices/discordRPC.ts";
-import { clients } from "../../ipc/handlers/spotify.ts";
 
 export class CommandProcessor {
     private commands = new Map<string, () => Promise<void>>(); // Maps command strings to action functions
@@ -27,7 +26,7 @@ export class CommandProcessor {
         this.registerMultiple([["unmute", true]], async () => this.discordRPC?.voice.unmute());
 
         this.registerMultiple([["play", true], ["resume", true], "continue"], async () =>
-            this.sendSpotifyCommand("play")
+            spotifyService.resumePlayback()
         );
 
         this.registerMultiple(
@@ -35,26 +34,19 @@ export class CommandProcessor {
                 ["pause", true],
                 ["stop", true],
             ],
-            async () => this.sendSpotifyCommand("pause")
+            async () => spotifyService.pausePlayback()
         );
 
-        /*
-        SpotifyService was made when I just started this project.
-        As such, I was completely idiotic and made it so that main hosts the websocket, -
-        and renderer and Spotify connect to it. I've now programmed SpotifyService so far that this can't be undone -
-        without rewriting a lot of code. So, I'm just going to send commands directly to the clients connected to the main process.
-        (2025-08-30 20:29:53) 
-        */
-        this.registerMultiple(["next song", "next", ["skip", true]], async () => this.sendSpotifyCommand("next"));
+        this.registerMultiple(["next song", "next", ["skip", true]], async () => spotifyService.playNextSong());
         this.registerMultiple(["previous song", "previous", ["back", true]], async () =>
-            this.sendSpotifyCommand("prev")
+            spotifyService.playPreviousSong()
         );
-        this.registerMultiple(["shuffle", "mix"], async () => this.sendSpotifyCommand("shuffle"));
+        this.registerMultiple(["shuffle", "mix"], async () => spotifyService.toggleShuffle());
         this.registerMultiple(["repeat", "repeat playlist", "repeat album"], async () =>
-            this.sendSpotifyCommand("setRepeat", 1)
+            spotifyService.setRepeatMode(1)
         );
-        this.registerMultiple(["repeat song", "repeat track"], async () => this.sendSpotifyCommand("setRepeat", 2));
-        this.registerMultiple(["stop repeating"], async () => this.sendSpotifyCommand("setRepeat", 0));
+        this.registerMultiple(["repeat song", "repeat track"], async () => spotifyService.setRepeatMode(2));
+        this.registerMultiple(["stop repeating"], async () => spotifyService.setRepeatMode(0));
     }
 
     /**
@@ -87,18 +79,7 @@ export class CommandProcessor {
                 this.commands.set(cmd.toLowerCase(), action);
             }
         });
-    }
-
-    // Sends commands directly to connected Spicetify clients via WebSocket
-    private sendSpotifyCommand(action: string, value?: number | string) {
-        const message = JSON.stringify({ type: "playback", action: action, ...(value !== undefined && { value }) });
-        clients.forEach((client) => {
-            if (client.readyState === 1) {
-                // WebSocket.OPEN
-                client.send(message);
-            }
-        });
-    }
+    }    
 
     // Processes voice commands with fallback from exact to word matching
     async processCommand(command: string) {

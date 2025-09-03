@@ -1,12 +1,6 @@
 import { ipcMain } from "electron";
 import spotifyService from "../../services/spotifyServices/SpotifyService.ts";
-import WebSocket, { WebSocketServer } from "ws";
 import { LrcLibApi } from "../../services/spotifyServices/LrcLibService.ts";
-import * as http from "http";
-
-let wss: WebSocketServer | null = null;
-let healthServer: http.Server | null = null;
-export const clients = new Set<WebSocket>();
 
 const lrcLibApi = new LrcLibApi();
 
@@ -61,33 +55,3 @@ export function setupSpotifyHandlers(mainWindow) {
     });
 }
 
-export function cleanupSpotifyHandlers() {
-    return new Promise<void>((resolve) => {
-        if (wss) {
-            // Close all client connections
-            clients.forEach((client) => {
-                client.close();
-            });
-            clients.clear();
-
-            // Close WebSocket server
-            wss.close(() => {
-                logger.log("WebSocket server closed");
-                wss = null;
-            });
-        }
-
-        if (healthServer) {
-            healthServer.close(() => {
-                logger.log("Health check server closed");
-                healthServer = null;
-            });
-        }
-
-        resolve();
-    });
-}
-
-export function getClients() {
-    return clients;
-}

@@ -118,8 +118,8 @@ const SpotifyMain: React.FC<SpotifyMainProps> = (viewState) => {
 
     useEffect(() => {
         // Immediate sync with current progress
-        if (window.spotify.currentProgress?.progress_ms) {
-            setLocalProgress(window.spotify.currentProgress?.progress_ms);
+        if (window.spotify.currentProgress().progress_ms) {
+            setLocalProgress(window.spotify.currentProgress().progress_ms);
         }
     }, []); // Run once on mount
 
@@ -144,11 +144,11 @@ const SpotifyMain: React.FC<SpotifyMainProps> = (viewState) => {
                 }
             }
 
-            const serviceProgress = window.spotify.currentProgress ?? 0;
+            const serviceProgress = window.spotify.currentProgress() ?? 0;
 
-            if (serviceProgress !== progressRef.current) {
-                progressRef.current = serviceProgress;
-                setLocalProgress(serviceProgress);
+            if (serviceProgress.progress_ms !== progressRef.current) {
+                progressRef.current = serviceProgress.progress_ms;
+                setLocalProgress(serviceProgress.progress_ms);
             }
         };
 
@@ -242,7 +242,7 @@ const SpotifyMain: React.FC<SpotifyMainProps> = (viewState) => {
                         currentTime={
                             Date.now() - manualStateUpdateRef.current < 200
                                 ? localProgress
-                                : window.spotify.currentProgress?.progress_ms ?? 0
+                                : window.spotify.currentProgress().progress_ms ?? 0
                         }
                         duration={currentTrackData.duration_ms || 0}
                         onPlay={() => {
@@ -329,7 +329,7 @@ const SpotifyMain: React.FC<SpotifyMainProps> = (viewState) => {
                             currentTime={
                                 Date.now() - manualStateUpdateRef.current < 200
                                     ? localProgress
-                                    : window.spotify.currentProgress?.progress_ms ?? 0
+                                    : window.spotify.currentProgress().progress_ms ?? 0
                             }
                             viewState={viewState.ViewState}
                             colors={colors}

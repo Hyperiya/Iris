@@ -19,8 +19,8 @@ import fs from "fs";
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 
 import { setupIpcHandlers } from "./ipc/index.ts";
-import { cleanupSpotifyHandlers } from "./ipc/handlers/spotify.ts";
 
+import spotifyService from "./services/spotifyServices/SpotifyService.ts";
 import { saveWindowState, restoreWindowState } from "./utils/windowState.ts";
 import { CommandProcessor } from "./services/VAServices/CommandProcessor.ts";
 
@@ -404,7 +404,7 @@ app.whenReady().then(async () => {
 
 app.on("before-quit", async () => {
     globalShortcut.unregisterAll();
-    await cleanupSpotifyHandlers();
+    await spotifyService.cleanup();
     await irisVA?.stopVA()
     if (discordRPC) {
         await discordRPC.disconnect();
@@ -416,7 +416,7 @@ app.on("before-quit", async () => {
 if (process.env.NODE_ENV === "development") {
     app.on("window-all-closed", async () => {
         if (process.platform !== "darwin") {
-            await cleanupSpotifyHandlers();
+            await spotifyService.cleanup();
 
             if (discordRPC) {
                 await discordRPC.disconnect();

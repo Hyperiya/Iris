@@ -1,14 +1,11 @@
 import { contextBridge, ipcRenderer } from "electron";
-
-let currentProgress: any = null;
-
-ipcRenderer.on("spotify:progress-update", (_, progress) => {
-    currentProgress = progress;
-    spotifyAPI.currentProgress = progress; // Update the exposed property
-});
-
+let currentProgress = {
+    progress_ms: 0,
+    duration_ms: 0,
+    percentage: 0,
+};
 const spotifyAPI = {
-    currentProgress: null as any,
+    currentProgress: () => currentProgress,
     spicetify: {
         installExtension: () => ipcRenderer.invoke("install-spicetify-extension"),
     },
@@ -38,6 +35,10 @@ const spotifyAPI = {
     // WebSocket control
     startLink: () => ipcRenderer.invoke("spotify:startLink"),
 };
+
+ipcRenderer.on("spotify:progress-update", (_, progress) => {
+    currentProgress = progress; // Just update the variable
+});
 
 contextBridge.exposeInMainWorld("spotify", spotifyAPI);
 export type SpotifyAPI = typeof spotifyAPI;
