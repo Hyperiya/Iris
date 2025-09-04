@@ -47,6 +47,20 @@ export class CommandProcessor {
         );
         this.registerMultiple(["repeat song", "repeat track"], async () => spotifyService.setRepeatMode(2));
         this.registerMultiple(["stop repeating"], async () => spotifyService.setRepeatMode(0));
+
+        // Variable commands
+        this.registerMultiple(
+            ["set volume", "volume", "set volume to"],
+            async (value) => {
+                const vol = parseInt(value || "0");
+                if (!isNaN(vol) && vol >= 0 && vol <= 100) {
+                    await spotifyService.setVolume(vol);
+                }
+            },
+            true // isVariable = true
+        );
+        this.registerMultiple(["increase volume"], async () => spotifyService.increaseVolume())
+        this.registerMultiple(["decrease volume"], async () => spotifyService.decreaseVolume())
     }
 
     /**
@@ -69,17 +83,24 @@ export class CommandProcessor {
      *   ["play music", true] // Word: "play music", "please play some music", etc.
      * ], () => this.sendSpotifyCommand('play'));
      */
-    private registerMultiple(commands: (string | [string, boolean])[], action: () => Promise<void>) {
+    private registerMultiple(
+        commands: (string | [string, boolean])[],
+        action: (value?: string) => Promise<void>,
+        isVariable: boolean = false
+    ) {
         commands.forEach((cmd) => {
             if (Array.isArray(cmd)) {
                 const [phrase, isWordMatch] = cmd;
-                const key = isWordMatch ? `words:${phrase.toLowerCase()}` : phrase.toLowerCase();
+                const prefix = isVariable ? "var:" : isWordMatch ? "words:" : "";
+                const key = `${prefix}${phrase.toLowerCase()}`;
                 this.commands.set(key, action);
             } else {
-                this.commands.set(cmd.toLowerCase(), action);
+                const prefix = isVariable ? "var:" : "";
+                const key = `${prefix}${cmd.toLowerCase()}`;
+                this.commands.set(key, action);
             }
         });
-    }    
+    }
 
     // Processes voice commands with fallback from exact to word matching
     async processCommand(command: string) {
