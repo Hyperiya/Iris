@@ -59,8 +59,8 @@ export class CommandProcessor {
             },
             true // isVariable = true
         );
-        this.registerMultiple(["increase volume"], async () => spotifyService.increaseVolume())
-        this.registerMultiple(["decrease volume"], async () => spotifyService.decreaseVolume())
+        this.registerMultiple(["increase volume"], async () => spotifyService.increaseVolume());
+        this.registerMultiple(["decrease volume"], async () => spotifyService.decreaseVolume());
     }
 
     /**
@@ -105,6 +105,20 @@ export class CommandProcessor {
     // Processes voice commands with fallback from exact to word matching
     async processCommand(command: string) {
         const normalizedCommand = command.toLowerCase().trim();
+
+        // Check for variable commands first
+        for (const [key, func] of this.commands.entries()) {
+            if (key.startsWith("var:")) {
+                const varCommand = key.replace("var:", "");
+                if (normalizedCommand.startsWith(varCommand)) {
+                    const value = normalizedCommand.replace(varCommand, "").trim();
+                    if (value) {
+                        await (func as (value: string) => Promise<void>)(value);
+                        return;
+                    }
+                }
+            }
+        }
 
         // First check for exact matches
         let commandFunction = this.commands.get(normalizedCommand);
