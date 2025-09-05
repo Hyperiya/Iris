@@ -1,5 +1,6 @@
 import EventEmitter from 'events';
 import net from 'net';
+import { env } from 'process'
 
 
 class MusicRPC extends EventEmitter {
@@ -13,14 +14,30 @@ class MusicRPC extends EventEmitter {
         this.CLIENT_ID = CLIENT_ID;
     }
 
+    private getIpcPath(pipeNum = 0) {
+        if (process.platform === "win32") {
+            return `\\\\?\\pipe\\discord-ipc-${pipeNum}`;
+        }
+
+        // Try XDG runtime dir first
+        if (env.XDG_RUNTIME_DIR) {
+            return `${env.XDG_RUNTIME_DIR}/discord-ipc-${pipeNum}`;
+        }
+
+        // Fallback to /run/user/<uid>
+        if (typeof process.getuid === "function") {
+            return `/run/user/${process.getuid()}/discord-ipc-${pipeNum}`;
+        }
+
+        // Fallback to /tmp
+        return `/tmp/discord-ipc-${pipeNum}`;
+    }
+
     public connect() {
         if (this.connected) return true;
 
         this.socket = new net.Socket();
-        const path = process.platform === 'win32'
-            ? '\\\\.\\pipe\\discord-ipc-0'
-            : '/tmp/discord-ipc-0';
-
+        const path = this.getIpcPath(0)
         this.socket.connect(path);
         this.socket.on('connect', () => {
             this.connected = true;

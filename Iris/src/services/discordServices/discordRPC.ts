@@ -1,8 +1,8 @@
-import net from 'net';
-import { EventEmitter } from 'events';
-import { VoiceChannelSelectType } from './types.ts'
-import Store from 'electron-store';
-
+import net from "net";
+import { EventEmitter } from "events";
+import { VoiceChannelSelectType } from "./types.ts";
+import Store from "electron-store";
+import { env } from "process";
 
 interface RpcMessage {
     op: number;
@@ -20,8 +20,8 @@ interface TokenStore {
 class DiscordRPC extends EventEmitter {
     private socket: net.Socket | null;
     private buffer: Buffer;
-    private readonly CLIENT_ID: string
-    private readonly CLIENT_SECRET: string
+    private readonly CLIENT_ID: string;
+    private readonly CLIENT_SECRET: string;
 
     private store: Store = new Store();
     public subscribedEvents: Set<string> = new Set();
@@ -35,51 +35,69 @@ class DiscordRPC extends EventEmitter {
 
         this.setupSocket();
 
-        this.CLIENT_ID = CLIENT_ID || ''
-        this.CLIENT_SECRET = CLIENT_SECRET || ''
+        this.CLIENT_ID = CLIENT_ID || "";
+        this.CLIENT_SECRET = CLIENT_SECRET || "";
 
-        this.voice = new VoiceManager(this)
-
+        this.voice = new VoiceManager(this);
     }
-    
+
     public generateNonce(): string {
         return Date.now().toString(36) + Math.random().toString(36).substring(2);
     }
 
+    private getIpcPath(pipeNum = 0) {
+        if (process.platform === "win32") {
+            return `\\\\?\\pipe\\discord-ipc-${pipeNum}`;
+        }
+
+        // Try XDG runtime dir first
+        if (env.XDG_RUNTIME_DIR) {
+            return `${env.XDG_RUNTIME_DIR}/discord-ipc-${pipeNum}`;
+        }
+
+        // Fallback to /run/user/<uid>
+        if (typeof process.getuid === "function") {
+            return `/run/user/${process.getuid()}/discord-ipc-${pipeNum}`;
+        }
+
+        // Fallback to /tmp
+        return `/tmp/discord-ipc-${pipeNum}`;
+    }
+
     async connect() {
-        if (this.CLIENT_ID === '' || this.CLIENT_SECRET === '') return;
-        
+        if (this.CLIENT_ID === "" || this.CLIENT_SECRET === "") return;
+
         const attemptConnection = async (): Promise<boolean> => {
             return new Promise((resolve) => {
                 let currentPipe = 0;
                 const maxPipes = 10;
                 let connected = false;
-                
+
                 const tryConnect = (pipeNum: number) => {
                     if (connected) return;
-                    
+
                     // Create a new socket for each attempt
                     if (this.socket) {
                         this.socket.removeAllListeners();
                         this.socket.destroy();
                     }
                     this.socket = new net.Socket();
-                    
+
                     // Setup socket listeners
-                    this.socket.once('connect', () => {
+                    this.socket.once("connect", () => {
                         connected = true;
-                        logger.log('Connected to Discord IPC pipe:', pipeNum);
+                        logger.log("Connected to Discord IPC pipe:", pipeNum);
                         this.setupSocket(); // Only setup full listeners after successful connection
                         resolve(true);
                     });
-        
-                    this.socket.once('error', (err) => {
+
+                    this.socket.once("error", (err) => {
                         logger.log(`Failed to connect to pipe ${pipeNum}:`, err.message);
-                        
+
                         // Clean up failed connection attempt
                         this.socket?.removeAllListeners();
                         this.socket?.destroy();
-                        
+
                         // Try next pipe
                         if (currentPipe < maxPipes - 1) {
                             currentPipe++;
@@ -88,13 +106,11 @@ class DiscordRPC extends EventEmitter {
                             resolve(false); // Changed from reject to resolve(false)
                         }
                     });
-        
-                    const currentPath = process.platform === 'win32'
-                        ? `\\\\?\\pipe\\discord-ipc-${pipeNum}`
-                        : `/tmp/discord-ipc-${pipeNum}`;
-        
+
+                    const currentPath = this.getIpcPath(pipeNum)
+
                     logger.log(`Attempting to connect to pipe ${pipeNum}:`, currentPath);
-                    
+
                     try {
                         this.socket.connect(currentPath);
                     } catch (err) {
@@ -102,7 +118,7 @@ class DiscordRPC extends EventEmitter {
                         logger.error(`Error connecting to pipe ${pipeNum}:`, err);
                         this.socket?.removeAllListeners();
                         this.socket?.destroy();
-                        
+
                         if (currentPipe < maxPipes - 1) {
                             currentPipe++;
                             tryConnect(currentPipe);
@@ -111,43 +127,41 @@ class DiscordRPC extends EventEmitter {
                         }
                     }
                 };
-        
+
                 // Start with pipe 0
-                logger.log('Starting Discord IPC connection attempts');
+                logger.log("Starting Discord IPC connection attempts");
                 tryConnect(currentPipe);
             });
         };
-        
+
         // Keep trying until connected
         while (true) {
             const connected = await attemptConnection();
             if (connected) return true;
-            
-            logger.log('Failed to connect to Discord. Retrying in 60 seconds...');
-            await new Promise(resolve => setTimeout(resolve, 60000)); // Wait 60 seconds
-        }    
+
+            logger.log("Failed to connect to Discord. Retrying in 60 seconds...");
+            await new Promise((resolve) => setTimeout(resolve, 60000)); // Wait 60 seconds
+        }
     }
-    
+
     private setupSocket() {
         if (!this.socket) return;
-        
+
         this.socket
-            .on('ready', () => this.handleConnect())
-            .on('data', (data) => this.handleData(data))
-            .on('close', () => {
-                logger.log('Socket closed');
-                this.emit('close');
+            .on("ready", () => this.handleConnect())
+            .on("data", (data) => this.handleData(data))
+            .on("close", () => {
+                logger.log("Socket closed");
+                this.emit("close");
             })
-            .on('error', (err) => {
-                logger.log('Socket error:', err);
-                this.emit('error', err);
+            .on("error", (err) => {
+                logger.log("Socket error:", err);
+                this.emit("error", err);
             });
     }
-    
-
 
     private async handleConnect() {
-        logger.log('Connected to Discord IPC');
+        logger.log("Connected to Discord IPC");
         await this.sendHandshake();
     }
 
@@ -157,16 +171,16 @@ class DiscordRPC extends EventEmitter {
                 v: 1,
                 client_id: this.CLIENT_ID,
                 nonce: this.generateNonce(),
-                op: 0
+                op: 0,
             };
 
-            logger.log('Sending handshake payload:', handshakePayload);
+            logger.log("Sending handshake payload:", handshakePayload);
             this.sendFrame(handshakePayload);
 
             // Set up a timeout for handshake response
 
             // Wait for handshake response
-            this.once('ready', () => {
+            this.once("ready", () => {
                 resolve(true);
                 this.authorize();
             });
@@ -175,75 +189,75 @@ class DiscordRPC extends EventEmitter {
 
     public async revokeAllTokens() {
         const tokens = {
-            access_token: this.store.get('access_token') as string,
-            refresh_token: this.store.get('refresh_token') as string,
-            expires_at: this.store.get('expires_at') as number
-        }
+            access_token: this.store.get("access_token") as string,
+            refresh_token: this.store.get("refresh_token") as string,
+            expires_at: this.store.get("expires_at") as number,
+        };
 
         // Revoke acccess token
         await fetch("https://discord.com/api/v10/oauth2/token", {
-            method: 'POST',
+            method: "POST",
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
+                "Content-Type": "application/x-www-form-urlencoded",
             },
             body: new URLSearchParams({
-                token: tokens.access_token as string
-            })
+                token: tokens.access_token as string,
+            }),
         });
 
         // Revoke Refresh Token =
         await fetch("https://discord.com/api/v10/oauth2/token", {
-            method: 'POST',
+            method: "POST",
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
+                "Content-Type": "application/x-www-form-urlencoded",
             },
             body: new URLSearchParams({
-                token: tokens.refresh_token as string
-            })
+                token: tokens.refresh_token as string,
+            }),
         });
 
-        await this.store.delete('access_token');
-        await this.store.delete('refresh_token');
-        await this.store.delete('expires_at');
+        await this.store.delete("access_token");
+        await this.store.delete("refresh_token");
+        await this.store.delete("expires_at");
 
         await window.electron.restart();
     }
 
     private async authorize() {
-        const tokens:TokenStore = {
-            access_token: this.store.get('access_token') as string,
-            refresh_token: this.store.get('refresh_token') as string,
-            expires_at: this.store.get('expires_at') as number
-        }
+        const tokens: TokenStore = {
+            access_token: this.store.get("access_token") as string,
+            refresh_token: this.store.get("refresh_token") as string,
+            expires_at: this.store.get("expires_at") as number,
+        };
 
-        logger.log(`access tokens: ${tokens.access_token}, ${tokens.refresh_token}, ${tokens.expires_at}`)
+        logger.log(`access tokens: ${tokens.access_token}, ${tokens.refresh_token}, ${tokens.expires_at}`);
 
         if (tokens.access_token !== undefined && tokens.expires_at > Date.now() && tokens.refresh_token !== undefined) {
-            logger.log('skippy')
+            logger.log("skippy");
             this.authenticate(tokens.access_token);
             return;
-        } else if (false || tokens.refresh_token !== undefined && tokens.expires_at < Date.now()) {
-            logger.log('refreshing')
+        } else if (false || (tokens.refresh_token !== undefined && tokens.expires_at < Date.now())) {
+            logger.log("refreshing");
             const response = await fetch("https://discord.com/api/v10/oauth2/token", {
-                method: 'POST',
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                    "Content-Type": "application/x-www-form-urlencoded",
                 },
                 body: new URLSearchParams({
-                    grant_type: 'refresh_token',
+                    grant_type: "refresh_token",
                     refresh_token: tokens.refresh_token,
                     client_id: this.CLIENT_ID,
                     client_secret: this.CLIENT_SECRET,
-                })
+                }),
             });
             const data = await response.json();
-            this.store.delete('access_token')
-            this.store.delete('refresh_token')
-            this.store.delete('expires_at')
+            this.store.delete("access_token");
+            this.store.delete("refresh_token");
+            this.store.delete("expires_at");
 
-            this.store.set('access_token', data.access_token);
-            this.store.set('refresh_token', data.refresh_token);
-            this.store.set('expires_at', Date.now() + data.expires_in);
+            this.store.set("access_token", data.access_token);
+            this.store.set("refresh_token", data.refresh_token);
+            this.store.set("expires_at", Date.now() + data.expires_in);
 
             this.authenticate(data.access_token);
             return;
@@ -251,48 +265,44 @@ class DiscordRPC extends EventEmitter {
 
         // After handshake is successful, you'll receive a READY event
         // Then you should send IDENTIFY
-        this.once('codeReceived', (code) => {
-            logger.log('getting token');
-            this.getToken(code)
+        this.once("codeReceived", (code) => {
+            logger.log("getting token");
+            this.getToken(code);
         });
-
-
 
         const identifyPayload = {
             op: 1, // FRAME opcode
-            cmd: 'AUTHORIZE',
+            cmd: "AUTHORIZE",
             nonce: this.generateNonce(),
             args: {
                 client_id: this.CLIENT_ID,
                 client_secret: this.CLIENT_SECRET,
-                scopes: ['rpc', 'rpc.notifications.read', 'rpc.voice.write', 'rpc.voice.read', 'messages.read'],
-                v: 1
-            }
+                scopes: ["rpc", "rpc.notifications.read", "rpc.voice.write", "rpc.voice.read", "messages.read"],
+                v: 1,
+            },
         };
-
 
         this.sendFrame(identifyPayload);
         // Handlemessage Takes it from here to get the code by codeReceived
-
     }
 
     private async getToken(code: string) {
         const response = await fetch("https://discord.com/api/oauth2/token", {
-            method: 'POST',
+            method: "POST",
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
+                "Content-Type": "application/x-www-form-urlencoded",
             },
             body: new URLSearchParams({
                 client_id: this.CLIENT_ID,
                 client_secret: this.CLIENT_SECRET,
-                grant_type: 'authorization_code',
+                grant_type: "authorization_code",
                 code: code,
-                redirect_uri: 'http://localhost',
-                scope: 'identify'
-            })
+                redirect_uri: "http://localhost",
+                scope: "identify",
+            }),
         });
         const data = await response.json();
-        logger.log(JSON.stringify(data, null, 2))
+        logger.log(JSON.stringify(data, null, 2));
         /*
         {
         "token_type": "Bearer",
@@ -302,32 +312,30 @@ class DiscordRPC extends EventEmitter {
         "scope": "messages.read rpc rpc.notifications.read"
         }
         */
-        this.store.set('access_token', data.access_token);
-        this.store.set('refresh_token', data.refresh_token);
+        this.store.set("access_token", data.access_token);
+        this.store.set("refresh_token", data.refresh_token);
 
         // I prefer doing this, because it just makes things easier in the long run
-        this.store.set('expires_at', Date.now() + data.expires_in);
+        this.store.set("expires_at", Date.now() + data.expires_in);
         data.access_token && this.authenticate(data.access_token);
     }
 
-
     private async authenticate(code: string) {
-
-        this.once('authenticated', () => {
-            logger.log('subscribing')
+        this.once("authenticated", () => {
+            logger.log("subscribing");
             this.subscribe();
         });
 
         const authenticatePayload = {
             op: 1, // FRAME opcode
-            cmd: 'AUTHENTICATE',
+            cmd: "AUTHENTICATE",
             nonce: this.generateNonce(),
             args: {
-                access_token: code
-            }
+                access_token: code,
+            },
         };
 
-        logger.log('Sending authenticate payload')
+        logger.log("Sending authenticate payload");
         this.sendFrame(authenticatePayload);
     }
 
@@ -352,7 +360,7 @@ class DiscordRPC extends EventEmitter {
 
             const payload = JSON.parse(this.buffer.subarray(8, totalLength).toString());
 
-            logger.log('Received payload:', JSON.stringify(payload, null, 2));
+            logger.log("Received payload:", JSON.stringify(payload, null, 2));
             this.handleMessage(opcode, payload);
 
             this.buffer = this.buffer.subarray(totalLength);
@@ -360,44 +368,42 @@ class DiscordRPC extends EventEmitter {
     }
 
     private async handleMessage(opcode: number, data: any) {
-        logger.log('Handling message with opcode:', opcode, 'and data:', data);
+        logger.log("Handling message with opcode:", opcode, "and data:", data);
         switch (opcode) {
             case 1: // Event
                 return this.handleEvent(data);
             case 2: // Error
                 return this.handleError(data);
             default:
-                logger.log('Unknown opcode:', opcode);
+                logger.log("Unknown opcode:", opcode);
         }
     }
 
     private async handleEvent(data: RpcMessage) {
         // Handle command responses first
-        if (data.cmd === 'AUTHORIZE' && data.data?.code) {
-            this.emit('codeReceived', data.data.code);
+        if (data.cmd === "AUTHORIZE" && data.data?.code) {
+            this.emit("codeReceived", data.data.code);
             return;
         }
 
-        if (data.cmd === 'AUTHENTICATE') {
-            logger.log('authenticated')
-            this.emit('authenticated');
+        if (data.cmd === "AUTHENTICATE") {
+            logger.log("authenticated");
+            this.emit("authenticated");
             return;
-        }
-
-        else if (data.cmd && data.evt == null) {
-            this.emit('data', data);
+        } else if (data.cmd && data.evt == null) {
+            this.emit("data", data);
         }
 
         // Handle dispatched events
         if (data.evt) {
-            if (data.evt === 'READY' && data.cmd === 'DISPATCH') {
-                this.emit('ready');
+            if (data.evt === "READY" && data.cmd === "DISPATCH") {
+                this.emit("ready");
                 return;
             }
 
             // Check if we're subscribed to this event
             else if (this.subscribedEvents.has(data.evt)) {
-                this.emit('data', data);
+                this.emit("data", data);
             }
         }
     }
@@ -407,12 +413,12 @@ class DiscordRPC extends EventEmitter {
             op: 1,
             cmd: command,
             nonce: this.generateNonce(),
-            ...(args && { args }),  // Simply check if args exists
-        }
+            ...(args && { args }), // Simply check if args exists
+        };
 
         try {
             this.sendFrame(payload);
-            logger.log(payload)
+            logger.log(payload);
             logger.log(`Sent ${command}`);
         } catch (error) {
             logger.error(`Failed to send ${command}:`, error);
@@ -420,18 +426,15 @@ class DiscordRPC extends EventEmitter {
     }
 
     private handleError(data: any) {
-        const errorMessage = data.data?.message || data.message || 'Unknown RPC error';
-        this.emit('error', new Error(errorMessage));
+        const errorMessage = data.data?.message || data.message || "Unknown RPC error";
+        this.emit("error", new Error(errorMessage));
     }
 
     private async subscribe() {
         // Now subscribe to events
-        await Promise.all([
-            this.subscribeToEvent('NOTIFICATION_CREATE'),
-            this.voice.voiceCallEventWorkflow(),
-        ]);
+        await Promise.all([this.subscribeToEvent("NOTIFICATION_CREATE"), this.voice.voiceCallEventWorkflow()]);
 
-        this.emit('subscribed');
+        this.emit("subscribed");
     }
 
     public async subscribeToEvent(event: string, args?: any) {
@@ -439,16 +442,16 @@ class DiscordRPC extends EventEmitter {
 
         const payload = {
             op: 1,
-            cmd: 'SUBSCRIBE',
+            cmd: "SUBSCRIBE",
             evt: event,
-            ...(args && { args }),  // Simply check if args exists
+            ...(args && { args }), // Simply check if args exists
             nonce: this.generateNonce(),
-            client_id: this.CLIENT_ID
+            client_id: this.CLIENT_ID,
         };
 
         try {
             this.sendFrame(payload);
-            logger.log(payload)
+            logger.log(payload);
             this.subscribedEvents.add(event);
             logger.log(`Subscribed to ${event}`);
         } catch (error) {
@@ -461,11 +464,11 @@ class DiscordRPC extends EventEmitter {
 
         const payload = {
             op: 1,
-            cmd: 'UNSUBSCRIBE',
-            ...(args && { args }),  // Simply check if args exists
+            cmd: "UNSUBSCRIBE",
+            ...(args && { args }), // Simply check if args exists
             evt: event,
             nonce: this.generateNonce(),
-            client_id: this.CLIENT_ID
+            client_id: this.CLIENT_ID,
         };
 
         try {
@@ -477,16 +480,16 @@ class DiscordRPC extends EventEmitter {
         }
     }
 
-    public async selectTextChannel(channel_id: string){ 
+    public async selectTextChannel(channel_id: string) {
         const payload = {
             op: 1,
-            cmd: 'SELECT_TEXT_CHANNEL',
+            cmd: "SELECT_TEXT_CHANNEL",
             args: {
                 channel_id: channel_id,
                 timeout: 4000,
             },
             nonce: this.generateNonce(),
-            client_id: this.CLIENT_ID
+            client_id: this.CLIENT_ID,
         };
 
         try {
@@ -518,120 +521,117 @@ class DiscordRPC extends EventEmitter {
 
 class VoiceManager {
     private rpc: DiscordRPC;
-    private channel_id: string = '';
+    private channel_id: string = "";
 
     constructor(rpc: DiscordRPC) {
         this.rpc = rpc;
     }
 
     public async voiceCallEventWorkflow() {
-        this.rpc.on('data', (data: VoiceChannelSelectType) => {
-            if (data.evt === 'VOICE_CHANNEL_SELECT') {
+        this.rpc.on("data", (data: VoiceChannelSelectType) => {
+            if (data.evt === "VOICE_CHANNEL_SELECT") {
                 if (data.data.channel_id == null) {
-                    logger.log('leaving call')
-                    this.unsubscribeFromVoiceEvents(this.channel_id)
+                    logger.log("leaving call");
+                    this.unsubscribeFromVoiceEvents(this.channel_id);
                 } else {
-                    logger.log(`joined ${data.data.channel_id}`)
-                    this.channel_id = data.data.channel_id
-                    this.subscribeToVoiceEvents(this.channel_id)
-                    this.rpc.sendCommand('GET_VOICE_SETTINGS')
+                    logger.log(`joined ${data.data.channel_id}`);
+                    this.channel_id = data.data.channel_id;
+                    this.subscribeToVoiceEvents(this.channel_id);
+                    this.rpc.sendCommand("GET_VOICE_SETTINGS");
                 }
             }
-        })
-        this.rpc.subscribeToEvent('VOICE_CHANNEL_SELECT');
+        });
+        this.rpc.subscribeToEvent("VOICE_CHANNEL_SELECT");
     }
 
     private async subscribeToVoiceEvents(channel_id: string, guild_id?: string) {
-
         const args = {
             channel_id: channel_id,
-        }
+        };
 
         await Promise.all([
             // These are events to see if a user is muted or such
-            this.rpc.subscribeToEvent('VOICE_STATE_UPDATE', args),
-            this.rpc.subscribeToEvent('VOICE_STATE_CREATE', args),
-            this.rpc.subscribeToEvent('VOICE_STATE_DELETE', args),
+            this.rpc.subscribeToEvent("VOICE_STATE_UPDATE", args),
+            this.rpc.subscribeToEvent("VOICE_STATE_CREATE", args),
+            this.rpc.subscribeToEvent("VOICE_STATE_DELETE", args),
 
             // If user is speaking
-            this.rpc.subscribeToEvent('SPEAKING_START', args),
-            this.rpc.subscribeToEvent('SPEAKING_STOP', args),
+            this.rpc.subscribeToEvent("SPEAKING_START", args),
+            this.rpc.subscribeToEvent("SPEAKING_STOP", args),
 
             // Current user voice state
-            this.rpc.subscribeToEvent('VOICE_SETTINGS_UPDATE')
+            this.rpc.subscribeToEvent("VOICE_SETTINGS_UPDATE"),
         ]);
     }
 
     private async unsubscribeFromVoiceEvents(channel_id: string) {
-
         const args = {
             channel_id: channel_id,
-        }
+        };
 
         await Promise.all([
-            this.rpc.unsubscribeFromEvent('VOICE_STATE_UPDATE', args),
-            this.rpc.unsubscribeFromEvent('VOICE_STATE_CREATE', args),
-            this.rpc.unsubscribeFromEvent('VOICE_STATE_DELETE', args),
+            this.rpc.unsubscribeFromEvent("VOICE_STATE_UPDATE", args),
+            this.rpc.unsubscribeFromEvent("VOICE_STATE_CREATE", args),
+            this.rpc.unsubscribeFromEvent("VOICE_STATE_DELETE", args),
 
-            this.rpc.unsubscribeFromEvent('SPEAKING_START', args),
-            this.rpc.unsubscribeFromEvent('SPEAKING_STOP', args),
+            this.rpc.unsubscribeFromEvent("SPEAKING_START", args),
+            this.rpc.unsubscribeFromEvent("SPEAKING_STOP", args),
 
-            this.rpc.unsubscribeFromEvent('VOICE_SETTINGS_UPDATE'),
+            this.rpc.unsubscribeFromEvent("VOICE_SETTINGS_UPDATE"),
         ]);
     }
 
     public async mute() {
         const args = {
-            mute: true
-        }
-        this.rpc.sendCommand('SET_VOICE_SETTINGS', args)
+            mute: true,
+        };
+        this.rpc.sendCommand("SET_VOICE_SETTINGS", args);
     }
 
     public async unmute() {
         const args = {
-            mute: false
-        }
-        this.rpc.sendCommand('SET_VOICE_SETTINGS', args)
+            mute: false,
+        };
+        this.rpc.sendCommand("SET_VOICE_SETTINGS", args);
     }
 
     public async deafen() {
         const args = {
-            deaf: true
-        }
-        this.rpc.sendCommand('SET_VOICE_SETTINGS', args)
+            deaf: true,
+        };
+        this.rpc.sendCommand("SET_VOICE_SETTINGS", args);
     }
 
     public async undeafen() {
         const args = {
-            deaf: false
-        }
-        this.rpc.sendCommand('SET_VOICE_SETTINGS', args)
+            deaf: false,
+        };
+        this.rpc.sendCommand("SET_VOICE_SETTINGS", args);
     }
 
     public async leaveCall() {
         const args = {
-            channel_id: null
-        }
-        this.rpc.sendCommand('SELECT_VOICE_CHANNEL', args)
+            channel_id: null,
+        };
+        this.rpc.sendCommand("SELECT_VOICE_CHANNEL", args);
     }
 
     public async joinCall(channel_id: string) {
         const args = {
             channel_id: channel_id,
-            force: true
-        }
-        this.rpc.sendCommand('SELECT_VOICE_CHANNEL', args)
+            force: true,
+        };
+        this.rpc.sendCommand("SELECT_VOICE_CHANNEL", args);
     }
 
     public async getVoiceSettings() {
-        this.rpc.sendCommand('GET_VOICE_SETTINGS')
+        this.rpc.sendCommand("GET_VOICE_SETTINGS");
     }
 
     public async getVoiceChannel() {
-        this.rpc.sendCommand('GET_SELECTED_VOICE_CHANNEL')
+        this.rpc.sendCommand("GET_SELECTED_VOICE_CHANNEL");
     }
 }
-
 
 // Usage
 

@@ -22,6 +22,10 @@ export class CommandProcessor {
         this.registerMultiple(["undeafen", "under often", "under and", "under fun", "under under oven"], async () =>
             this.discordRPC?.voice.undeafen()
         );
+
+        /*
+         * Spotify Commands
+         */
         this.registerMultiple([["mute", true]], async () => this.discordRPC?.voice.mute());
         this.registerMultiple([["unmute", true]], async () => this.discordRPC?.voice.unmute());
 
@@ -52,7 +56,11 @@ export class CommandProcessor {
         this.registerMultiple(
             ["set volume", "volume", "set volume to"],
             async (value) => {
-                const vol = parseInt(value || "0");
+                if (value === "max" || value === "maximum") {
+                    await spotifyService.setVolume(100);
+                    return;
+                }
+                const vol = parseInt(value || '');
                 if (!isNaN(vol) && vol >= 0 && vol <= 100) {
                     await spotifyService.setVolume(vol);
                 }
