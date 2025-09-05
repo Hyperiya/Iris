@@ -95,13 +95,13 @@ const AppSelector: React.FC<TitlebarProps> = ({
         </div>
 
       </div>
-      <div className='time-display' onClick={() => {
+      <button className='time-display' onClick={() => {
         if (hide) return;
         setIsCollapsed(!isCollapsed)
       }
       }>
         <AccessTimeRounded />{currentTime}
-      </div>
+      </button>
     </div>
   );
 };

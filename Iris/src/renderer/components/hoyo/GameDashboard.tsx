@@ -439,7 +439,7 @@ const GameAccountDashboard: React.FC<GameAccountDashboardProps> = ({ viewState }
             } as CustomCSS}
           >
             {/* Game title section */}
-            <div
+            <button
               className="game-info-section"
               onClick={() => viewState === ViewState.NEUTRAL && setSelectedGame(game.title)}
               role="button"
@@ -453,7 +453,7 @@ const GameAccountDashboard: React.FC<GameAccountDashboardProps> = ({ viewState }
               />
               <h2 className="game-title">{game.title}</h2>
               <span className="update-time">Updated: {displayedTime}</span>
-            </div>
+            </button>
 
             {/* Stats section */}
             {(

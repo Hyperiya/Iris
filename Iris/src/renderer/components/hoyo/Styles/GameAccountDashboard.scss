@@ -228,6 +228,7 @@ $card-height: 100px; // Default card height
 
 /* Game info section styles */
 .game-info-section {
+    all: unset;
     justify-content: center;
     padding: 0%;
     display: flex;
@@ -238,7 +239,12 @@ $card-height: 100px; // Default card height
     background-color: #1e1e20; // Slightly elevated background
     width: 15%;
     box-sizing: border-box;
-    height: $card-height ;
+    height: $card-height;
+
+    &:focus {
+        outline: 2px solid var(--accent-color);
+        outline-offset: -2px;
+    }
 
     &:hover {
         background-color: #28282b;

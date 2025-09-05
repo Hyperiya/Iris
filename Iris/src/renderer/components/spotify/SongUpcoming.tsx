@@ -18,15 +18,17 @@ const SongUpcoming: React.FC<SongUpcomingProps> = ({ nextSong }) => {
 
 
   return (
-    <div className={`upcoming-song-container ${isCollapsed ? 'collapsed' : ''}`}>
-      <div
+    <div  className={`upcoming-song-container ${isCollapsed ? 'collapsed' : ''}`}>
+      <button
         className="upcoming-header"
         onClick={() => setIsCollapsed(!isCollapsed)}
+        tabIndex={0}
+        role='button'
       >
         <h3>Up Next
           <span className={`collapse-arrow ${isCollapsed ? 'rotated' : ''}`}> <ArrowForwardIosRounded /> </span>
         </h3>
-      </div>
+      </button>
 
       <div className="upcoming-content">
         <div className="next-song-card">

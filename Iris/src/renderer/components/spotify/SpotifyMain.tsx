@@ -63,10 +63,14 @@ const SpotifyMain: React.FC<SpotifyMainProps> = (viewState) => {
     }, []);
 
     useEffect(() => {
+        async () => {
+            const playlists = await window.spotify.getPlaylists();
+            setPlaylists(playlists);
+        };
         setInterval(async () => {
             const playlists = await window.spotify.getPlaylists();
             setPlaylists(playlists);
-        }, 100000);
+        }, 10000);
     }, []);
 
     // CurrentTrack Tracking

@@ -82,6 +82,13 @@ const Settings: React.FC<SettingsProps> = ({
         }
     };
 
+    useEffect(() => {
+      
+        
+      
+    }, [])
+    
+
     return (
         <div
             className={`settings ${isSettings ? "show" : ""}`}
