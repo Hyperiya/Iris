@@ -110,7 +110,7 @@ Iris supports voice commands (when enabled) using the wake word "Hey Iris" follo
 | `shuffle` | mix | Toggle shuffle mode |
 | `repeat` | repeat playlist, repeat album | Repeat playlist/album |
 | `repeat song` | repeat track | Repeat current track |
-| `stop repeating` | | Turn off repeat |
+| `stop repeating` | *word matching* | Turn off repeat |
 | `increase volume` | volume up | Increase volume |
 | `decrease volume` | volume down | Decrease volume |
 | `set volume` | volume, set volume to | Sets volume to value stated after | 
