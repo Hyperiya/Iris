@@ -1,5 +1,6 @@
 import spotifyService from "../spotifyServices/SpotifyService.ts";
 import DiscordRPC from "../discordServices/discordRPC.ts";
+import { match } from "assert";
 
 export class CommandProcessor {
     private commands = new Map<string, () => Promise<void>>(); // Maps command strings to action functions
@@ -50,7 +51,7 @@ export class CommandProcessor {
             spotifyService.setRepeatMode(1)
         );
         this.registerMultiple(["repeat song", "repeat track"], async () => spotifyService.setRepeatMode(2));
-        this.registerMultiple(["stop repeating"], async () => spotifyService.setRepeatMode(0));
+        this.registerMultiple([["stop repeating", true]], async () => spotifyService.setRepeatMode(0));
 
         // Variable commands
         this.registerMultiple(
@@ -60,15 +61,15 @@ export class CommandProcessor {
                     await spotifyService.setVolume(100);
                     return;
                 }
-                const vol = parseInt(value || '');
+                const vol = this.numberWordToInt(value || "");
                 if (!isNaN(vol) && vol >= 0 && vol <= 100) {
                     await spotifyService.setVolume(vol);
                 }
             },
             true // isVariable = true
         );
-        this.registerMultiple(["increase volume"], async () => spotifyService.increaseVolume());
-        this.registerMultiple(["decrease volume"], async () => spotifyService.decreaseVolume());
+        this.registerMultiple(["increase volume", "volume up"], async () => spotifyService.increaseVolume());
+        this.registerMultiple(["decrease volume", "volume down"], async () => spotifyService.decreaseVolume());
     }
 
     /**
@@ -156,5 +157,61 @@ export class CommandProcessor {
         } else {
             console.log(`Unknown command: ${command}`);
         }
+    }
+
+    private numberWordToInt(string) {
+        const singleDigitWords = {
+            zero: 0,
+            one: 1,
+            two: 2,
+            three: 3,
+            four: 4,
+            five: 5,
+            six: 6,
+            seven: 7,
+            eight: 8,
+            nine: 9,
+        };
+        const tensWords = {
+            ten: 10,
+            twenty: 20,
+            thirty: 30,
+            forty: 40,
+            fifty: 50,
+            sixty: 60,
+            seventy: 70,
+            eighty: 80,
+            ninety: 90,
+        };
+        const teenWords = {
+            eleven: 11,
+            twelve: 12,
+            thirteen: 13,
+            fourteen: 14,
+            fifteen: 15,
+            sixteen: 16,
+            seventeen: 17,
+            eighteen: 18,
+            nineteen: 19,
+        };
+
+        const value = string.split(" ");
+        logger.log(value);
+
+        let result: number = 0;
+        for (const word of value) {
+            logger.log(word);
+            if (word in singleDigitWords) {
+                result += singleDigitWords[word as keyof typeof singleDigitWords];
+            }
+            if (word in tensWords) {
+                result += tensWords[word as keyof typeof tensWords];
+            }
+            if (word in teenWords) {
+                result += teenWords[word as keyof typeof teenWords];
+            }
+            logger.log(result);
+        }
+        return result;
     }
 }
