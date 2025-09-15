@@ -12,7 +12,7 @@ import { GetChannelType } from './../../../services/discordServices/eventTypes/G
 import { SpeakingType } from './../../../services/discordServices/eventTypes/SpeakingType.ts';
 import { VoiceStateType } from './../../../services/discordServices/eventTypes/VoiceStateType.ts';
 import { VoiceSettingsType } from './../../../services/discordServices/eventTypes/VoiceSettingsType.ts';
-
+import { logger } from '../../utils/logger.ts'
 
 interface VoiceUsers {
     [key: string]: {
@@ -105,7 +105,6 @@ const DiscordCall: React.FC = () => {
     }
 
     const handleLeave = () => {
-
         window.discord.voice.leave();
         setCallState(null)
 
@@ -125,7 +124,7 @@ const DiscordCall: React.FC = () => {
     const handleDiscordData = useCallback(async (data: any) => {
         const setInitial = (initialData: GetChannelType) => {
             if (!initialData) return;
-            window.electron.log('setting initial')
+            // window.electron.log('setting initial')
             const voiceUsers = initialData?.data?.voice_states?.reduce((acc, state) => {
                 acc[state.user.id] = {
                     uid: state.user.id,
@@ -145,48 +144,48 @@ const DiscordCall: React.FC = () => {
                 setIsInCall(false)
                 return;
             } else {
-                console.log(initialData?.data?.voice_states?.length)
+                logger.log(initialData?.data?.voice_states?.length)
                 setIsInCall(true)
             }
 
 
             setCallState(voiceUsers)
-            console.log(voiceUsers)
+            logger.log(voiceUsers)
 
         }
+
         switch (data.evt ?? data.cmd) {
             case 'VOICE_CHANNEL_SELECT':
                 if (!data.data.channel_id) {
                     setCallState(null);
                     setIsInCall(false)
-                    console.log('no channel ID', 'left it prolly')
                     break;
                 }
-                console.log('channel ID', data.data.channel_id)
-                console.log(isBeingCalledRef.current)
+                logger.log('Channel ID', data.data.channel_id)
+                logger.log(isBeingCalledRef.current)
 
                 if (isBeingCalledRef.current && beingCalledDataRef.current?.data.channel_id === data.data.channel_id) {
                     setIsBeingCalled(false);
-                    console.log('isbeingcalled false');
+                    logger.log('isbeingcalled false');
                 } else {
-                    console.log('isbeingcalled true');
+                    logger.log('isbeingcalled true');
                     // Don't throw an error, just log it
-                    console.log(`Conditions not met: isBeingCalled=${isBeingCalledRef.current}, channelId=${beingCalledDataRef.current?.data.channel_id}, dataChannelId=${data.data.channel_id}`);
+                    logger.log(`Conditions not met: isBeingCalled=${isBeingCalledRef.current}, channelId=${beingCalledDataRef.current?.data.channel_id}, dataChannelId=${data.data.channel_id}`);
                 }
 
                 setIsInCall(true);
-                console.log('getting channel')
+                logger.log('getting channel')
                 window.discord.voice.getVoiceChannel();
-                console.log('getting voicesettings')
+                logger.log('getting voicesettings')
                 window.discord.voice.getVoiceSettings();
                 break;
             case 'GET_SELECTED_VOICE_CHANNEL':
-                console.log('got channel')
+                logger.log('got channel')
                 const initialData: GetChannelType = data;
                 setInitial(initialData)
                 break;
             case 'GET_VOICE_SETTINGS':
-                console.log('got voicesettigns')
+                logger.log('got voicesettigns')
                 const voiceSettingsData: VoiceSettingsType = data;
                 setIsMuted(voiceSettingsData.data.mute)
                 setIsDeafened(voiceSettingsData.data.deaf)
@@ -209,12 +208,12 @@ const DiscordCall: React.FC = () => {
                         selfmuted: voiceStateCreateData.data.voice_state.self_mute,
                         selfdeafened: voiceStateCreateData.data.voice_state.self_deaf
                     }
-                    console.log('created Call State:', updatedCallState);
+                    logger.log('created Call State:', updatedCallState);
                     return updatedCallState;
                 })
                 break;
             case 'VOICE_STATE_UPDATE':
-                console.log('Voice State Updated:', data);
+                logger.log('Voice State Updated:', data);
                 const voiceStateUpdateData: VoiceStateType = data;
                 setCallState((prevCallState): VoiceUsers | null => {
                     if (!prevCallState) return null;
@@ -229,7 +228,7 @@ const DiscordCall: React.FC = () => {
                         selfmuted: voiceStateUpdateData.data.voice_state.self_mute,
                         selfdeafened: voiceStateUpdateData.data.voice_state.self_deaf
                     };
-                    console.log('Updated Call State:', updatedCallState);
+                    logger.log('Updated Call State:', updatedCallState);
                     return updatedCallState;  // Return the new state
                 });
                 break;
@@ -245,7 +244,7 @@ const DiscordCall: React.FC = () => {
                 });
                 break;
             case 'SPEAKING_START':
-                console.log('Speaking Start:', data);
+                logger.log('Speaking Start:', data);
                 const speakingData: SpeakingType = data;
                 setCallState((prevCallState): VoiceUsers | null => {
                     if (!prevCallState) return null;
@@ -256,7 +255,7 @@ const DiscordCall: React.FC = () => {
                 })
                 break;
             case 'SPEAKING_STOP':
-                console.log('Speaking Stop:', data);
+                logger.log('Speaking Stop:', data);
                 const speakingStopData: SpeakingType = data
                 setCallState((prevCallState): VoiceUsers | null => {
                     if (!prevCallState) return null;
@@ -272,9 +271,9 @@ const DiscordCall: React.FC = () => {
                 setIsDeafened(voiceSettingsUpdateData.data.deaf)
                 break;
             case 'NOTIFICATION_CREATE':
-                console.log('discord-create-data:', data)
+                logger.log('discord-create-data:', data)
                 const notificationCreateData: DiscordNotificationType = data;
-                console.log('noti-create-data:', notificationCreateData)
+                logger.log('noti-create-data:', notificationCreateData)
                 if (notificationCreateData.data.message.type === 3) {
                     const args = {
                         channel_id: notificationCreateData.data.channel_id,
@@ -284,15 +283,15 @@ const DiscordCall: React.FC = () => {
                     await setBeingCalledData(notificationCreateData)
                     beingCalledDataRef.current = notificationCreateData; // Update ref immediately
 
-                    console.log(`beingcalledData: ${beingCalledData}`)
+                    logger.log(`beingcalledData: ${beingCalledData}`)
                     await window.discord.subscribe('VOICE_STATE_DELETE', args)
                     await setChannelId(args.channel_id)
 
-                    console.log('getting called')
+                    logger.log('getting called')
                 }
                 break;
             default:
-                console.log('Unhandled event:', data.evt, data.cmd);
+                logger.log('Unhandled event:', data.evt, data.cmd);
         }
     }, [])
 

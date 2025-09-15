@@ -48,7 +48,6 @@ const DiscordMain: React.FC = ({
             if (e.key === 'discord_client_id' || e.key === 'discord_client_secret') {
                 connectToDiscord();
             }
-            console.log('storage event')
         };
     
     

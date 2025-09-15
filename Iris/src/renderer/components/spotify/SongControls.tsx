@@ -83,7 +83,7 @@ const SongControls: React.FC<SongControlsProps> = ({
   }
 
   const handleBack = () => {
-    window.electron.log(`${currentTime / 1000 < 3}`)
+    // window.electron.log(`${currentTime / 1000 < 3}`)
     if ((currentTime / 1000) < 3) {
       onBack();
       return;
