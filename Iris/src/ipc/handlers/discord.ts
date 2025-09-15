@@ -15,6 +15,7 @@ export function setupDiscordHandlers(mainWindow: BrowserWindow) {
             const client_secret = secret;
 
             discordRPC = new DiscordRPC(String(client_id), String(client_secret));
+
             await discordRPC.connect();
 
             // Forward notifications to renderer
@@ -145,4 +146,8 @@ export function setupDiscordHandlers(mainWindow: BrowserWindow) {
             throw error;
         }
     });
+}
+
+export function getDiscordRPC(): DiscordRPC | null {
+    return discordRPC;
 }

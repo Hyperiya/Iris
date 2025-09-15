@@ -1,11 +1,15 @@
 import spotifyService from "../spotifyServices/SpotifyService.ts";
 import DiscordRPC from "../discordServices/discordRPC.ts";
-import { match } from "assert";
+import { getDiscordRPC } from "../../ipc/handlers/discord.ts";
 
 export class CommandProcessor {
     private commands = new Map<string, () => Promise<void>>(); // Maps command strings to action functions
 
-    constructor(private discordRPC: DiscordRPC | null) {
+    private get discordRPC(): DiscordRPC | null {
+        return getDiscordRPC();
+    }
+
+    constructor() {
         this.registerCommands();
     }
 
@@ -13,7 +17,7 @@ export class CommandProcessor {
         /*
          * Discord Commands
          */
-        this.registerMultiple(["leave call", "hang up", "disconnect"], async () => this.discordRPC?.voice.leaveCall());
+        this.registerMultiple(["leave call", "hang up", "disconnect", "leave"], async () => this.discordRPC?.voice.leaveCall());
 
         // Deafen/undeafen have many aliases due to Vosk speech recognition errors
         this.registerMultiple(["deafen", "stephen", "duffin", "devon", "death and", "and", "death in"], async () =>
@@ -24,11 +28,28 @@ export class CommandProcessor {
             this.discordRPC?.voice.undeafen()
         );
 
+        this.registerMultiple(
+            [
+                ["mute", true],
+                ["newt", true],
+                ["new", true],
+                ["mew", true],
+            ],
+            async () => this.discordRPC?.voice.mute()
+        );
+        this.registerMultiple(
+            [
+                ["unmute", true],
+                ["un newt", true],
+                ["anew", true],
+                ["a new", true],
+                ["un mew", true],
+            ],
+            async () => this.discordRPC?.voice.unmute()
+        );
         /*
          * Spotify Commands
          */
-        this.registerMultiple([["mute", true]], async () => this.discordRPC?.voice.mute());
-        this.registerMultiple([["unmute", true]], async () => this.discordRPC?.voice.unmute());
 
         this.registerMultiple([["play", true], ["resume", true], "continue"], async () =>
             spotifyService.resumePlayback()

@@ -23,23 +23,13 @@ import { setupIpcHandlers } from "./ipc/index.ts";
 import spotifyService from "./services/spotifyServices/SpotifyService.ts";
 import { saveWindowState, restoreWindowState } from "./utils/windowState.ts";
 import { CommandProcessor } from "./services/VAServices/CommandProcessor.ts";
-
+import { logger } from "./utils/logger.ts"
 const isDebugMode = process.env.DEBUG_MODE?.trim() === "true";
 global.DEBUG_MODE = isDebugMode;
 
 global.HOYO_ONLINE = process.env.HOYO_ONLINE?.trim() === "true";
 
-global.logger = {
-    log: (...args: any[]) => {
-        if (isDebugMode) console.log(...args);
-    },
-    error: (...args: any[]) => {
-        if (isDebugMode) console.error(...args);
-    },
-    warn: (...args: any[]) => {
-        if (isDebugMode) console.warn(...args);
-    },
-};
+global.logger = logger
 
 console.log("DEBUG_MODE:", process.env.DEBUG_MODE, "isDebugMode:", isDebugMode); // Add this
 
@@ -62,7 +52,7 @@ let snapshotManager: SnapshotManager | null = null;
 let irisVA: IrisVA | null = null;
 
 
-commandProcessor = new CommandProcessor(discordRPC)
+commandProcessor = new CommandProcessor()
 
 ipcMain.setMaxListeners(20); // Or whatever number is appropriate
 
