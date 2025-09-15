@@ -1,3 +1,6 @@
+// TODO: 
+// Collapse button on popup 
+// Add timeout to updating call data when leaving 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './styles/DiscordCall.scss';
 
