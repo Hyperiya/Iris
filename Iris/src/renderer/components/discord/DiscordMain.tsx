@@ -43,16 +43,13 @@ const DiscordMain: React.FC = ({
         };
 
         connectToDiscord();
-
-        const handleStorageChange = (e: StorageEvent) => {
-            if (e.key === 'discord_client_id' || e.key === 'discord_client_secret') {
-                connectToDiscord();
-            }
-        };
-    
     
         // For changes from other windows/tabs
-        window.addEventListener('storage', handleStorageChange);
+        window.settings.onChange((key, value)=> {
+            if (key === 'discord.clientId' || key === 'discord.clientSecret') {
+                connectToDiscord();
+            }
+        });
     
         return () => {
             mounted = false;

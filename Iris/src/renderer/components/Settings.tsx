@@ -277,7 +277,7 @@ function Spotify({}: SpotifyProps) {
                 }}
                 onChange={(e) =>
                     window.settings.set(
-                        "music.prefferredLangauge",
+                        "music.preferredLanguage",
                         e.target.value.split("-") // Split 'en-us' into ['en', 'us']
                     )
                 }
