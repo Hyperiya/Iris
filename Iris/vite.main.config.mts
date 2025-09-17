@@ -17,6 +17,7 @@ export default defineConfig({
             external: [
                 "electron",
                 "fs",
+                "events",
                 "path",
                 "util",
                 "child_process",
