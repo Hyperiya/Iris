@@ -1,7 +1,5 @@
 import React, { useEffect } from 'react';
 import DiscordCall from './DiscordCall.tsx';
-import DiscordNotification from './DiscordNotification.tsx';
-
 
 const DiscordMain: React.FC = ({
 
@@ -63,7 +61,6 @@ const DiscordMain: React.FC = ({
             {logins && (
                 <>
                     <DiscordCall />
-                    <DiscordNotification />
                 </>
             )}
         </>

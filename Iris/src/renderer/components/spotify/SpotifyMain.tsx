@@ -223,7 +223,6 @@ const SpotifyMain: React.FC<SpotifyMainProps> = (viewState) => {
     return (
         <div className="spotify">
             <SongBackground coverUrl={currentTrackData.album_cover || Iris} />
-            <div className="section-content">
                 <div className="song-info">
                     <SongInfo
                         currentSong={{
@@ -342,7 +341,6 @@ const SpotifyMain: React.FC<SpotifyMainProps> = (viewState) => {
                     </div>
                 )}
             </div>
-        </div>
     );
 };
 

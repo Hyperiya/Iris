@@ -9,14 +9,14 @@
   /* Add this to properly position from top */
   position: fixed;
 
-  /* Add this to make it a positioning context */
-  display: flex;
+  // /* Add this to make it a positioning context */
+  // display: flex;
 
-  /* Add this to enable flexbox centering */
-  justify-content: center;
+  // /* Add this to enable flexbox centering */
+  // justify-content: center;
 
-  /* Center horizontally */
-  align-items: center;
+  // /* Center horizontally */
+  // align-items: center;
 
   /* Center vertically */
 }
@@ -54,4 +54,9 @@
   > * {
     pointer-events: auto;
   }
+}
+
+.section-content {
+  height: fit-content;
+  width: fit-content;
 }

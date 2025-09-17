@@ -10,11 +10,9 @@
 }
 
 .notification-container {
-  position: fixed;
-  top: 75px;
-  right: 50%;
+  position: relative;
   z-index: 1000;
-  translate: 50% 0;
+  // translate: 50% 0;
   outline: solid #27272a 1px;
 
   // Dimensions
@@ -29,7 +27,7 @@
   // Animation
   opacity: 0;
   // opacity: 1;
-  transform: translateY(0);
+  // transform: translateY(0);
 
   transition: all 0.3s ease;
   pointer-events: none;
