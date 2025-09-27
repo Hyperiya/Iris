@@ -7,14 +7,15 @@
     position: fixed;
 
     font-family: Urbanist;
-    
+
     top: 42px;
     right: 10px;
-    translate: 0 -200px; /* Start hidden above */
-    
+    translate: 0 -200px;
+    /* Start hidden above */
+
     z-index: 100;
     width: 280px;
-    
+
     transition: ease translate 0.3s, opacity 0.3s, visibility 0.3s;
     visibility: hidden;
 
@@ -22,21 +23,21 @@
         translate: 0 0;
         visibility: visible;
     }
-    
+
     .tip-content {
         h3 {
             margin: 0 0 8px 0;
             color: #fff;
             font-size: 14px;
         }
-        
+
         p {
             margin: 0 0 12px 0;
             color: #ccc;
             font-size: 13px;
             font-weight: 600;
         }
-        
+
         kbd {
             background: #333;
             border: 1px solid #555;
@@ -45,7 +46,7 @@
             font-family: monospace;
             font-size: 11px;
         }
-        
+
         button {
             background: #333;
             border: 1px solid #555;
@@ -56,10 +57,24 @@
             font-size: 12px;
             font-family: Urbanist;
             font-weight: 700;
-            
+
             &:hover {
                 background: #444;
             }
         }
     }
+}
+
+.top-bar {
+    top: 0;
+    left: 50%;
+    translate: -50% 0;
+    position: absolute;
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    justify-items: center;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
 }

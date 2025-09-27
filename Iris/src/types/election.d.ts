@@ -1,30 +1,38 @@
 import { AppSettings } from "../utils/settingsUtil.ts";
-import type * as PreloadTypes from '../preload/index.ts';
+import type * as PreloadTypes from "../preload/index.ts";
 
 // Type helper to get nested property types
 // Specifically for AppSettings
-type NestedKeyOf<T> = T extends object ? {
-  [K in keyof T]: K extends string 
-    ? T[K] extends object
-      ? `${K}` | `${K}.${NestedKeyOf<T[K]>}`
-      : `${K}`
-    : never
-}[keyof T] : never;
+type NestedKeyOf<T> = T extends object
+    ? T extends any[] // Add this check to exclude arrays
+        ? never
+        : {
+              [K in keyof T]: K extends string
+                  ? T[K] extends object
+                      ? T[K] extends any[] // Also exclude arrays here
+                          ? `${K}`
+                          : `${K}` | `${K}.${NestedKeyOf<T[K]>}`
+                      : `${K}`
+                  : never;
+          }[keyof T]
+    : never;
 
-type GetNestedValue<T, K extends string> = 
-  K extends `${infer First}.${infer Rest}`
+type GetNestedValue<T, K extends string> = K extends `${infer First}.${infer Rest}`
     ? First extends keyof T
-      ? GetNestedValue<T[First], Rest>
-      : never
+        ? GetNestedValue<T[First], Rest>
+        : never
     : K extends keyof T
-      ? T[K]
-      : never;
-      
-interface SettingsAPI extends Omit<PreloadTypes.SettingsAPI, 'get' | 'set'> {
-  get<K extends NestedKeyOf<AppSettings>>(key: K): GetNestedValue<AppSettings, K>;
-  set<K extends NestedKeyOf<AppSettings>>(key: K, value: GetNestedValue<AppSettings, K>): void;
+    ? T[K]
+    : never;
+
+interface SettingsAPI extends Omit<PreloadTypes.SettingsAPI, "get" | "set"> {
+    get<K extends NestedKeyOf<AppSettings>>(key: K): GetNestedValue<AppSettings, K>;
+    set<K extends NestedKeyOf<AppSettings>>(key: K, value: GetNestedValue<AppSettings, K>): void;
+    onChange<K extends NestedKeyOf<AppSettings>>(
+        callback: (key: K, value: GetNestedValue<AppSettings, K>) => void
+    ): void;
 }
-    
+
 declare global {
     interface Window {
         irisVA: PreloadTypes.IrisVaAPI;
@@ -43,4 +51,4 @@ declare global {
     }
 }
 
-export { };
+export {};

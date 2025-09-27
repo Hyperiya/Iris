@@ -19,6 +19,7 @@ import AppSelector from "./components/AppSelector.tsx";
 import LoadingScreen from "./components/LoadingScreen.tsx";
 import { LoadingProvider, useLoading } from "./context/LoadingContext.tsx";
 import WakeBorder from "./components/voice/WakeBorder.tsx";
+import DiscordNotification from "./components/discord/DiscordNotification.tsx";
 
 import "../index.scss";
 import "./App.scss";
@@ -163,7 +164,10 @@ function AppContent() {
 
                 <div className={`content-wrapper ${viewState}`}>
                     <WakeBorder />
-                    <AppSelector viewState={viewState} setViewState={setViewState} hide={hide} />
+                    <div className="top-bar">
+                        <AppSelector viewState={viewState} setViewState={setViewState} hide={hide} />
+                        <DiscordNotification />
+                    </div>
                     {showSettings && (
                         <div className="settings-backdrop" onClick={handleOutsideClick}>
                             <Settings isSettings={showSettings} setIsSettings={setShowSettings} />
@@ -179,7 +183,13 @@ function AppContent() {
                     )}
                     {enabledModules.hoyolab && (
                         <div
-                            className={`right-section ${viewState === ViewState.RIGHT_FULL ? "full" : viewState === ViewState.SPOTIFY_FULL ? "hidden" : ""}`}
+                            className={`right-section ${
+                                viewState === ViewState.RIGHT_FULL
+                                    ? "full"
+                                    : viewState === ViewState.SPOTIFY_FULL
+                                    ? "hidden"
+                                    : ""
+                            }`}
                         >
                             <HoyoMain ViewState={viewState} />
                         </div>

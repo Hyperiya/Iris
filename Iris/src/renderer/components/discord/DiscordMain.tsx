@@ -1,7 +1,5 @@
 import React, { useEffect } from 'react';
 import DiscordCall from './DiscordCall.tsx';
-import DiscordNotification from './DiscordNotification.tsx';
-
 
 const DiscordMain: React.FC = ({
 
@@ -43,17 +41,13 @@ const DiscordMain: React.FC = ({
         };
 
         connectToDiscord();
-
-        const handleStorageChange = (e: StorageEvent) => {
-            if (e.key === 'discord_client_id' || e.key === 'discord_client_secret') {
-                connectToDiscord();
-            }
-            console.log('storage event')
-        };
-    
     
         // For changes from other windows/tabs
-        window.addEventListener('storage', handleStorageChange);
+        window.settings.onChange((key, value)=> {
+            if (key === 'discord.clientId' || key === 'discord.clientSecret') {
+                connectToDiscord();
+            }
+        });
     
         return () => {
             mounted = false;
@@ -67,7 +61,6 @@ const DiscordMain: React.FC = ({
             {logins && (
                 <>
                     <DiscordCall />
-                    <DiscordNotification />
                 </>
             )}
         </>

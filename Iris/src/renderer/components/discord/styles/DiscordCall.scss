@@ -1,4 +1,36 @@
 // DiscordCall.scss
+.collapse-button {
+    position: absolute;
+    top: -24px; // Positions it above the discord-call div
+    left: 50%;
+    translate: -50% 0;
+    right: 8px;
+    width: 24px;
+    height: 24px;
+    background-color: #000; // Discord's dark theme color
+    border-radius: 4px 4px 0px 0px;
+    outline: solid #27272a 1px;
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border: none;
+    padding: 00px 20px;
+    
+    &:hover {
+        background-color: #40444b;
+    }
+
+    svg {
+        display: block; // Ensure it's not inline
+        min-height: 16px;
+        min-width: 16px;
+    }
+}
+
+
 .discord-call {
     position: absolute;
     left: 50%;
@@ -23,6 +55,9 @@
     &.ringing {
         translate: -50% 0;
         pointer-events: all;
+    }
+    &.collapse {
+        translate: -50% 109.5%;
     }
 }
 
@@ -190,7 +225,7 @@
         display: flex;
         flex-direction: column;
         gap: 6px;
-        
+
 
         .call-author {
             color: grey;

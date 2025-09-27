@@ -1,9 +1,13 @@
 import spotifyService from "../spotifyServices/SpotifyService.ts";
 import DiscordRPC from "../discordServices/discordRPC.ts";
 import { getDiscordRPC } from "../../ipc/handlers/discord.ts";
+import { DiscordNotificationType } from "../discordServices/types.ts";
 
 export class CommandProcessor {
     private commands = new Map<string, () => Promise<void>>(); // Maps command strings to action functions
+    private isBeingCalled: boolean = false;
+    private beingCalledData: DiscordNotificationType | undefined;
+    private callTimeout: NodeJS.Timeout | null = null;
 
     private get discordRPC(): DiscordRPC | null {
         return getDiscordRPC();
@@ -13,11 +17,71 @@ export class CommandProcessor {
         this.registerCommands();
     }
 
+    public monitorDiscordCall() {
+        try {
+            const handleData = (data: any) => {
+                this.handleDiscordData(data);
+            };
+
+            this.discordRPC?.addListener("data", handleData);
+        } catch (error) {
+            console.error("Failed to monitor Discord call:", error);
+        }
+    }
+
+    private handleDiscordData = (data: any) => {
+        switch (data.evt ?? data.cmd) {
+            case "NOTIFICATION_CREATE":
+                const notificationCreateData: DiscordNotificationType = data;
+                if (notificationCreateData.data.message.type === 3) {
+                    this.isBeingCalled = true;
+                    this.beingCalledData = notificationCreateData;
+
+                    // Set timeout to reset call state after 30 seconds
+                    this.callTimeout = setTimeout(() => {
+                        this.isBeingCalled = false;
+                    }, 30000);
+                }
+                break;
+            case "VOICE_CHANNEL_SELECT":
+                if (this.isBeingCalled && this.beingCalledData?.data.channel_id === data.data.channel_id) {
+                    this.isBeingCalled = false;
+                    if (this.callTimeout) {
+                        clearTimeout(this.callTimeout);
+                        this.callTimeout = null;
+                    }
+                }
+                break;
+            case "VOICE_STATE_DELETE":
+                if (this.isBeingCalled) {
+                    this.isBeingCalled = false;
+                    if (this.callTimeout) {
+                        clearTimeout(this.callTimeout);
+                        this.callTimeout = null;
+                    }
+                }
+                break;
+        }
+    };
+
     private async registerCommands() {
         /*
          * Discord Commands
          */
-        this.registerMultiple(["leave call", "hang up", "disconnect", "leave"], async () => this.discordRPC?.voice.leaveCall());
+        this.registerMultiple(
+            [
+                ["pick up", true],
+                ["accept", true],
+                ["join", true],
+            ],
+            async () => {
+                if (!this.isBeingCalled || !this.beingCalledData) return;
+                await this.discordRPC?.voice.joinCall(String(this.beingCalledData.data.channel_id));
+            }
+        );
+        this.registerMultiple(["hang up", ["disconnect", true], ["leave", true]], async () =>
+            this.discordRPC?.voice.leaveCall()
+        );
 
         // Deafen/undeafen have many aliases due to Vosk speech recognition errors
         this.registerMultiple(["deafen"], async () =>
@@ -27,6 +91,8 @@ export class CommandProcessor {
         this.registerMultiple(["un deafen"], async () =>
             this.discordRPC?.voice.undeafen()
         );
+
+        // Mute/unmute have many aliases due to Vosk speech recognition errors
 
         this.registerMultiple(
             [

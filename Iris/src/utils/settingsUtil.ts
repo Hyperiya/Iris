@@ -1,4 +1,3 @@
-// src/services/settingsService.ts
 import { app } from "electron";
 import { BrowserWindow } from "electron";
 import { getOSLocale } from "./locale.ts";
@@ -28,7 +27,7 @@ export interface AppSettings {
     modules: EnabledModules;
   };
   music: {
-    prefferredLangauge: string[]; // Optional, can be undefined
+    preferredLanguage: string[]; // Optional, can be undefined
   };
   voiceAssistant: {
     enabled: boolean;
@@ -54,7 +53,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     },
   },
   music: {
-    prefferredLangauge: getOSLocale(), // Optional, can be undefined
+    preferredLanguage: getOSLocale(), // Optional, can be undefined
   },
   voiceAssistant: {
     enabled: false,

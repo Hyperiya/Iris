@@ -2,6 +2,7 @@
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
 
 // src/preload.ts
-
 import './preload/index.ts';
 
+// Add to preload.ts
+// Add to preload.ts
