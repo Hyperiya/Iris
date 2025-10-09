@@ -84,11 +84,11 @@ export class CommandProcessor {
         );
 
         // Deafen/undeafen have many aliases due to Vosk speech recognition errors
-        this.registerMultiple(["deafen", "stephen", "duffin", "devon", "death and", "and", "death in"], async () =>
+        this.registerMultiple(["deafen"], async () =>
             this.discordRPC?.voice.deafen()
         );
 
-        this.registerMultiple(["undeafen", "under often", "under and", "under fun", "under under oven"], async () =>
+        this.registerMultiple(["un deafen"], async () =>
             this.discordRPC?.voice.undeafen()
         );
 
@@ -97,19 +97,12 @@ export class CommandProcessor {
         this.registerMultiple(
             [
                 ["mute", true],
-                ["newt", true],
-                ["new", true],
-                ["mew", true],
             ],
             async () => this.discordRPC?.voice.mute()
         );
         this.registerMultiple(
             [
-                ["unmute", true],
-                ["un newt", true],
-                ["anew", true],
-                ["a new", true],
-                ["un mew", true],
+                ["un mute", true],
             ],
             async () => this.discordRPC?.voice.unmute()
         );
