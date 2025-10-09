@@ -355,12 +355,12 @@ ipcMain.handle("get-app-path", () => {
 
 ipcMain.on("console-log", (_, message) => {
     if (process.env.DEBUG_MODE == "false") return; // Only log in non-production environments
-    console.log(message); // This will print to terminal
+    logger.log(message); // This will print to terminal
 });
 
 ipcMain.on("console-error", (_, message) => {
     if (process.env.DEBUG_MODE == "false") return; // Only log in non-production environments
-    console.error(message); // This will print to terminal
+    logger.error(message); // This will print to terminal
 });
 
 app.whenReady().then(async () => {

@@ -5,6 +5,7 @@ import SongControls from "./SongControls.tsx";
 import SongUpcoming from "./SongUpcoming.tsx";
 import SongBackground from "./SongBackground.tsx";
 import SongLyrics from "./SongLyrics.tsx";
+import SpotifyPlaylists from "./SpotifyPlaylists.tsx";
 
 import Iris from "../../../assets/icons/Iris.png";
 
@@ -12,7 +13,6 @@ import "./Styles/Main.scss";
 import { Song } from "../../../services/spotifyServices/types/types.ts";
 import { ViewState } from "../../../types/viewState.ts";
 import { ColorExtractor } from "../../../utils/ColorExtractor.ts";
-import SpotifyPlaylists from "./SpotifyPlaylists.tsx";
 import { Playlist } from "../../../services/spotifyServices/types/types.ts";
 
 interface SpotifyMainProps {
@@ -243,7 +243,7 @@ const SpotifyMain: React.FC<SpotifyMainProps> = (viewState) => {
                     <SongControls
                         isPlaying={currentTrackData.is_playing || false}
                         currentTime={
-                            Date.now() - manualStateUpdateRef.current < 200
+                            Date.now() - manualStateUpdateRef.current < 500
                                 ? localProgress
                                 : window.spotify.currentProgress().progress_ms ?? 0
                         }
@@ -330,7 +330,7 @@ const SpotifyMain: React.FC<SpotifyMainProps> = (viewState) => {
                                 length: currentTrackData.duration_ms || 0,
                             }}
                             currentTime={
-                                Date.now() - manualStateUpdateRef.current < 200
+                                Date.now() - manualStateUpdateRef.current < 500
                                     ? localProgress
                                     : window.spotify.currentProgress().progress_ms ?? 0
                             }
