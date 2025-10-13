@@ -9,7 +9,7 @@ import zzzIcon from "../../../assets/images/Zenless_Zone_Zero_logo.png"
 import genshinIcon from "../../../assets/images/Genshin-Impact-Logo.png"
 import honkaiIcon from "../../../assets/images/Honkai_Star-Rail_Logo.png"
 
-import { starrailBattery, starrailInfo, zenlessBattery, zenlessInfo, genshinInfo, genshinNotes, baseInfo } from '../../../services/hoyoServices/gameResponseTypes/index.ts';
+import { starrailBattery, zenlessBattery, genshinNotes, baseInfo } from '../../../services/hoyoServices/gameResponseTypes/index.ts';
 
 interface CustomCSS extends CSSProperties {
   '--accent-color'?: string;

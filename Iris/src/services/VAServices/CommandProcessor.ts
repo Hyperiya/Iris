@@ -2,6 +2,7 @@ import spotifyService from "../spotifyServices/SpotifyService.ts";
 import DiscordRPC from "../discordServices/discordRPC.ts";
 import { getDiscordRPC } from "../../ipc/handlers/discord.ts";
 import { DiscordNotificationType } from "../discordServices/types.ts";
+import { BrowserWindow } from "electron";
 
 export class CommandProcessor {
     private commands = new Map<string, () => Promise<void>>(); // Maps command strings to action functions
@@ -192,7 +193,7 @@ export class CommandProcessor {
     }
 
     // Processes voice commands with fallback from exact to word matching
-    async processCommand(command: string) {
+    async processCommand(command: string, mainWindow: BrowserWindow) {
         const normalizedCommand = command.toLowerCase().trim();
 
         // Check for variable commands first
@@ -236,6 +237,7 @@ export class CommandProcessor {
             await commandFunction();
         } else {
             console.log(`Unknown command: ${command}`);
+            mainWindow.webContents.send("va:unknown")
         }
     }
 

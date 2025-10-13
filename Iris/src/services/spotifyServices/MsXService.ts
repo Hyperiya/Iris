@@ -24,7 +24,12 @@ export class MsXService {
                 f_subtitle_length_max_deviation: '40',
             };
 
+            logger.log("Sending with", params)
+
             const apiResult = await this.queryMusixmatch('macro.subtitles.get', params);
+
+            logger.log(JSON.stringify(apiResult, null, 2));
+
             if (apiResult) {
                 result = this.parseSyncedLyrics(apiResult);
 
@@ -129,6 +134,7 @@ export class MsXService {
 
         logger.log(`Querying translations with params for song "${songTitle}":`, queryParams);
         const result = await this.queryMusixmatch('crowd.track.translations.get', queryParams);
+        logger.log(`Translations for song "${songTitle}":`, JSON.stringify(result, null, 2));
         return result?.message?.body?.translations_list;
     }
 }
