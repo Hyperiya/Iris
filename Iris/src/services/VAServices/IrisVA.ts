@@ -415,7 +415,7 @@ export class IrisVA {
                         .replaceAll("hey iris", "")
                         .trim();
                     logger.log("Command detected:", command);
-                    this.commandProcessor?.processCommand(command || "");
+                    this.commandProcessor?.processCommand(command || "", this.mainWindow);
                     break;
                 case "PROCESSED":
                     logger.log("Command processed");

@@ -16,7 +16,8 @@ const irisVaLoader = {
     },
     onWaiting: (callback) => ipcRenderer.on('va:waiting', callback),
     onReset: (callback) => ipcRenderer.on('va:resetting', callback),
-    onCommand: (callback) => ipcRenderer.on('va:command', callback)
+    onCommand: (callback) => ipcRenderer.on('va:command', callback),
+    onUnknown: (callback) => ipcRenderer.on('va:unknown', callback) 
 };
 
 contextBridge.exposeInMainWorld("irisVA", irisVaLoader);
