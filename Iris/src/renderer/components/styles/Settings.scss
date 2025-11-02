@@ -15,20 +15,22 @@
   justify-content: center;
   align-items: center;
   z-index: 999;
-  overflow-y: auto; /* Allow scrolling if content is too tall */
+  overflow-y: auto;
+  /* Allow scrolling if content is too tall */
 }
 
 .settings {
-  position: relative; /* Change from fixed to relative */
-  padding: 0; /* Remove padding as it's handled by settings-container */
-  width: 90%; /* Use percentage of parent (which is centered) */
-  max-width: 800px; /* Keep max-width */
-  max-height: 80vh; /* Use viewport height instead of percentage */
+  position: relative;
+  padding: 0;
+  width: 100vw; // Full viewport width
+  height: 100%; // Full viewport height
+  max-width: none; // Remove max-width constraint
+  max-height: none; // Remove max-height constraint
   opacity: 0;
   z-index: 1000;
   visibility: hidden;
   transition: opacity 0.3s ease, visibility 0.3s ease;
-  margin: auto; /* Center within the backdrop */
+  margin: 0; // Remove margin
 
   &.show {
     opacity: 1;
@@ -38,14 +40,118 @@
 
 .settings-container {
   background-color: #121214;
-  border-radius: 12px;
-  overflow: hidden;
-  height: 100%;
+  height: 100vh;
   display: flex;
   flex-direction: column;
-  max-height: 80vh; /* Limit height */
-  overflow-y: auto; /* Enable scrolling for tall content */
 }
+
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 32px;
+  border-bottom: 1px solid #333;
+
+  h1 {
+    color: white;
+    font-size: 28px;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .close-button {
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+      background-color: #333;
+      color: white;
+    }
+    
+    svg {
+      width: 24px;
+      height: 24px;
+    }
+  }
+}
+
+.settings-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.settings-sidebar {
+  width: 280px;
+  background-color: #1a1a1c;
+  border-right: 1px solid #333;
+  padding: 24px 0;
+  overflow-y: auto;
+
+  .sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 16px 24px;
+    background: none;
+    border: none;
+    color: #999;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+
+    &:hover {
+      background-color: #2a2a2c;
+      color: white;
+    }
+
+    &.active {
+      background-color: #ff8484;
+      color: white;
+    }
+
+    .sidebar-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      
+      svg {
+        width: 20px;
+        height: 20px;
+      }
+    }
+
+    .sidebar-label {
+      font-weight: 500;
+    }
+  }
+}
+
+.settings-main {
+  flex: 1;
+  padding: 32px;
+  overflow-y: auto;
+
+  h2 {
+    color: white;
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0 0 24px 0;
+  }
+}
+
 
 .navigation-header {
   padding: 20px 24px;
@@ -112,10 +218,14 @@
 .options-menu {
   flex-grow: 1;
   animation: fadeIn 0.3s ease-out;
-  max-height: 70vh; /* Slightly smaller than container */
-  overflow-y: auto; /* Enable scrolling */
-  padding: 0 16px; /* Add horizontal padding */
+  max-height: 70vh;
+  /* Slightly smaller than container */
+  overflow-y: auto;
+  /* Enable scrolling */
+  padding: 0 16px;
+  /* Add horizontal padding */
 }
+
 .options-list {
   display: flex;
   flex-direction: column;
@@ -173,17 +283,26 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  padding: 20px;
-  border-radius: 8px;
-  margin-bottom: 16px;
-  margin-left: 20px;
+  padding: 24px;
+  margin: 0;
+  max-width: none;
+  width: 100%;
+  background-color: #1a1a1c;
+  border-radius: 12px;
+  box-sizing: border-box;
 
   h3 {
-    margin: 0 0 16px 0;
     color: white;
-    font-size: 16px;
+    font-size: 18px;
+    font-weight: 600;
+    margin: 32px 0 16px 0;
+
+    &:first-child {
+      margin-top: 0;
+    }
   }
-  
+
+
   hr {
     color: white;
     background-color: white;
@@ -212,28 +331,28 @@
 }
 
 .install-status {
-    margin-top: 12px;
-    padding: 8px 12px;
-    border-radius: 4px;
-    font-size: 14px;
-    user-select: all;
-    margin-bottom: 10px;
+  margin-top: 12px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  user-select: all;
+  margin-bottom: 10px;
 
-    &.success {
-      background: rgba(29, 185, 84, 0.1);
-      color: #1db954;
-    }
-
-    &.error {
-      background: rgba(255, 68, 68, 0.1);
-      color: #ff4444;
-    }
-
-    &.installing {
-      background: rgba(247, 129, 2, 0.1);
-      color: rgb(247, 129, 2);
-    }
+  &.success {
+    background: rgba(29, 185, 84, 0.1);
+    color: #1db954;
   }
+
+  &.error {
+    background: rgba(255, 68, 68, 0.1);
+    color: #ff4444;
+  }
+
+  &.installing {
+    background: rgba(247, 129, 2, 0.1);
+    color: rgb(247, 129, 2);
+  }
+}
 
 // Module Toggle Section
 .module-toggles {
@@ -241,8 +360,9 @@
   flex-direction: row;
   width: 100%;
   gap: 24px;
-  padding: 24px 0;
+  padding: 0;
   align-items: flex-start;
+  flex-wrap: wrap;
 
   .module-toggle {
     @extend .flex-center;
@@ -252,7 +372,8 @@
     background-color: #1e1e20;
     border-radius: 8px;
     transition: all 0.2s ease;
-    width: 50%;
+    flex: 1;
+    min-width: 200px;
 
     &:hover {
       background-color: #28282b;
@@ -321,8 +442,8 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  padding: 30px;
-  margin-left: 20px;
+  padding: 0;
+  margin: 0;
 
   .basic-details {
     @extend .flex-center;
@@ -467,10 +588,18 @@
 
 // Credentials container
 .credentials {
-  padding: 20px 0;
-  gap: 10px;
+  padding: 0;
+  gap: 16px;
   align-items: flex-start;
-  margin-left: 20px;
+  margin: 0;
+  width: 100%;
+  box-sizing: border-box;
+  
+  .base-input {
+    width: 100%;
+    max-width: 400px;
+    box-sizing: border-box;
+  }
 }
 
 // Save input container
@@ -493,7 +622,7 @@
     .module-name {
       color: white;
     }
-  
+
     .toggle-switch {
       margin-right: 10px;
     }
@@ -564,34 +693,57 @@
 }
 
 @media (max-width: 768px) {
-  .settings {
-    width: 95%; /* Wider on small screens */
-    max-height: 85vh; /* Slightly taller on small screens */
+  .settings-content {
+    flex-direction: column;
   }
   
+  .settings-sidebar {
+    width: 100%;
+    padding: 16px 0;
+    border-right: none;
+    border-bottom: 1px solid #333;
+  }
+  
+  .settings-main {
+    padding: 16px;
+  }
+
   .settings-section {
-    padding: 15px 10px; /* Reduce padding on small screens */
+    padding: 16px;
+    border-radius: 8px;
   }
   
-  /* Make input fields responsive */
-  #input-bar {
-    width: 90%; /* Wider input on small screens */
+  .module-toggles {
+    flex-direction: column;
+    gap: 16px;
+    
+    .module-toggle {
+      width: 100%;
+      min-width: unset;
+    }
+  }
+  
+  .credentials .base-input {
+    max-width: none;
   }
 }
 
 /* Fix for very small screens */
 @media (max-width: 480px) {
   .settings {
-    width: 98%; /* Almost full width on very small screens */
+    width: 98%;
+    /* Almost full width on very small screens */
   }
-  
+
   .navigation-header {
-    padding: 15px; /* Reduce padding */
-    flex-wrap: wrap; /* Allow wrapping for long navigation paths */
+    padding: 15px;
+    /* Reduce padding */
+    flex-wrap: wrap;
+    /* Allow wrapping for long navigation paths */
   }
-  
+
   .nav-item {
-    font-size: 14px; /* Smaller font */
+    font-size: 14px;
+    /* Smaller font */
   }
 }
-

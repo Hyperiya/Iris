@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { LICENSE_TEXT } from "../../assets/license/license.ts";
 import "./styles/Settings.scss";
 import { logger } from "../utils/logger.ts";
+import { Settings as SettingsIcon, Music, MessageCircle, Gamepad2, Puzzle, Mic, Info, X } from "lucide-react";
 
 import Iris from "../../assets/icons/IrisWideTransparent.png";
 
@@ -19,173 +20,94 @@ export const DEFAULT_MODULES: EnabledModules = {
     hoyolab: true,
 };
 
+enum SettingsMenu {
+    GENERAL = "General",
+    SPOTIFY = "Spotify Settings",
+    DISCORD = "Discord Settings",
+    HOYOLAB = "Hoyolab Settings",
+    MODULES = "Modules",
+    VOICE_ASSISTANT = "Voice Assistant Settings (BETA)",
+    ABOUT = "About",
+    LICENSE = "License"
+}
+
 interface SettingsProps {
     isSettings: boolean;
     setIsSettings: (value: boolean) => void;
 }
 
-const Settings: React.FC<SettingsProps> = ({
-    isSettings,
-    setIsSettings: setIsSettings,
-}) => {
-    const [navigationPath, setNavigationPath] = useState<string[]>([
-        "Settings",
-    ]);
-    const [activeMenu, setActiveMenu] = useState<string | null>(null);
-
-    const generalOptions = [
-        "Spotify Settings",
-        "Hoyolab Settings",
-        "Discord Settings",
-        "Modules",
-        "Voice Assistant Settings (BETA)",
+const Settings: React.FC<SettingsProps> = ({ isSettings, setIsSettings }) => {
+    const [activeMenu, setActiveMenu] = useState<SettingsMenu>(SettingsMenu.GENERAL);
+    
+    const menuItems = [
+        { id: SettingsMenu.SPOTIFY, label: "Spotify", icon: <Music size={20} /> },
+        { id: SettingsMenu.DISCORD, label: "Discord", icon: <MessageCircle size={20} /> },
+        { id: SettingsMenu.HOYOLAB, label: "Hoyolab", icon: <Gamepad2 size={20} /> },
+        { id: SettingsMenu.MODULES, label: "Modules", icon: <Puzzle size={20} /> },
+        { id: SettingsMenu.VOICE_ASSISTANT, label: "Voice Assistant", icon: <Mic size={20} /> },
+        { id: SettingsMenu.ABOUT, label: "About", icon: <Info size={20} /> }
     ];
 
-    // Basic menu select
-    const handleMenuSelect = (menu: string) => {
-        window.electron.log(`Menu selected: ${menu}`);
-        // Build the full path based on current navigation
-        let newPath: string[];
-
-        // If we're in the main menu (Settings)
-        if (navigationPath.length === 1) {
-            newPath = ["Settings", menu];
-        }
-        // If we're in a submenu (e.g., General)
-        else if (navigationPath.length === 2) {
-            // Keep the current path and add the new menu
-            newPath = [...navigationPath, menu];
-        }
-        // If we're already in a sub-submenu, replace the last item
-        else {
-            newPath = [...navigationPath.slice(0, -1), menu];
-        }
-
-        setNavigationPath(newPath);
-        setActiveMenu(menu);
-    };
-
-    // Navigation Handlers
-    const handleNavigationClick = (index: number) => {
-        // If clicking on 'Settings', reset to main menu
-        if (index === 0) {
-            setActiveMenu(null);
-            setNavigationPath(["Settings"]);
-            window.electron.log(`Navigation path: ${navigationPath}`);
-        }
-        // If clicking on a submenu, truncate the path up to that point
-        else if (index < navigationPath.length) {
-            const newPath = navigationPath.slice(0, index + 1);
-            setActiveMenu(navigationPath[index]);
-            setNavigationPath(newPath);
-            window.electron.log(`Navigation path: ${newPath}`);
-        }
-    };
-
-    useEffect(() => {
-      
-        
-      
-    }, [])
-    
-
     return (
-        <div
-            className={`settings ${isSettings ? "show" : ""}`}
-            onClick={(e) => e.stopPropagation()}
-        >
+        <div className={`settings ${isSettings ? "show" : ""}`}>
             <div className="settings-container">
-                {/* Navigation header */}
-                <div className="navigation-header">
-                    {navigationPath.map((item, index) => (
-                        <React.Fragment key={index}>
-                            {index > 0 && (
-                                <ArrowForwardIosRounded className="nav-arrow" />
-                            )}
-                            <span
-                                className={`nav-item ${
-                                    index === navigationPath.length - 1
-                                        ? "active"
-                                        : ""
-                                }`}
-                                onClick={() => handleNavigationClick(index)}
-                                role="button"
-                                tabIndex={0}
-                            >
-                                {item}
-                            </span>
-                        </React.Fragment>
-                    ))}
+                {/* Header with close button */}
+                <div className="settings-header">
+                    <h1>Settings</h1>
+                    <button className="close-button" onClick={() => setIsSettings(false)}>
+                        <X size={24} />
+                    </button>
                 </div>
-
-                {/* Main menu */}
-                {navigationPath.length === 1 && (
-                    <div className="main-buttons">
-                        <button
-                            className="settings-button"
-                            onClick={() => handleMenuSelect("General")}
-                        >
-                            General
-                        </button>
-                        <button
-                            className="settings-button"
-                            onClick={() => handleMenuSelect("About")}
-                        >
-                            About
-                        </button>
-                    </div>
-                )}
-
-                {/* Sub menus */}
-                {activeMenu === "General" && (
-                    <div className="options-list">
-                        {generalOptions.map((option, index) => (
+                
+                <div className="settings-content">
+                    {/* Sidebar */}
+                    <div className="settings-sidebar">
+                        {menuItems.map((item) => (
                             <button
-                                key={index}
-                                className="settings-button"
-                                onClick={() => handleMenuSelect(option)}
+                                key={item.id}
+                                className={`sidebar-item ${activeMenu === item.id ? 'active' : ''}`}
+                                onClick={() => setActiveMenu(item.id)}
                             >
-                                {option}
+                                <span className="sidebar-icon">{item.icon}</span>
+                                <span className="sidebar-label">{item.label}</span>
                             </button>
                         ))}
                     </div>
-                )}
-
-                {activeMenu === "Voice Assistant Settings (BETA)" && <IrisVA />}
-
-                {/* About Menu */}
-                {activeMenu === "About" && (
-                    <About handleMenuSelect={handleMenuSelect} />
-                )}
-
-                {activeMenu === "License" && <License />}
-
-                {/* Spotify Settings section */}
-                {activeMenu === "Spotify Settings" && <Spotify />}
-
-                {/* Hoyoverse Settings section */}
-                {activeMenu === "Hoyolab Settings" && <Hoyo />}
-
-                {/* Discord Settings section */}
-                {activeMenu === "Discord Settings" && <Discord />}
-
-                {activeMenu === "Modules" && (
-                    <Modules
-                        isSettings={isSettings}
-                        setIsSettings={setIsSettings}
-                    />
-                )}
+                    
+                    {/* Main content area */}
+                    <div className="settings-main">
+                        {activeMenu === SettingsMenu.GENERAL && <GeneralSettings />}
+                        {activeMenu === SettingsMenu.SPOTIFY && <Spotify />}
+                        {activeMenu === SettingsMenu.DISCORD && <Discord />}
+                        {activeMenu === SettingsMenu.HOYOLAB && <Hoyo />}
+                        {activeMenu === SettingsMenu.MODULES && <Modules isSettings={isSettings} setIsSettings={setIsSettings} />}
+                        {activeMenu === SettingsMenu.VOICE_ASSISTANT && <IrisVA />}
+                        {activeMenu === SettingsMenu.ABOUT && <About handleMenuSelect={setActiveMenu} />}
+                        {activeMenu === SettingsMenu.LICENSE && <License />}
+                    </div>
+                </div>
             </div>
         </div>
     );
 };
+
+// New General Settings component
+function GeneralSettings() {
+    return (
+        <div className="settings-section">
+            <h2>General Settings</h2>
+            <p>Configure general application settings here.</p>
+        </div>
+    );
+}
+
 
 export default Settings;
 
 function Snapshot({}) {}
 
 interface AboutProps {
-    handleMenuSelect: (menu: string) => void;
+    handleMenuSelect: (menu: SettingsMenu) => void;
 }
 
 function About({ handleMenuSelect }: AboutProps) {
@@ -213,7 +135,7 @@ function About({ handleMenuSelect }: AboutProps) {
             </p>
             <button
                 className="settings-button"
-                onClick={() => handleMenuSelect("License")}
+                onClick={() => handleMenuSelect(SettingsMenu.LICENSE)}
             >
                 License
             </button>
@@ -265,7 +187,6 @@ function Spotify({}: SpotifyProps) {
                 <div className="install-status installing">Installing...</div>
             )}
 
-            <hr />
 
             <h3>Preferred Language (Song Translation)</h3>
             <select
@@ -558,6 +479,7 @@ function IrisVA({}) {
     const [irisEnabled, setIrisEnabled] = useState<boolean>(false);
     const [irisInstalled, setIrisInstalled] = useState<boolean>(false);
     const [installStatus, setInstallStatus] = useState<string>("");
+    const [isLoading, setIsLoading] = useState<boolean>(true);
     // Audio Handlers
 
     const handleMicSelect = (deviceId: string) => {
@@ -626,8 +548,10 @@ function IrisVA({}) {
 
     useEffect(() => {
         const checkModel = async () => {
+            setIsLoading(true);
             const isInstalled = await window.irisVA.checkForModel();
             setIrisInstalled(isInstalled);
+            setIsLoading(false);
         };
         checkModel();
     }, []);
@@ -673,6 +597,14 @@ function IrisVA({}) {
 
         return name;
     };
+
+    if (isLoading) {
+        return (
+            <div className="settings-section">
+                <div className="install-status installing">Checking installation...</div>
+            </div>
+        );
+    }
 
     return (
         <div className="settings-section">
