@@ -2,6 +2,7 @@ import spotifyService from "../spotifyServices/SpotifyService.ts";
 import DiscordRPC from "../discordServices/discordRPC.ts";
 import { getDiscordRPC } from "../../ipc/handlers/discord.ts";
 import { DiscordNotificationType } from "../discordServices/types.ts";
+import { viewStateManager, ViewState } from "../../utils/mainViewState.ts";
 import { BrowserWindow } from "electron";
 
 export class CommandProcessor {
@@ -85,28 +86,14 @@ export class CommandProcessor {
         );
 
         // Deafen/undeafen have many aliases due to Vosk speech recognition errors
-        this.registerMultiple(["deafen"], async () =>
-            this.discordRPC?.voice.deafen()
-        );
+        this.registerMultiple(["deafen"], async () => this.discordRPC?.voice.deafen());
 
-        this.registerMultiple(["un deafen"], async () =>
-            this.discordRPC?.voice.undeafen()
-        );
+        this.registerMultiple(["un deafen"], async () => this.discordRPC?.voice.undeafen());
 
         // Mute/unmute have many aliases due to Vosk speech recognition errors
 
-        this.registerMultiple(
-            [
-                ["mute", true],
-            ],
-            async () => this.discordRPC?.voice.mute()
-        );
-        this.registerMultiple(
-            [
-                ["un mute", true],
-            ],
-            async () => this.discordRPC?.voice.unmute()
-        );
+        this.registerMultiple([["mute", true]], async () => this.discordRPC?.voice.mute());
+        this.registerMultiple([["un mute", true]], async () => this.discordRPC?.voice.unmute());
         /*
          * Spotify Commands
          */
@@ -138,6 +125,27 @@ export class CommandProcessor {
         this.registerMultiple(
             ["set volume", "volume", "set volume to"],
             async (value) => {
+                switch (value) {
+                    case "max":
+                    case "maximum":
+                        await spotifyService.setVolume(100);
+                        break;
+
+                    case "min":
+                    case "mute":
+                    case "off":
+                    case "minimum":
+                        await spotifyService.setVolume(0);
+                        break;
+
+                    case "up":
+                        await spotifyService.increaseVolume();
+                        break;
+
+                    case "down":
+                        await spotifyService.decreaseVolume();
+                        break;
+                }
                 if (value === "max" || value === "maximum") {
                     await spotifyService.setVolume(100);
                     return;
@@ -149,8 +157,19 @@ export class CommandProcessor {
             },
             true // isVariable = true
         );
-        this.registerMultiple(["increase volume", "volume up"], async () => spotifyService.increaseVolume());
-        this.registerMultiple(["decrease volume", "volume down"], async () => spotifyService.decreaseVolume());
+        this.registerMultiple(["increase volume"], async () => spotifyService.increaseVolume());
+        this.registerMultiple(["decrease volume"], async () => spotifyService.decreaseVolume());
+        this.registerMultiple(["show spotify", "spotify view", ["spotify full", true]], async () => {
+            viewStateManager.setViewState(ViewState.SPOTIFY_FULL);
+        });
+
+        this.registerMultiple(["show hoyo", "hoyo view", ["hoyo full", true]], async () => {
+            viewStateManager.setViewState(ViewState.RIGHT_FULL);
+        });
+
+        this.registerMultiple(["show both", "neutral view", "default view"], async () => {
+            viewStateManager.setViewState(ViewState.NEUTRAL);
+        });
     }
 
     /**
@@ -237,7 +256,7 @@ export class CommandProcessor {
             await commandFunction();
         } else {
             console.log(`Unknown command: ${command}`);
-            mainWindow.webContents.send("va:unknown")
+            mainWindow.webContents.send("va:unknown");
         }
     }
 

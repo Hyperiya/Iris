@@ -12,6 +12,7 @@ import DiscordRPC from "./services/discordServices/discordRPC.ts";
 import { SnapshotManager } from "./utils/snapshotUtil.ts";
 import { fileURLToPath } from "url";
 import { IrisVA } from './services/VAServices/IrisVA.ts';
+import { viewStateManager } from './utils/mainViewState.ts';
 
 
 import fs from "fs";
@@ -159,6 +160,7 @@ const createWindow = async (): Promise<void> => {
         show: false,
     });
 
+    viewStateManager.setMainWindow(mainWindow);
 
 
     // Add this after creating the mainWindow and before loading the URL

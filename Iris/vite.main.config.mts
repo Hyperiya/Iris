@@ -28,6 +28,7 @@ export default defineConfig({
                 "os",
                 "process",
                 "assert",
+                "atomically",
                 "node:fs",
                 "node:util",
                 "node:path",

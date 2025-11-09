@@ -142,6 +142,16 @@ function AppContent() {
         handleFullscreenChange();
     }, []);
 
+    useEffect(() => {
+        const handleViewStateChange = (newViewState: string) => {
+            setViewState(newViewState as ViewState);
+        };
+        window.electron.onViewStateChange(handleViewStateChange);
+        return () => {
+            window.electron.removeViewStateListener();
+        };
+    }, []);
+
     return (
         <>
             <LoadingScreen isVisible={isLoading} progress={progress} message={message} />

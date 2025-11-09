@@ -18,6 +18,7 @@ class SpotifyService extends EventEmitter {
     private token: string = "";
     private tokenExpire: number = 0;
     private tokenTime: number = 0;
+    private _isConnected: boolean = false;
 
     private _currentProgress: {
         progress_ms: number;
@@ -35,6 +36,10 @@ class SpotifyService extends EventEmitter {
             logger.error("Error in currentProgress getter:", error);
             return null;
         }
+    }
+
+    get isConnected() {
+        return this._isConnected;
     }
 
     constructor() {
@@ -57,6 +62,7 @@ class SpotifyService extends EventEmitter {
 
         this.wss.on("connection", async (ws: WebSocket) => {
             await this.clients.add(ws);
+            this._isConnected = true;
             logger.log("New Spicetify client connected");
             this.emit("connection");
 
@@ -87,12 +93,14 @@ class SpotifyService extends EventEmitter {
 
             ws.on("close", () => {
                 this.clients.delete(ws);
+                this._isConnected = this.clients.size > 0;
                 logger.log("Client disconnected");
             });
 
             ws.on("error", (error) => {
                 logger.error("WebSocket error:", error);
                 this.clients.delete(ws);
+                this._isConnected = this.clients.size > 0;
             });
 
             // Send initial connection confirmation
@@ -178,16 +186,20 @@ class SpotifyService extends EventEmitter {
 
     private sendWsMessage(message: any): void {
         if (this.clients.size === 0) {
-            // logger.warn("No Spicetify clients connected");
+            this._isConnected = false;
             return;
         }
 
         const messageStr = JSON.stringify(message);
+        let activeClients = 0;
         this.clients.forEach((client) => {
             if (client.readyState === WebSocket.OPEN) {
                 client.send(messageStr);
+                activeClients++;
             }
         });
+        
+        this._isConnected = activeClients > 0;
     }
 
     async handleMessage(message: string) {
@@ -203,6 +215,10 @@ class SpotifyService extends EventEmitter {
     // In SpotifyService.ts methods
     async getCurrentTrack(): Promise<Song> {
         try {
+            if (!this._isConnected) {
+                throw new Error("Spotify not connected");
+            }
+
             this.sendWsMessage({
                 type: "info",
                 action: "current",
@@ -251,6 +267,10 @@ class SpotifyService extends EventEmitter {
 
     async getNextSong(): Promise<Song> {
         try {
+            if (!this._isConnected) {
+                throw new Error("Spotify not connected");
+            }
+
             this.sendWsMessage({
                 type: "info",
                 action: "next",
@@ -313,6 +333,8 @@ class SpotifyService extends EventEmitter {
     }
 
     async playNextSong(): Promise<void> {
+        if (!this._isConnected) return;
+        
         try {
             this.sendWsMessage({
                 type: "playback",
@@ -320,11 +342,12 @@ class SpotifyService extends EventEmitter {
             });
         } catch (error) {
             logger.error("Error playing next song:", error);
-            throw error;
         }
     }
 
     async playUri(uri: string): Promise<void> {
+        if (!this._isConnected) return;
+        
         try {
             this.sendWsMessage({
                 type: "playback",
@@ -333,11 +356,12 @@ class SpotifyService extends EventEmitter {
             });
         } catch (error) {
             logger.error("Error playing URI:", error);
-            throw error;
         }
     }
 
     async playPreviousSong(): Promise<void> {
+        if (!this._isConnected) return;
+        
         try {
             this.sendWsMessage({
                 type: "playback",
@@ -345,20 +369,19 @@ class SpotifyService extends EventEmitter {
             });
         } catch (error) {
             logger.error("Error playing previous song:", error);
-            throw error;
         }
     }
 
     async pausePlayback(): Promise<void> {
+        if (!this._isConnected) return;
+        
         try {
-            // Send message through WebSocket
             this.sendWsMessage({
                 type: "playback",
                 action: "pause",
             });
         } catch (error) {
             logger.error("Error pausing playback:", error);
-            throw error;
         }
     }
 
@@ -372,19 +395,21 @@ class SpotifyService extends EventEmitter {
     }
 
     async resumePlayback(): Promise<void> {
+        if (!this._isConnected) return;
+        
         try {
-            // Send message through WebSocket
             this.sendWsMessage({
                 type: "playback",
                 action: "play",
             });
         } catch (error) {
             logger.error("Error resuming playback:", error);
-            throw error;
         }
     }
 
     async setVolume(volume: number): Promise<void> {
+        if (!this._isConnected) return;
+        
         try {
             this.sendWsMessage({
                 type: "playback",
@@ -393,12 +418,13 @@ class SpotifyService extends EventEmitter {
             });
         } catch (error) {
             logger.error("Error setting volume:", error);
-            throw error;
         }
     }
 
     // Seeking using Ws Message
     async seek(position: number): Promise<void> {
+        if (!this._isConnected) return;
+        
         try {
             this.sendWsMessage({
                 type: "playback",
@@ -407,33 +433,32 @@ class SpotifyService extends EventEmitter {
             });
         } catch (error) {
             logger.error("Error seeking position:", error);
-            throw error;
         }
     }
 
     async toggleShuffle(): Promise<void> {
+        if (!this._isConnected) return;
+        
         try {
-            // Send message through WebSocket
             this.sendWsMessage({
                 type: "playback",
                 action: "shuffle",
             });
         } catch (error) {
             logger.error("Error toggling shuffle:", error);
-            throw error;
         }
     }
 
     async toggleRepeatMode(): Promise<void> {
+        if (!this._isConnected) return;
+        
         try {
-            // Send message through WebSocket
             this.sendWsMessage({
                 type: "playback",
                 action: "toggleRepeat",
             });
         } catch (error) {
             logger.error("Error toggling repeat mode:", error);
-            throw error;
         }
     }
 
@@ -445,6 +470,8 @@ class SpotifyService extends EventEmitter {
      * @param mode `0` No repeat. `1` Repeat all. `2` Repeat one track.
      */
     async setRepeatMode(mode: RepeatState | number): Promise<void> {
+        if (!this._isConnected) return;
+        
         try {
             this.sendWsMessage({
                 type: "playback",
@@ -453,12 +480,15 @@ class SpotifyService extends EventEmitter {
             });
         } catch (error) {
             logger.error("Error setting repeat mode:", error);
-            throw error;
         }
     }
 
     async getPlaylists(): Promise<Playlist[]> {
         try {
+            if (!this._isConnected) {
+                throw new Error("Spotify not connected");
+            }
+
             logger.log("Getting playlists");
             this.sendWsMessage({
                 type: "info",
@@ -509,6 +539,10 @@ class SpotifyService extends EventEmitter {
 
     async getToken(): Promise<Token> {
         try {
+            if (!this._isConnected) {
+                throw new Error("Spotify not connected");
+            }
+
             this.sendWsMessage({
                 type: "info",
                 action: "token",
@@ -592,6 +626,7 @@ class SpotifyService extends EventEmitter {
                     client.close();
                 });
                 this.clients.clear();
+                this._isConnected = false;
 
                 // Close WebSocket server
                 this.wss.close(() => {
