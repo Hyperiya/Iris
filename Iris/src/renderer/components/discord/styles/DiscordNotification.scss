@@ -34,7 +34,6 @@
 
   &.visible {
     opacity: 1;
-    transform: translateY(calc(17.5px + 32px));
     pointer-events: all;
   }
 }
