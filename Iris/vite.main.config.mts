@@ -40,7 +40,8 @@ export default defineConfig({
                 "node:os",
                 "node:process",
                 "node:assert",
-                "node:stream"
+                "node:stream",
+                "node:events"
             ],
 
             output: {
