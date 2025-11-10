@@ -15,8 +15,7 @@
   justify-content: center;
   align-items: center;
   z-index: 999;
-  overflow-y: auto;
-  /* Allow scrolling if content is too tall */
+  overflow-y: hidden;
 }
 
 .settings {
@@ -255,6 +254,8 @@
 // Base input styling
 .base-input {
   padding: 12px;
+  max-width: 100%;
+  min-width: 10%;
   border-radius: 8px;
   border: 1px solid #323232;
   font-size: 14px;
@@ -446,7 +447,8 @@
   margin: 0;
 
   .basic-details {
-    @extend .flex-center;
+    display: flex;
+    align-items: center;
     flex-direction: row;
   }
 
@@ -471,6 +473,8 @@
     width: 30%;
     height: 100%;
     user-select: none;
+    border-radius: 10px;
+
 
     img {
       @extend .full-width, .full-height;
@@ -597,7 +601,6 @@
   
   .base-input {
     width: 100%;
-    max-width: 400px;
     box-sizing: border-box;
   }
 }
@@ -605,7 +608,8 @@
 // Save input container
 .save-input {
   gap: 10px;
-  margin-top: 5px;
+  margin-top: 16px;
+  display: flex;
 }
 
 .audio-settings {

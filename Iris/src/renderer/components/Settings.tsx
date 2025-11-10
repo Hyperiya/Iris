@@ -1,12 +1,11 @@
 // Settings.tsx
-import { ArrowForwardIosRounded } from "@mui/icons-material";
 import React, { useEffect, useState, useRef } from "react";
 import { LICENSE_TEXT } from "../../assets/license/license.ts";
 import "./styles/Settings.scss";
 import { logger } from "../utils/logger.ts";
 import { Settings as SettingsIcon, Music, MessageCircle, Gamepad2, Puzzle, Mic, Info, X } from "lucide-react";
 
-import Iris from "../../assets/icons/IrisWideTransparent.png";
+import Iris from "../../assets/icons/IrisWide.png";
 
 export interface EnabledModules {
     spotify: boolean;
@@ -28,7 +27,7 @@ enum SettingsMenu {
     MODULES = "Modules",
     VOICE_ASSISTANT = "Voice Assistant Settings (BETA)",
     ABOUT = "About",
-    LICENSE = "License"
+    LICENSE = "License",
 }
 
 interface SettingsProps {
@@ -37,15 +36,15 @@ interface SettingsProps {
 }
 
 const Settings: React.FC<SettingsProps> = ({ isSettings, setIsSettings }) => {
-    const [activeMenu, setActiveMenu] = useState<SettingsMenu>(SettingsMenu.GENERAL);
-    
+    const [activeMenu, setActiveMenu] = useState<SettingsMenu>();
+
     const menuItems = [
         { id: SettingsMenu.SPOTIFY, label: "Spotify", icon: <Music size={20} /> },
         { id: SettingsMenu.DISCORD, label: "Discord", icon: <MessageCircle size={20} /> },
         { id: SettingsMenu.HOYOLAB, label: "Hoyolab", icon: <Gamepad2 size={20} /> },
         { id: SettingsMenu.MODULES, label: "Modules", icon: <Puzzle size={20} /> },
         { id: SettingsMenu.VOICE_ASSISTANT, label: "Voice Assistant", icon: <Mic size={20} /> },
-        { id: SettingsMenu.ABOUT, label: "About", icon: <Info size={20} /> }
+        { id: SettingsMenu.ABOUT, label: "About", icon: <Info size={20} /> },
     ];
 
     return (
@@ -58,14 +57,14 @@ const Settings: React.FC<SettingsProps> = ({ isSettings, setIsSettings }) => {
                         <X size={24} />
                     </button>
                 </div>
-                
+
                 <div className="settings-content">
                     {/* Sidebar */}
                     <div className="settings-sidebar">
                         {menuItems.map((item) => (
                             <button
                                 key={item.id}
-                                className={`sidebar-item ${activeMenu === item.id ? 'active' : ''}`}
+                                className={`sidebar-item ${activeMenu === item.id ? "active" : ""}`}
                                 onClick={() => setActiveMenu(item.id)}
                             >
                                 <span className="sidebar-icon">{item.icon}</span>
@@ -73,14 +72,15 @@ const Settings: React.FC<SettingsProps> = ({ isSettings, setIsSettings }) => {
                             </button>
                         ))}
                     </div>
-                    
+
                     {/* Main content area */}
                     <div className="settings-main">
-                        {activeMenu === SettingsMenu.GENERAL && <GeneralSettings />}
                         {activeMenu === SettingsMenu.SPOTIFY && <Spotify />}
                         {activeMenu === SettingsMenu.DISCORD && <Discord />}
                         {activeMenu === SettingsMenu.HOYOLAB && <Hoyo />}
-                        {activeMenu === SettingsMenu.MODULES && <Modules isSettings={isSettings} setIsSettings={setIsSettings} />}
+                        {activeMenu === SettingsMenu.MODULES && (
+                            <Modules isSettings={isSettings} setIsSettings={setIsSettings} />
+                        )}
                         {activeMenu === SettingsMenu.VOICE_ASSISTANT && <IrisVA />}
                         {activeMenu === SettingsMenu.ABOUT && <About handleMenuSelect={setActiveMenu} />}
                         {activeMenu === SettingsMenu.LICENSE && <License />}
@@ -91,20 +91,7 @@ const Settings: React.FC<SettingsProps> = ({ isSettings, setIsSettings }) => {
     );
 };
 
-// New General Settings component
-function GeneralSettings() {
-    return (
-        <div className="settings-section">
-            <h2>General Settings</h2>
-            <p>Configure general application settings here.</p>
-        </div>
-    );
-}
-
-
 export default Settings;
-
-function Snapshot({}) {}
 
 interface AboutProps {
     handleMenuSelect: (menu: SettingsMenu) => void;
@@ -114,12 +101,7 @@ function About({ handleMenuSelect }: AboutProps) {
     return (
         <div className="about-content">
             <div className="basic-details">
-                <img
-                    src={Iris}
-                    alt="Iris"
-                    className="iris-image"
-                    draggable="true"
-                ></img>
+                <img src={Iris} alt="Iris" className="iris-image" draggable="true"></img>
                 <div className="name-text">
                     <span id="title">Iris </span>
                     <span id="name"> By Hyperiya</span>
@@ -127,16 +109,12 @@ function About({ handleMenuSelect }: AboutProps) {
             </div>
             <p className="iris-text">
                 Iris is a project created by Hyperiya (That's me!). <br />
-                It is a project that aims to provide a user-friendly interface
-                for the Spotify, Discord, and Hoyolab APIs. <br /> <br />
-                Iris © 2025 is licensed under CC BY-NC-SA 4.0 (Creative Commons
-                Attribution-NonCommercial-ShareAlike 4.0 International License).{" "}
-                <br />
+                It is a project that aims to provide a user-friendly interface for the Spotify, Discord, and Hoyolab
+                APIs. <br /> <br />
+                Iris © 2025 is licensed under CC BY-NC-SA 4.0 (Creative Commons Attribution-NonCommercial-ShareAlike 4.0
+                International License). <br />
             </p>
-            <button
-                className="settings-button"
-                onClick={() => handleMenuSelect(SettingsMenu.LICENSE)}
-            >
+            <button className="settings-button" onClick={() => handleMenuSelect(SettingsMenu.LICENSE)}>
                 License
             </button>
         </div>
@@ -175,18 +153,11 @@ function Spotify({}: SpotifyProps) {
                 Install Spicetify Extension
             </button>
             {installStatus && (
-                <div
-                    className={`install-status ${
-                        installStatus.includes("failed") ? "error" : "success"
-                    }`}
-                >
+                <div className={`install-status ${installStatus.includes("failed") ? "error" : "success"}`}>
                     {installStatus}
                 </div>
             )}
-            {isInstalling && (
-                <div className="install-status installing">Installing...</div>
-            )}
-
+            {isInstalling && <div className="install-status installing">Installing...</div>}
 
             <h3>Preferred Language (Song Translation)</h3>
             <select
@@ -264,24 +235,37 @@ function Hoyo({}: HoyoProps) {
     };
 
     return (
-        <div className="credentials flex-center flex-column full-width">
-            <input
-                type="text"
-                placeholder="Hoyolab Username/Email"
-                className="base-input"
-                style={{ width: "90%" }}
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-            />
-            <input
-                type="password"
-                placeholder="Hoyolab Password"
-                className="base-input"
-                style={{ width: "90%" }}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-            />
-            <div className="save-input flex-center">
+        <>
+            <div className="settings-section">
+                <div className="credentials flex-center flex-column full-width">
+                    <input
+                        type="text"
+                        placeholder="Hoyolab Username/Email"
+                        className="base-input"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                    />
+                    <input
+                        type="password"
+                        placeholder="Hoyolab Password"
+                        className="base-input"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                    />
+                    {loginStatus && !loggingIn && (
+                        <div
+                            className={`install-status ${
+                                loginStatus.toLowerCase().includes("failed") ? "error" : "success"
+                            }`}
+                        >
+                            {loginStatus}
+                        </div>
+                    )}
+
+                    {loggingIn && <div className="install-status installing">Logging in...</div>}
+                </div>
+            </div>
+            <div className="save-input">
                 <button
                     className="base-button"
                     style={{
@@ -294,22 +278,7 @@ function Hoyo({}: HoyoProps) {
                     Save
                 </button>
             </div>
-            {loginStatus && !loggingIn && (
-                <div
-                    className={`install-status ${
-                        loginStatus.toLowerCase().includes("failed")
-                            ? "error"
-                            : "success"
-                    }`}
-                >
-                    {loginStatus}
-                </div>
-            )}
-
-            {loggingIn && (
-                <div className="install-status installing">Logging in...</div>
-            )}
-        </div>
+        </>
     );
 }
 
@@ -339,49 +308,30 @@ function Discord({}: DiscordProps) {
     };
 
     return (
-        <div className="credentials flex-center flex-column full-width">
-            <input
-                type="text"
-                placeholder="Discord Client ID"
-                className="base-input"
-                style={{ width: "90%" }}
-                value={clientId}
-                onChange={(e) => setClientId(e.target.value)}
-            />
-            <input
-                type="text"
-                placeholder="Discord Client Secret"
-                className="base-input"
-                style={{ width: "90%" }}
-                value={clientSecret}
-                onChange={(e) => setClientSecret(e.target.value)}
-            />
-
-            <div className="save-input flex-center">
-                <button
-                    className="base-button"
-                    style={{
-                        padding: "8px 16px",
-                        minWidth: "60px",
-                        height: "40px",
-                    }}
-                    onClick={handleCredentialsDiscord}
-                >
-                    Save
-                </button>
-                <button
-                    className="base-button"
-                    style={{
-                        padding: "8px 16px",
-                        minWidth: "60px",
-                        height: "40px",
-                    }}
-                    onClick={handleDiscordReset}
-                >
-                    Reset
-                </button>
+        <>
+            <div className="settings-section">
+                <div className="credentials flex-center flex-column full-width">
+                    <input
+                        type="text"
+                        placeholder="Discord Client ID"
+                        className="base-input"
+                        value={clientId}
+                        onChange={(e) => setClientId(e.target.value)}
+                    />
+                    <input
+                        type="text"
+                        placeholder="Discord Client Secret"
+                        className="base-input"
+                        value={clientSecret}
+                        onChange={(e) => setClientSecret(e.target.value)}
+                    />
+                </div>
             </div>
-        </div>
+            <div className="save-input">
+                <SaveButton onClick={handleCredentialsDiscord} />
+                <ResetButton onClick={handleDiscordReset} />
+            </div>
+        </>
     );
 }
 
@@ -391,15 +341,9 @@ interface ModulesProps {
 }
 
 function Modules({ isSettings, setIsSettings }: ModulesProps) {
-    const modules: Array<keyof EnabledModules> = [
-        "spotify",
-        "discord",
-        "hoyolab",
-    ];
-    const [enabledModules, setEnabledModules] =
-        useState<EnabledModules>(DEFAULT_MODULES);
-    const [tempModules, setTempModules] =
-        useState<EnabledModules>(DEFAULT_MODULES);
+    const modules: Array<keyof EnabledModules> = ["spotify", "discord", "hoyolab"];
+    const [enabledModules, setEnabledModules] = useState<EnabledModules>(DEFAULT_MODULES);
+    const [tempModules, setTempModules] = useState<EnabledModules>(DEFAULT_MODULES);
 
     // Load settings on component mount
     useEffect(() => {
@@ -437,39 +381,28 @@ function Modules({ isSettings, setIsSettings }: ModulesProps) {
     };
 
     return (
-        <div className="settings-section">
-            <div className="module-toggles">
-                {modules.map((module) => (
-                    <div key={module} className="module-toggle">
-                        <label className="toggle-switch">
-                            <input
-                                type="checkbox"
-                                checked={tempModules[module]}
-                                onChange={() => handleModuleToggle(module)}
-                            />
-                            <span className="toggle-slider"></span>
-                        </label>
-                        <span className="module-name">
-                            {module.charAt(0).toUpperCase() + module.slice(1)}
-                        </span>
-                    </div>
-                ))}
+        <>
+            <div className="settings-section">
+                <div className="module-toggles">
+                    {modules.map((module) => (
+                        <div key={module} className="module-toggle">
+                            <label className="toggle-switch">
+                                <input
+                                    type="checkbox"
+                                    checked={tempModules[module]}
+                                    onChange={() => handleModuleToggle(module)}
+                                />
+                                <span className="toggle-slider"></span>
+                            </label>
+                            <span className="module-name">{module.charAt(0).toUpperCase() + module.slice(1)}</span>
+                        </div>
+                    ))}
+                </div>
             </div>
-
-            <div className="save-input flex-center">
-                <button
-                    className="base-button"
-                    style={{
-                        padding: "8px 16px",
-                        minWidth: "60px",
-                        height: "40px",
-                    }}
-                    onClick={handleModuleSave}
-                >
-                    Save
-                </button>
+            <div className="save-input">
+                <SaveButton onClick={handleModuleSave} />
             </div>
-        </div>
+        </>
     );
 }
 
@@ -498,9 +431,7 @@ function IrisVA({}) {
             const devices = await navigator.mediaDevices.enumerateDevices();
 
             // Filter for only audio input devices (microphones)
-            const audioInputDevices = devices.filter(
-                (device) => device.kind === "audioinput"
-            );
+            const audioInputDevices = devices.filter((device) => device.kind === "audioinput");
 
             setAudioDevices(audioInputDevices);
 
@@ -517,10 +448,8 @@ function IrisVA({}) {
 
     useEffect(() => {
         const loadSettings = async () => {
-            const selectedDeviceId =
-                (await window.settings.get("voiceAssistant.device")) || "";
-            const irisEnabledSetting =
-                (await window.settings.get("voiceAssistant.enabled")) || false;
+            const selectedDeviceId = (await window.settings.get("voiceAssistant.device")) || "";
+            const irisEnabledSetting = (await window.settings.get("voiceAssistant.enabled")) || false;
 
             setSelectedDevice(selectedDeviceId);
             setIrisEnabled(irisEnabledSetting);
@@ -533,16 +462,10 @@ function IrisVA({}) {
         getAudioDevices();
 
         // Listen for device changes (e.g., plugging in/removing a mic)
-        navigator.mediaDevices.addEventListener(
-            "devicechange",
-            getAudioDevices
-        );
+        navigator.mediaDevices.addEventListener("devicechange", getAudioDevices);
 
         return () => {
-            navigator.mediaDevices.removeEventListener(
-                "devicechange",
-                getAudioDevices
-            );
+            navigator.mediaDevices.removeEventListener("devicechange", getAudioDevices);
         };
     }, [irisEnabled]);
 
@@ -578,14 +501,7 @@ function IrisVA({}) {
     };
 
     const cleanMicrophoneName = (name: string) => {
-        const suffixesToRemove = [
-            "analog stereo",
-            "mono",
-            "stereo",
-            "digital stereo",
-            "analog",
-            "digital",
-        ];
+        const suffixesToRemove = ["analog stereo", "mono", "stereo", "digital stereo", "analog", "digital"];
 
         const lowerName = name.toLowerCase();
 
@@ -612,23 +528,14 @@ function IrisVA({}) {
                 {irisInstalled ? (
                     <>
                         <span>
-                            <h3>
-                                Voice Control Toggle (Unstable, high resource
-                                intensity!)
-                            </h3>
+                            <h3>Voice Control Toggle (Unstable, high resource intensity!)</h3>
                         </span>
                         <div className="vc-toggle">
                             <label className="toggle-switch">
-                                <input
-                                    type="checkbox"
-                                    checked={irisEnabled}
-                                    onChange={handleIrisToggle}
-                                />
+                                <input type="checkbox" checked={irisEnabled} onChange={handleIrisToggle} />
                                 <span className="toggle-slider"></span>
                             </label>
-                            <span className="module-name">
-                                Toggle "Hey Iris!"
-                            </span>
+                            <span className="module-name">Toggle "Hey Iris!"</span>
                         </div>
                         {irisEnabled && (
                             <>
@@ -643,18 +550,11 @@ function IrisVA({}) {
                                         borderColor: "#3a3a3a",
                                     }}
                                     value={selectedDevice}
-                                    onChange={(e) =>
-                                        handleMicSelect(e.target.value)
-                                    }
+                                    onChange={(e) => handleMicSelect(e.target.value)}
                                 >
                                     {audioDevices.map((device) => (
-                                        <option
-                                            key={device.deviceId}
-                                            value={device.deviceId}
-                                        >
-                                            {cleanMicrophoneName(
-                                                device.label
-                                            ) ||
+                                        <option key={device.deviceId} value={device.deviceId}>
+                                            {cleanMicrophoneName(device.label) ||
                                                 `Microphone ${device.deviceId.slice(0, 5)}...`}
                                         </option>
                                     ))}
@@ -664,20 +564,13 @@ function IrisVA({}) {
                     </>
                 ) : (
                     <div>
-                        <button
-                            className="install-button"
-                            onClick={handleModelInstall}
-                        >
+                        <button className="install-button" onClick={handleModelInstall}>
                             Install Vosk Model
                         </button>
                         {installStatus && (
                             <div
                                 className={`install-status ${
-                                    installStatus
-                                        .toLowerCase()
-                                        .includes("error")
-                                        ? "error"
-                                        : "success"
+                                    installStatus.toLowerCase().includes("error") ? "error" : "success"
                                 }`}
                             >
                                 {installStatus}
@@ -687,5 +580,38 @@ function IrisVA({}) {
                 )}
             </div>
         </div>
+    );
+}
+
+// Commonly used components
+function SaveButton({ onClick }: { onClick: () => void }) {
+    return (
+        <button
+            className="base-button"
+            style={{
+                padding: "8px 16px",
+                minWidth: "60px",
+                height: "40px",
+            }}
+            onClick={onClick}
+        >
+            Save
+        </button>
+    );
+}
+
+function ResetButton({ onClick }: { onClick: () => void }) {
+    return (
+        <button
+            className="base-button"
+            style={{
+                padding: "8px 16px",
+                minWidth: "60px",
+                height: "40px",
+            }}
+            onClick={onClick}
+        >
+            Reset
+        </button>
     );
 }
