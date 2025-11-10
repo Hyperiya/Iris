@@ -107,8 +107,8 @@
     outline: solid #27272a 1px;
 
     .speaker {
-        width: 40px;
-        height: 40px;
+        width: 38px;
+        height: 38px;
         position: relative; // Add this to make it the positioning context
         display: flex; // Add this
         align-items: center; // Add this
@@ -116,7 +116,8 @@
         overflow: visible; // Change from hidden to allow icon to show outside
 
         &.speaking img {
-            outline: 2px solid #43b56d;
+            outline: 2px solid #a6e3a1;
+            outline-offset: 2px;
         }
 
         img {
@@ -141,10 +142,13 @@
 
             &.deaf,
             &.mute {
-                background-color: #121213;
+                background-color: #f38ca9;
             }
 
             svg {
+                color: #181825;
+                align-items: center;
+                justify-content: center;
                 height: 100%;
                 width: 100%;
             }
