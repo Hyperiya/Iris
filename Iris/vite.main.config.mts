@@ -28,6 +28,7 @@ export default defineConfig({
                 "os",
                 "process",
                 "assert",
+                "stream",
                 "node:fs",
                 "node:util",
                 "node:path",
@@ -39,6 +40,7 @@ export default defineConfig({
                 "node:os",
                 "node:process",
                 "node:assert",
+                "node:stream"
             ],
 
             output: {
