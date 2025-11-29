@@ -1,5 +1,5 @@
 import "./Styles/SongLyrics.scss";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ViewState } from "../../../types/viewState.ts";
 import { logger } from "../../utils/logger.ts";
 
@@ -33,8 +33,13 @@ const SongLyrics: React.FC<SongLyricsProps> = ({ currentSong, currentTime, viewS
         onSeek(time);
     };
 
+    const currentRequestRef = useRef<string>("");
+
     useEffect(() => {
         const fetchLyrics = async () => {
+            const requestId = `${currentSong.name}-${currentSong.artist}`;
+            currentRequestRef.current = requestId;
+
             setLoading(true);
             setError(null);
 
@@ -57,7 +62,7 @@ const SongLyrics: React.FC<SongLyricsProps> = ({ currentSong, currentTime, viewS
                     window.settings.get("music.preferredLanguage")
                 );
 
-                console.log(msxLyrics)
+                console.log(msxLyrics);
 
                 if (msxLyrics && msxLyrics.length > 0) {
                     lyricsData = msxLyrics;
@@ -75,16 +80,21 @@ const SongLyrics: React.FC<SongLyricsProps> = ({ currentSong, currentTime, viewS
 
                 logger.log("Lyrics data received:", lyricsData);
 
-                if (lyricsData && lyricsData.length > 0) {
-                    setLyrics(lyricsData);
-                } else {
-                    setError("No lyrics found");
+                if (currentRequestRef.current === requestId) {
+                    if (lyricsData && lyricsData.length > 0) {
+                        setLyrics(lyricsData);
+                    } else {
+                        setError("No lyrics found");
+                    }
                 }
             } catch (err) {
-                console.error("Error fetching lyrics:", err);
-                setError("No lyrics found");
+                if (currentRequestRef.current === requestId) {
+                    setError("No lyrics found");
+                }
             } finally {
-                setLoading(false);
+                if (currentRequestRef.current === requestId) {
+                    setLoading(false);
+                }
             }
         };
 
