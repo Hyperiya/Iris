@@ -105,8 +105,6 @@ const SongLyrics: React.FC<SongLyricsProps> = ({ currentSong, currentTime, viewS
 
     useEffect(() => {
         if (lyrics.length > 0) {
-            // Store previous index before updating
-
             const index = lyrics.findIndex((lyric, i) => {
                 const nextLyric = lyrics[i + 1];
                 return currentTime >= lyric.time && (!nextLyric || currentTime < nextLyric.time);
@@ -116,14 +114,14 @@ const SongLyrics: React.FC<SongLyricsProps> = ({ currentSong, currentTime, viewS
     }, [currentTime, lyrics]);
 
     const userScrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const [isUserScrolling, setIsUserScrolling] = useState(false);
+    const isUserScrollingRef = useRef(false);
 
     useEffect(() => {
         const handleScroll = () => {
-            setIsUserScrolling(true);
+            isUserScrollingRef.current = true;
             if (userScrollTimeoutRef.current) clearTimeout(userScrollTimeoutRef.current);
             userScrollTimeoutRef.current = setTimeout(() => {
-                setIsUserScrolling(false);
+                isUserScrollingRef.current = false;
             }, 1000);
         };
 
@@ -132,22 +130,13 @@ const SongLyrics: React.FC<SongLyricsProps> = ({ currentSong, currentTime, viewS
             lyricsMenu.addEventListener("scroll", handleScroll);
         }
 
-        if (currentLyricIndex >= 0 && lyricsMenu && !isUserScrolling) {
+        if (currentLyricIndex >= 0 && lyricsMenu && !isUserScrollingRef.current) {
             const currentLyricElement = lyricsMenu.children[currentLyricIndex] as HTMLElement;
             if (currentLyricElement) {
-                // Use manual scroll instead of scrollIntoView
-                const containerRect = lyricsMenu.getBoundingClientRect();
-                const elementRect = currentLyricElement.getBoundingClientRect();
-                const scrollTop = lyricsMenu.scrollTop;
-                const targetScroll =
-                    scrollTop +
-                    (elementRect.top - containerRect.top) -
-                    containerRect.height / 2 +
-                    elementRect.height / 2;
-
-                lyricsMenu.scrollTo({
-                    top: targetScroll,
+                currentLyricElement.scrollIntoView({
                     behavior: "smooth",
+                    block: "center",
+                    inline: "nearest",
                 });
             }
         }
@@ -160,7 +149,7 @@ const SongLyrics: React.FC<SongLyricsProps> = ({ currentSong, currentTime, viewS
                 clearTimeout(userScrollTimeoutRef.current);
             }
         };
-    }, [currentLyricIndex, isUserScrolling]);
+    }, [currentLyricIndex]);
 
     if (loading) {
         return (
@@ -185,17 +174,21 @@ const SongLyrics: React.FC<SongLyricsProps> = ({ currentSong, currentTime, viewS
     return (
         <div className={`lyrics-container ${viewState === ViewState.SPOTIFY_FULL ? "shown" : ""}`} style={lyricsStyle}>
             <div className="lyrics-menu" ref={lyricsMenuRef}>
-                {lyrics.map((lyric, index) => (
+                {/* {lyrics.map((lyric, index) => (
                     <div
                         key={index}
                         className={`lyric ${index === currentLyricIndex ? "current-lyric" : ""} ${index === currentLyricIndex - 1 ? "prev-lyric" : ""} ${index === currentLyricIndex + 1 ? "next-lyric" : ""} clickable`}
                         onClick={() => handleLyricClick(lyric.time)}
+                        style={
+                            {
+                                "--text-blur": `${Math.abs(currentLyricIndex-index)*0.55}px`,
+                            } as React.CSSProperties
+                        }
                     >
                         {lyric.text}
                     </div>
-                ))}
-
-                {/* {currentLyricIndex > 0 && (
+                ))} */}
+                {currentLyricIndex > 0 && (
                     <div
                         key={`prev-${currentLyricIndex}`}
                         className="lyric secondary-lyric prev-lyric clickable"
@@ -221,7 +214,7 @@ const SongLyrics: React.FC<SongLyricsProps> = ({ currentSong, currentTime, viewS
                     >
                         {lyrics[currentLyricIndex + 1].text}
                     </div>
-                )} */}
+                )}
             </div>
         </div>
     );

@@ -21,6 +21,8 @@ import { LoadingProvider, useLoading } from "./context/LoadingContext.tsx";
 import WakeBorder from "./components/voice/WakeBorder.tsx";
 import DiscordNotification from "./components/discord/DiscordNotification.tsx";
 
+import { useViewState, ViewStateProvider } from "./context/ViewStateContext.tsx";
+
 import "../index.scss";
 import "./App.scss";
 
@@ -36,14 +38,7 @@ function AppContent() {
         return savedModules;
     });
 
-    const [viewState, setViewState] = useState<ViewState>(() => {
-        if (!enabledModules.hoyolab) {
-            return ViewState.SPOTIFY_FULL;
-        } else if (!enabledModules.spotify) {
-            return ViewState.RIGHT_FULL;
-        }
-        return ViewState.NEUTRAL;
-    });
+    const {viewState, setViewState} = useViewState()
 
     const [hide, setHide] = useState<boolean>(() => {
         if (!enabledModules.hoyolab || !enabledModules.spotify) {
@@ -188,7 +183,7 @@ function AppContent() {
 
                     {enabledModules.spotify && (
                         <div className={`spotify-section ${viewState === ViewState.SPOTIFY_FULL ? "full" : ""}`}>
-                            <SpotifyMain ViewState={viewState} />
+                            <SpotifyMain />
                         </div>
                     )}
                     {enabledModules.hoyolab && (
@@ -197,11 +192,11 @@ function AppContent() {
                                 viewState === ViewState.RIGHT_FULL
                                     ? "full"
                                     : viewState === ViewState.SPOTIFY_FULL
-                                    ? "hidden"
-                                    : ""
+                                      ? "hidden"
+                                      : ""
                             }`}
                         >
-                            <HoyoMain ViewState={viewState} />
+                            <HoyoMain />
                         </div>
                     )}
                 </div>
@@ -213,7 +208,9 @@ function AppContent() {
 export function App({}: AppProps) {
     return (
         <LoadingProvider>
-            <AppContent />
+            <ViewStateProvider>
+                <AppContent />
+            </ViewStateProvider>
         </LoadingProvider>
     );
 }

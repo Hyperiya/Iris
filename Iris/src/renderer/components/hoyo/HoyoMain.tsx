@@ -2,12 +2,10 @@ import React, { useState, useEffect } from "react";
 import GameAccountDashboard from "./GameDashboard.tsx";
 import { ViewState } from "../../../types/viewState.ts";
 import "./Styles/Main.scss";
+import { useViewState } from "../../context/ViewStateContext.tsx";
 
-interface AppProps {
-    ViewState: ViewState;
-}
-
-const HoyoMain: React.FC<AppProps> = ({ ViewState }) => {
+const HoyoMain: React.FC = () => {
+    const { viewState } = useViewState()
     useEffect(() => {
         const performLogin = async () => {
             try {
@@ -24,7 +22,7 @@ const HoyoMain: React.FC<AppProps> = ({ ViewState }) => {
                     try {
                         await window.hoyoAPI.initialize(cookie, uid);
                         const baseDetails = await window.hoyoAPI.callMethod("getBaseDetails");
-                        
+
                         console.log("Cookie login successful:", baseDetails);
                         return;
                     } catch (cookieError) {
@@ -71,7 +69,7 @@ const HoyoMain: React.FC<AppProps> = ({ ViewState }) => {
 
     return (
         <div>
-            <GameAccountDashboard viewState={ViewState} />
+            <GameAccountDashboard viewState={viewState} />
             {/* <div className="background" color='white'/> */}
         </div>
     );

@@ -9,19 +9,19 @@ import SpotifyPlaylists from "./SpotifyPlaylists.tsx";
 
 import Iris from "../../../assets/icons/Iris.png";
 
+import { useViewState } from "../../context/ViewStateContext.tsx";
+
 import "./Styles/Main.scss";
 import { Song } from "../../../services/spotifyServices/types/types.ts";
 import { ViewState } from "../../../types/viewState.ts";
 import { ColorExtractor } from "../../../utils/ColorExtractor.ts";
 import { Playlist } from "../../../services/spotifyServices/types/types.ts";
 
-interface SpotifyMainProps {
-    ViewState: ViewState;
-}
 
 window.spotify.startLink();
 
-const SpotifyMain: React.FC<SpotifyMainProps> = (viewState) => {
+const SpotifyMain: React.FC = () => {
+    const { viewState } = useViewState()
     const [currentTrackData, setCurrentTrackData] = useState<Song>({
         name: "",
         artist: "",
@@ -221,7 +221,7 @@ const SpotifyMain: React.FC<SpotifyMainProps> = (viewState) => {
     }, [currentTrackData.album_cover]);
 
     return (
-        <div className="spotify">
+        <div className={`spotify ${viewState === ViewState.SPOTIFY_FULL ? "full" : ''}`}>
             <SongBackground coverUrl={currentTrackData.album_cover || Iris} />
                 <div className="song-info">
                     <SongInfo
@@ -334,7 +334,7 @@ const SpotifyMain: React.FC<SpotifyMainProps> = (viewState) => {
                                     ? localProgress
                                     : window.spotify.currentProgress().progress_ms ?? 0
                             }
-                            viewState={viewState.ViewState}
+                            viewState={viewState}
                             colors={colors}
                             onSeek={handleSeek}
                         />
