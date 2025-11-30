@@ -117,9 +117,14 @@ const SongLyrics: React.FC<SongLyricsProps> = ({ currentSong, currentTime, viewS
 
     const userScrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const [isUserScrolling, setIsUserScrolling] = useState(false);
+    const isProgrammaticScrollRef = useRef(false);
 
     useEffect(() => {
         const handleScroll = () => {
+            if (isProgrammaticScrollRef.current) {
+                isProgrammaticScrollRef.current = false;
+                return;
+            }
             setIsUserScrolling(true);
             if (userScrollTimeoutRef.current) clearTimeout(userScrollTimeoutRef.current);
             userScrollTimeoutRef.current = setTimeout(() => {

@@ -34,20 +34,19 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 1vh 1rem;
   /* Add large top/bottom padding */
   border-radius: 8px;
   width: 50vw;
   padding: 20vh 1rem;
   /* Large top/bottom padding to allow centering */
   box-sizing: border-box;
-  max-width: 600px;
+  max-width: 700px;
   margin: 0 auto;
   overflow-y: scroll;
   /* Hide overflowing content during animations */
   height: 70vh;
   /* Allow height to adjust to content */
-  gap: 10px;
+  gap: 20px;
 
   mask-image: linear-gradient(to bottom,
       rgba(0, 0, 0, 0) 0%,
@@ -135,6 +134,8 @@
     scale: 0.98;
   }
 }
+
+
 
 @keyframes pulse {
   0% {
