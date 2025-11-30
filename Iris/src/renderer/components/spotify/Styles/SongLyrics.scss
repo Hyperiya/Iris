@@ -56,6 +56,10 @@
       rgba(0, 0, 0, 1) 90%,
       rgba(0, 0, 0, 0) 100%);
 
+  &.error {
+    justify-content: center;
+  }
+
   &::-webkit-scrollbar {
     width: 8px;
   }
@@ -189,7 +193,3 @@
   opacity: 0.8;
 }
 
-.error {
-  color: #ff4444;
-  font-style: italic;
-}
