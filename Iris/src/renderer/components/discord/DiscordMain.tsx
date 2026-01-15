@@ -1,5 +1,7 @@
 import React, { useEffect } from 'react';
 import DiscordCall from './DiscordCall.tsx';
+import { logger } from "../../utils/logger.ts";
+
 
 const DiscordMain: React.FC = ({
 
@@ -32,7 +34,7 @@ const DiscordMain: React.FC = ({
                     return;
                 } else {
                     console.log('Connected to Discord');
-                    console.log(result)
+                    logger.log(result)
                 }
             } catch (error) {
                 if (!mounted) return;
