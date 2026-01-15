@@ -99,25 +99,29 @@ interface AboutProps {
 
 function About({ handleMenuSelect }: AboutProps) {
     return (
-        <div className="about-content">
-            <div className="basic-details">
-                <img src={Iris} alt="Iris" className="iris-image" draggable="true"></img>
-                <div className="name-text">
-                    <span id="title">Iris </span>
-                    <span id="name"> By Hyperiya</span>
+        <>
+            <div className="settings-section">
+                <div className="about-content">
+                    <div className="basic-details">
+                        <img src={Iris} alt="Iris" className="iris-image" draggable="true"></img>
+                        <div className="name-text">
+                            <span id="title">Iris </span>
+                            <span id="name"> By Hyperiya</span>
+                        </div>
+                    </div>
+                    <p className="iris-text">
+                        Iris is a project created by Hyperiya (That's me!). <br />
+                        It is a project that aims to provide a user-friendly interface for the Spotify, Discord, and
+                        Hoyolab APIs. <br /> <br />
+                        Iris © 2025 is licensed under CC BY-NC-SA 4.0 (Creative Commons
+                        Attribution-NonCommercial-ShareAlike 4.0 International License). <br />
+                    </p>
                 </div>
             </div>
-            <p className="iris-text">
-                Iris is a project created by Hyperiya (That's me!). <br />
-                It is a project that aims to provide a user-friendly interface for the Spotify, Discord, and Hoyolab
-                APIs. <br /> <br />
-                Iris © 2025 is licensed under CC BY-NC-SA 4.0 (Creative Commons Attribution-NonCommercial-ShareAlike 4.0
-                International License). <br />
-            </p>
             <button className="settings-button" onClick={() => handleMenuSelect(SettingsMenu.LICENSE)}>
                 License
             </button>
-        </div>
+        </>
     );
 }
 

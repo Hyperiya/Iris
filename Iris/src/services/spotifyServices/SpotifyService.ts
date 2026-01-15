@@ -198,7 +198,7 @@ class SpotifyService extends EventEmitter {
                 activeClients++;
             }
         });
-        
+
         this._isConnected = activeClients > 0;
     }
 
@@ -229,6 +229,8 @@ class SpotifyService extends EventEmitter {
                     clearTimeout(timeoutId);
                     try {
                         if (response.type === "response" && response.action === "current") {
+                            const lastTrack = this.existingTrackData;
+
                             const song: Song = {
                                 name: response.data.name,
                                 artist: response.data.artist,
@@ -244,6 +246,39 @@ class SpotifyService extends EventEmitter {
                             };
 
                             // Handle RPC logic here...
+                            if (!isEqual(omit(song, "progress_ms"), omit(lastTrack, "progress_ms"))) {
+                                const now = Date.now();
+                                const startTime = now - (song.progress_ms || 0);
+                                const endTime = startTime + (song.duration_ms || 0);
+
+                                this.RPC.setActivity({
+                                    type: 2,
+                                    status_display_type: 2,
+                                    details: song.name,
+                                    state: song.artist,
+                                    assets: {
+                                        large_image: "iris",
+                                        large_text: song.name,
+                                        small_image: "playing",
+                                        small_text: song.artist,
+                                    },
+                                    timestamps: {
+                                        start: startTime,
+                                        end: endTime,
+                                    },
+                                    buttons: [
+                                        {
+                                            label: "Listen on Spotify",
+                                            url: `https://open.spotify.com/track/${response.data.id}`,
+                                        },
+                                        {
+                                            label: "Download this app!",
+                                            url: "https://github.com/Hyperiya/Iris",
+                                        },
+                                    ],
+                                });
+                            }
+
                             this.existingTrackData = song;
                             resolve(song);
                         }
@@ -334,7 +369,7 @@ class SpotifyService extends EventEmitter {
 
     async playNextSong(): Promise<void> {
         if (!this._isConnected) return;
-        
+
         try {
             this.sendWsMessage({
                 type: "playback",
@@ -347,7 +382,7 @@ class SpotifyService extends EventEmitter {
 
     async playUri(uri: string): Promise<void> {
         if (!this._isConnected) return;
-        
+
         try {
             this.sendWsMessage({
                 type: "playback",
@@ -361,7 +396,7 @@ class SpotifyService extends EventEmitter {
 
     async playPreviousSong(): Promise<void> {
         if (!this._isConnected) return;
-        
+
         try {
             this.sendWsMessage({
                 type: "playback",
@@ -374,7 +409,7 @@ class SpotifyService extends EventEmitter {
 
     async pausePlayback(): Promise<void> {
         if (!this._isConnected) return;
-        
+
         try {
             this.sendWsMessage({
                 type: "playback",
@@ -396,7 +431,7 @@ class SpotifyService extends EventEmitter {
 
     async resumePlayback(): Promise<void> {
         if (!this._isConnected) return;
-        
+
         try {
             this.sendWsMessage({
                 type: "playback",
@@ -409,7 +444,7 @@ class SpotifyService extends EventEmitter {
 
     async setVolume(volume: number): Promise<void> {
         if (!this._isConnected) return;
-        
+
         try {
             this.sendWsMessage({
                 type: "playback",
@@ -424,7 +459,7 @@ class SpotifyService extends EventEmitter {
     // Seeking using Ws Message
     async seek(position: number): Promise<void> {
         if (!this._isConnected) return;
-        
+
         try {
             this.sendWsMessage({
                 type: "playback",
@@ -438,7 +473,7 @@ class SpotifyService extends EventEmitter {
 
     async toggleShuffle(): Promise<void> {
         if (!this._isConnected) return;
-        
+
         try {
             this.sendWsMessage({
                 type: "playback",
@@ -451,7 +486,7 @@ class SpotifyService extends EventEmitter {
 
     async toggleRepeatMode(): Promise<void> {
         if (!this._isConnected) return;
-        
+
         try {
             this.sendWsMessage({
                 type: "playback",
@@ -471,7 +506,7 @@ class SpotifyService extends EventEmitter {
      */
     async setRepeatMode(mode: RepeatState | number): Promise<void> {
         if (!this._isConnected) return;
-        
+
         try {
             this.sendWsMessage({
                 type: "playback",
