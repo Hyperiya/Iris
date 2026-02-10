@@ -11,7 +11,6 @@ class SpotifyService extends EventEmitter {
     private existingTrackData: Song | null = null;
 
     private wss: WebSocketServer | null = null;
-    private healthServer: http.Server | null = null;
     private clients = new Set<WebSocket>();
     private mainWindow: undefined | BrowserWindow;
 
@@ -93,14 +92,14 @@ class SpotifyService extends EventEmitter {
 
             ws.on("close", () => {
                 this.clients.delete(ws);
-                this._isConnected = this.clients.size > 0;
+                this.updateConnectionState();
                 logger.log("Client disconnected");
             });
 
             ws.on("error", (error) => {
                 logger.error("WebSocket error:", error);
                 this.clients.delete(ws);
-                this._isConnected = this.clients.size > 0;
+                this.updateConnectionState();
             });
 
             // Send initial connection confirmation
@@ -110,96 +109,20 @@ class SpotifyService extends EventEmitter {
         this.wss.on("error", (error) => {
             logger.error("WebSocket server error:", error);
         });
-
-        const healthServer = http.createServer((req, res) => {
-            if (req.url === "/health") {
-                res.writeHead(200, { "Content-Type": "application/json" });
-                res.end(JSON.stringify({ status: "ok" }));
-            } else {
-                res.writeHead(404);
-                res.end();
-            }
-        });
-
-        healthServer.listen(5002, "127.0.0.1", () => {
-            logger.log("Health check server listening on port 5002");
-        });
     }
 
-    // private connectWebSocket() {
-    //     try {
-    //         this.ws = new WebSocket(this.WS_URL);
-
-    //         this.ws.onopen = () => {
-    //             logger.log("SpotifyService WebSocket connected");
-    //             this.reconnectAttempts = 0; // Reset attempts on successful connection
-    //         };
-
-    //         this.ws.onclose = (event) => {
-    //             logger.log("SpotifyService WebSocket closed:", event);
-    //             if (this.reconnectAttempts < this.MAX_RECONNECT_ATTEMPTS) {
-    //                 this.reconnectAttempts++;
-    //                 const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 10000);
-    //                 logger.log(`Attempting to reconnect in ${delay}ms...`);
-    //                 setTimeout(() => this.connectWebSocket(), delay);
-    //             }
-    //         };
-
-    //         this.ws.onerror = (error) => {
-    //             logger.error("SpotifyService WebSocket error:", error);
-    //         };
-
-    //         this.ws.onmessage = (event) => {
-    //             try {
-    //                 // This is for the progress update thingies)
-
-    //                 // Use a try-catch block to handle potential JSON parsing errors
-    //                 let response;
-    //                 try {
-    //                     response = JSON.parse(event.data);
-    //                 } catch (parseError) {
-    //                     logger.error("Error parsing WebSocket message:", parseError);
-    //                     return; // Exit the function if parsing fails
-    //                 }
-
-    //                 if (response.type === "progress") this.handleProgress(response);
-    //                 // Handle any responses from app.tsx here if needed
-    //             } catch (error) {
-    //                 logger.error("Error processing WebSocket message:", error);
-    //             }
-    //         };
-    //         logger.log("SpotifyService WebSocket created:", this.ws);
-    //     } catch (error) {
-    //         logger.error("Failed to create WebSocket:", error);
-    //     }
-    // }
-
-    // public async startLinkWs() {
-    //     if (!window.electron) {
-    //         logger.error("Electron API is not available");
-    //         return;
-    //     }
-
-    //     await window.spotify.spotifyLink();
-    //     await this.connectWebSocket();
-    // }
-
     private sendWsMessage(message: any): void {
-        if (this.clients.size === 0) {
-            this._isConnected = false;
-            return;
-        }
-
         const messageStr = JSON.stringify(message);
-        let activeClients = 0;
         this.clients.forEach((client) => {
             if (client.readyState === WebSocket.OPEN) {
                 client.send(messageStr);
-                activeClients++;
             }
         });
+        this.updateConnectionState();
+    }
 
-        this._isConnected = activeClients > 0;
+    private updateConnectionState(): void {
+        this._isConnected = Array.from(this.clients).some((client) => client.readyState === WebSocket.OPEN);
     }
 
     async handleMessage(message: string) {
@@ -667,13 +590,6 @@ class SpotifyService extends EventEmitter {
                 this.wss.close(() => {
                     logger.log("WebSocket server closed");
                     this.wss = null;
-                });
-            }
-
-            if (this.healthServer) {
-                this.healthServer.close(() => {
-                    logger.log("Health check server closed");
-                    this.healthServer = null;
                 });
             }
 

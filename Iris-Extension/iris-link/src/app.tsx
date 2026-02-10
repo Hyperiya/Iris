@@ -1,6 +1,5 @@
 // Constants
 const WEBSOCKET_URL = "ws://localhost:5001";
-const HEALTH_CHECK_URL = "http://127.0.0.1:5002/health";
 const PROGRESS_UPDATE_INTERVAL = 100;
 const RECONNECT_DELAY = 1000;
 const MAX_RECONNECT_ATTEMPTS = 5;
@@ -84,26 +83,11 @@ class IrisSpotifyExtension {
         this.isServerCheckInProgress = true;
 
         try {
-            if (!(await this.checkServerHealth())) {
-                console.log("Server not available, retrying...");
-                this.scheduleReconnect(SERVER_CHECK_INTERVAL);
-                return;
-            }
-
             this.ws = new WebSocket(WEBSOCKET_URL);
             this.setupWebSocketHandlers();
         } catch (error) {
             console.error("Failed to create WebSocket:", error);
             this.handleReconnect();
-        }
-    }
-
-    private async checkServerHealth(): Promise<boolean> {
-        try {
-            await fetch(HEALTH_CHECK_URL, { method: "HEAD", mode: "no-cors" });
-            return true;
-        } catch {
-            return false;
         }
     }
 
