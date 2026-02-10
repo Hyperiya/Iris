@@ -255,6 +255,7 @@ class IrisSpotifyExtension {
         });
     }
 
+    // Frankly, I don't remember how i got this URL. And it's outdated as of 10/2/2026 (dd/mm/yyyy)
     private async sendPlaylists(): Promise<void> {
         const res = await Spicetify.CosmosAsync.get("sp://core-playlist/v1/rootlist");
         console.log("playlists", res);
