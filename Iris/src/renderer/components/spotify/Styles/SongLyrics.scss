@@ -109,6 +109,7 @@
   // letter-spacing: 0.02em; /* Add slight spacing to reserve space */
   filter: blur(var(--text-blur));
   transition: all 0.5s ease !important;
+  will-change: transform; // Add this
 
   &.current-lyric {
     opacity: 1 !important;
@@ -127,6 +128,30 @@
   }
 }
 
+.blank-progress-dots {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+}
+
+.dot {
+
+  width: var(--dot-radius, 8px);
+  height: var(--dot-radius, 8px);
+  background-color: var(--set-dimmer-color);
+  border-radius: 50%;
+  opacity: 1;
+
+  &.active {
+    background-color: var(--average-color);
+    opacity: 1;
+  }
+}
+
+.current-lyric .dot {
+  background-color: var(--average-color);
+}
 
 .clickable {
   cursor: pointer;
@@ -195,4 +220,3 @@
   font-style: italic;
   opacity: 0.8;
 }
-

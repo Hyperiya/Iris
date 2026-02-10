@@ -1,5 +1,5 @@
 import "./Styles/SongLyrics.scss";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { ViewState } from "../../../types/viewState.ts";
 import { logger } from "../../utils/logger.ts";
 
@@ -16,11 +16,32 @@ interface SongLyricsProps {
     onSeek: (time: number) => void; // Add this new prop
 }
 
+interface LyricsLine {
+    time: number;
+    text: string;
+    blank?: boolean;
+}
+
 const SongLyrics: React.FC<SongLyricsProps> = ({ currentSong, currentTime, viewState, colors, onSeek }) => {
-    const [lyrics, setLyrics] = useState<Array<{ time: number; text: string }>>([]);
+    const [lyrics, setLyrics] = useState<Array<LyricsLine>>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [currentLyricIndex, setCurrentLyricIndex] = useState(-1);
+    // Add this after the currentLyricIndex useEffect
+    const currentLyricProgress = useMemo(() => {
+        if (currentLyricIndex >= 0 && lyrics[currentLyricIndex]) {
+            const currentLyric = lyrics[currentLyricIndex];
+            const nextLyric = lyrics[currentLyricIndex + 1];
+
+            if (nextLyric) {
+                const lyricDuration = nextLyric.time - currentLyric.time;
+                const elapsed = currentTime - currentLyric.time;
+                return Math.max(0, Math.min(1, elapsed / lyricDuration));
+            }
+        }
+        return 0;
+    }, [currentLyricIndex, currentTime, lyrics]);
+
     const lyricsMenuRef = useRef<HTMLDivElement>(null);
 
     const lyricsStyle = {
@@ -36,6 +57,28 @@ const SongLyrics: React.FC<SongLyricsProps> = ({ currentSong, currentTime, viewS
     const currentRequestRef = useRef<string>("");
 
     useEffect(() => {
+        const checkGap = (lyricsData: Array<LyricsLine>) => {
+            const gapThreshold: number = 4000;
+
+            if (lyricsData[0].time >= gapThreshold) {
+                lyricsData.unshift({ time: 0, text: "", blank: true });
+            }
+
+            // Process blanks: mark satisfactory ones, remove others (iterate backwards)
+            for (let i = lyricsData.length - 1; i >= 1; i--) {
+                if (lyricsData[i].text === "") {
+                    const nextLyric = lyricsData[i + 1];
+                    const gap = nextLyric ? nextLyric.time - lyricsData[i].time : 0;
+
+                    if (gap >= gapThreshold) {
+                        lyricsData[i].blank = true; // Mark as satisfactory blank
+                    } else {
+                        lyricsData.splice(i, 1); // Remove unsatisfactory blank
+                    }
+                }
+            }
+        };
+
         const fetchLyrics = async () => {
             const requestId = `${currentSong.name}-${currentSong.artist}`;
             currentRequestRef.current = requestId;
@@ -44,44 +87,38 @@ const SongLyrics: React.FC<SongLyricsProps> = ({ currentSong, currentTime, viewS
             setError(null);
 
             try {
-                console.log("Fetching lyrics for:", {
-                    track: currentSong.name,
-                    artist: currentSong.artist,
-                    album: currentSong.album,
-                });
-
-                let lyricsData;
-
-                const msxLyrics = await window.msx.searchLyrics(
-                    {
-                        artist: currentSong.artist,
-                        title: currentSong.name,
-                        album: currentSong.album,
-                        length: currentSong.length || 0,
-                    },
-                    window.settings.get("music.preferredLanguage")
-                );
-
-                console.log(msxLyrics);
-
-                if (msxLyrics && msxLyrics.length > 0) {
-                    lyricsData = msxLyrics;
-                } else {
-                    const lrcLyrics = await window.lrc.searchLyrics({
+                const [msxResult, lrcResult] = await Promise.allSettled([
+                    window.msx.searchLyrics(
+                        {
+                            artist: currentSong.artist,
+                            title: currentSong.name,
+                            album: currentSong.album,
+                            length: currentSong.length || 0,
+                        },
+                        window.settings.get("music.preferredLanguage")
+                    ),
+                    window.lrc.searchLyrics({
                         artist: currentSong.artist,
                         track: currentSong.name,
                         album: currentSong.album,
-                    });
+                    }),
+                ]);
 
-                    if (lrcLyrics) {
-                        lyricsData = lrcLyrics;
-                    }
+                let lyricsData;
+
+                // Check MSX first
+                if (msxResult.status === "fulfilled" && msxResult.value && msxResult.value.length > 0) {
+                    lyricsData = msxResult.value;
                 }
-
-                logger.log("Lyrics data received:", lyricsData);
+                // Fallback to LRC
+                else if (lrcResult.status === "fulfilled" && lrcResult.value && lrcResult.value.length > 0) {
+                    lyricsData = lrcResult.value;
+                }
 
                 if (currentRequestRef.current === requestId) {
                     if (lyricsData && lyricsData.length > 0) {
+                        checkGap(lyricsData);
+                        logger.log("Lyrics found:", lyricsData);
                         setLyrics(lyricsData);
                     } else {
                         setError("No lyrics found");
@@ -196,6 +233,30 @@ const SongLyrics: React.FC<SongLyricsProps> = ({ currentSong, currentTime, viewS
         );
     }
 
+    const getDotOpacity = (dotIndex: number, progress: number) => {
+        const dotProgress = progress * 3; // Scale to 0-3 range
+        const dotStart = dotIndex; // Dot 0 starts at 0, dot 1 at 1, dot 2 at 2
+
+        if (dotProgress <= dotStart) return 0.3; // Not reached yet
+        if (dotProgress >= dotStart + 1) return 1; // Fully visible
+
+        // Partially visible - interpolate between 0.3 and 1
+        const partialProgress = dotProgress - dotStart;
+        return 0.3 + 0.7 * partialProgress;
+    };
+
+    const getDotScale = (dotIndex: number, progress: number) => {
+        const dotProgress = progress * 3; // Scale to 0-3 range
+        const dotStart = dotIndex; // Dot 0 starts at 0, dot 1 at 1, dot 2 at 2
+
+        if (dotProgress <= dotStart) return 0.8; // Not reached yet - smaller
+        if (dotProgress >= dotStart + 1) return 1.2; // Fully visible - larger
+
+        // Partially visible - interpolate between 0.8 and 1.2
+        const partialProgress = dotProgress - dotStart;
+        return 0.8 + 0.3 * partialProgress;
+    };
+
     return (
         <div className={`lyrics-container ${viewState === ViewState.SPOTIFY_FULL ? "shown" : ""}`} style={lyricsStyle}>
             <div className="lyrics-menu" ref={lyricsMenuRef}>
@@ -207,7 +268,28 @@ const SongLyrics: React.FC<SongLyricsProps> = ({ currentSong, currentTime, viewS
                         } ${index === currentLyricIndex + 1 ? "next-lyric" : ""} clickable`}
                         onClick={() => handleLyricClick(lyric.time)}
                     >
-                        {lyric.text}
+                        {lyric.blank ? (
+                            <div className="blank-progress-dots">
+                                {[0, 1, 2].map((dotIndex) => (
+                                    <div
+                                        key={dotIndex}
+                                        className="dot"
+                                        style={
+                                            {
+                                                "--dot-radius": "1vw",
+                                                opacity:
+                                                    index === currentLyricIndex
+                                                        ? getDotOpacity(dotIndex, currentLyricProgress)
+                                                        : 0.3,
+                                                transform: `scale(${index === currentLyricIndex ? getDotScale(dotIndex, currentLyricProgress) : 0.8})`,
+                                            } as React.CSSProperties
+                                        }
+                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            lyric.text
+                        )}
                     </div>
                 ))}
 
