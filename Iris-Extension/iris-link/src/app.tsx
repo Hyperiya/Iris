@@ -257,7 +257,7 @@ class IrisSpotifyExtension {
 
     // Frankly, I don't remember how i got this URL. And it's outdated as of 10/2/2026 (dd/mm/yyyy)
     private async sendPlaylists(): Promise<void> {
-        const res = await Spicetify.CosmosAsync.get("sp://core-playlist/v1/rootlist");
+        const res = await Spicetify.CosmosAsync.get("");
         console.log("playlists", res);
 
         const processedRows = res.rows.map((playlist: any) => ({
@@ -295,7 +295,7 @@ class IrisSpotifyExtension {
         this.duration.current = currentTrack.duration.milliseconds;
 
         const volume = Spicetify.Player.getVolume();
-        console.log("Volume:", volume); // Debug log
+        // console.log("Volume:", volume); // Debug log
 
         this.sendMessage({
             type: "response",

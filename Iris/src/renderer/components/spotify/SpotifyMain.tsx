@@ -48,7 +48,9 @@ const SpotifyMain: React.FC = () => {
     const isMountedRef = useRef<boolean>(true);
 
     const progressRef = useRef<number>(0); // Add a ref to track between renders
-    const [playlists, setPlaylists] = useState<Playlist[] | undefined>();
+
+    // Playlists is broken while CosmosAsync in spicetify is broken, so it's commented until further notice
+    // const [playlists, setPlaylists] = useState<Playlist[] | undefined>();
 
     // NextTrack tracking
     const initialNextTrack = useCallback(async () => {
@@ -62,16 +64,16 @@ const SpotifyMain: React.FC = () => {
         }
     }, []);
 
-    useEffect(() => {
-        async () => {
-            const playlists = await window.spotify.getPlaylists();
-            setPlaylists(playlists);
-        };
-        setInterval(async () => {
-            const playlists = await window.spotify.getPlaylists();
-            setPlaylists(playlists);
-        }, 10000);
-    }, []);
+    // useEffect(() => {
+    //     async () => {
+    //         const playlists = await window.spotify.getPlaylists();
+    //         setPlaylists(playlists);
+    //     };
+    //     setInterval(async () => {
+    //         const playlists = await window.spotify.getPlaylists();
+    //         setPlaylists(playlists);
+    //     }, 10000);
+    // }, []);
 
     // CurrentTrack Tracking
     useEffect(() => {
@@ -315,10 +317,10 @@ const SpotifyMain: React.FC = () => {
                             albumCover: nextTrackData.album_cover || Iris,
                         }}
                     />
-                    <SpotifyPlaylists
+                    {/* <SpotifyPlaylists
                         playlists={playlists}
                         onSelectedPlaylist={(playlistId: string) => window.spotify.playUri(playlistId)}
-                    />
+                    /> */}
                 </div>
                 {hasInitialData && (
                     <div className="song-lyrics">
