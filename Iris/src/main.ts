@@ -21,7 +21,7 @@ declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 
 import { setupIpcHandlers } from "./ipc/index.ts";
 
-import spotifyService from "./services/spotifyServices/SpotifyService.ts";
+import spotifyService from "./services/mediaServices/SpotifyService.ts";
 import { saveWindowState, restoreWindowState } from "./utils/windowState.ts";
 import { CommandProcessor } from "./services/VAServices/CommandProcessor.ts";
 import { logger } from "./utils/logger.ts"

@@ -1,4 +1,3 @@
-// src/renderer/components/spotify/VolumeControls.tsx
 import React, { useState, useRef, useEffect } from 'react';
 import './Styles/SongVolume.scss';
 import { VolumeDownRounded, VolumeUpRounded } from '@mui/icons-material';

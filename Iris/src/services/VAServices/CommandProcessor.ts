@@ -1,4 +1,4 @@
-import spotifyService from "../spotifyServices/SpotifyService.ts";
+import spotifyService from "../mediaServices/SpotifyService.ts";
 import DiscordRPC from "../discordServices/discordRPC.ts";
 import { getDiscordRPC } from "../../ipc/handlers/discord.ts";
 import { DiscordNotificationType } from "../discordServices/types.ts";

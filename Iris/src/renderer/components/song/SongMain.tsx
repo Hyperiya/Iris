@@ -5,17 +5,16 @@ import SongControls from "./SongControls.tsx";
 import SongUpcoming from "./SongUpcoming.tsx";
 import SongBackground from "./SongBackground.tsx";
 import SongLyrics from "./SongLyrics.tsx";
-import SpotifyPlaylists from "./SpotifyPlaylists.tsx";
 
 import Iris from "../../../assets/icons/Iris.png";
 
 import { useViewState } from "../../context/ViewStateContext.tsx";
 
 import "./Styles/Main.scss";
-import { Song } from "../../../services/spotifyServices/types/types.ts";
+import { Song } from "../../../services/mediaServices/types/types.ts";
 import { ViewState } from "../../../types/viewState.ts";
 import { ColorExtractor } from "../../../utils/ColorExtractor.ts";
-import { Playlist } from "../../../services/spotifyServices/types/types.ts";
+import { Playlist } from "../../../services/mediaServices/types/types.ts";
 
 
 window.spotify.startLink();

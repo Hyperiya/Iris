@@ -1,6 +1,6 @@
 import { ipcMain } from "electron";
-import spotifyService from "../../services/spotifyServices/SpotifyService.ts";
-import { LrcLibApi } from "../../services/spotifyServices/LrcLibService.ts";
+import spotifyService from "../../services/mediaServices/SpotifyService.ts";
+import { LrcLibApi } from "../../services/mediaServices/LrcLibService.ts";
 
 const lrcLibApi = new LrcLibApi();
 

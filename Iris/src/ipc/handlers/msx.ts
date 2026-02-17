@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron';
-import { MsXService } from '../../services/spotifyServices/MsXService.ts';
-import type { TrackMetadata } from '../../services/spotifyServices/types/lyrics.ts';
+import { MsXService } from '../../services/mediaServices/MsXService.ts';
+import type { TrackMetadata } from '../../services/mediaServices/types/lyrics.ts';
 
 const msxService = new MsXService();
 

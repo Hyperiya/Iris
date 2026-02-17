@@ -12,7 +12,7 @@ import { logger } from "./utils/logger.ts";
 
 import Titlebar from "./components/Titlebar.tsx";
 import Settings from "./components/Settings.tsx";
-import SpotifyMain from "./components/spotify/SpotifyMain.tsx";
+import SpotifyMain from "./components/song/SongMain.tsx";
 import HoyoMain from "./components/hoyo/HoyoMain.tsx";
 import DiscordMain from "./components/discord/DiscordMain.tsx";
 import AppSelector from "./components/AppSelector.tsx";
