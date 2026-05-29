@@ -16,6 +16,6 @@
     "spicetify-creator": "^1.0.17"
   },
   "dependencies": {
-    "ws": "^8.18.1"
+    "ws": "^8.20.1"
   }
 }
