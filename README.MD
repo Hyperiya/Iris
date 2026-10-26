@@ -4,11 +4,9 @@
 Iris is an Electron-based desktop application that seamlessly integrates Discord, Spotify, and Hoyoverse game services into an interface. It provides real-time music controls, game status tracking, and Discord voice chat management with a sleek, modern design.
 
 Features:
-- Spotify integration with real-time playback controls, lyrics display, and dynamic background theming based on album artwork
-- Discord voice chat management with mute/deafen controls and user status tracking
-- Hoyoverse game tracking for Genshin Impact, Honkai: Star Rail, and Zenless Zone Zero with real-time resin/stamina monitoring
-- Customizable modular interface that allows users to enable/disable specific features
-- System-native window controls with frameless design
+- Spotify integration with playback controls, lyrics display, and background theming based on the album (or song)'s artwork
+- Discord voice chat integration with mute/deafen controls
+- Hoyoverse game tracking for Genshin Impact, Honkai: Star Rail, and Zenless Zone Zero with stamina monitoring
 - Voice Assistant for Discord and Spotify
 
 ## Examples
@@ -80,10 +78,10 @@ cd App
 npm start
 ```
 
-2. Enable desired modules in the settings menu (accessible via the gear icon in the titlebar)
+2. Enable desired modules in the settings menu (accessible via the gear icon in the title-bar)
 
 3. Connect your accounts:
-   - Spotify: Click the button to install the extention, ensuring you have Spicetify, and that it works properly. If you compiled the extention yourself, make sure that the extention is applied.
+   - Spotify: Click the button to install the extension, ensuring you have Spicetify, and that it works properly. If you compiled the extension yourself, make sure that the extension is applied.
    - Discord: Enter in your client ID and client Secret from https://discord.com/developers/applications (Make a new application) and grant permissions when prompted
    - Hoyoverse: Log in through the settings menu
 
@@ -92,28 +90,28 @@ npm start
 Iris supports voice commands (when enabled) using the wake word "Hey Iris" followed by any of these commands:
 
 ### Discord Commands
-| Command | Aliases | Action |
-|---------|---------|--------|
-| `leave call` | hang up, disconnect | Leave current voice channel |
-| `deafen` | stephen, duffin, devon, death and, and, death in | Deafen yourself |
-| `undeafen` | under often, under and, under fun, under under oven | Undeafen yourself |
-| `mute` | *word matching* | Mute your microphone |
-| `unmute` | *word matching* | Unmute your microphone |
+| Command      | Aliases                                            | Action                        |
+|--------------|----------------------------------------------------|-------------------------------|
+| `leave call` | hang up, disconnect                                 | Leave current voice channel  |
+| `deafen`     | stephen, duffin, devon, death and, and, death in    | Deafen yourself              |
+| `undeafen`   | under often, under and, under fun, under under oven | Undeafen yourself            |
+| `mute`       | *word matching*                                     | Mute your microphone         |
+| `unmute`     | *word matching*                                     | Unmute your microphone       |
 
 ### Spotify Commands
-| Command | Aliases | Action |
-|---------|---------|--------|
-| `play` | resume, continue | Resume playback |
-| `pause` | stop | Pause playback |
-| `next song` | next, skip | Skip to next track |
-| `previous song` | previous, back | Go to previous track |
-| `shuffle` | mix | Toggle shuffle mode |
-| `repeat` | repeat playlist, repeat album | Repeat playlist/album |
-| `repeat song` | repeat track | Repeat current track |
-| `stop repeating` | *word matching* | Turn off repeat |
-| `increase volume` | volume up | Increase volume |
-| `decrease volume` | volume down | Decrease volume |
-| `set volume` | volume, set volume to | Sets volume to value stated after | 
+| Command           | Aliases                       | Action                            |
+|-------------------|-------------------------------|-----------------------------------|
+| `play`            | resume, continue              | Resume playback                   |
+| `pause` | stop    |                               | Pause playback                    |
+| `next song`       | next, skip                    | Skip to next track                |
+| `previous song`   | previous, back                | Go to previous track              |
+| `shuffle`, `mix`  |                               | Toggle shuffle mode               |
+| `repeat`          | repeat playlist, repeat album | Repeat playlist/album             |
+| `repeat song`     | repeat track                  | Repeat current track              |
+| `stop repeating`  | *word matching*               | Turn off repeat                   |
+| `increase volume` | volume up                     | Increase volume                   |
+| `decrease volume` | volume down                   | Decrease volume                   |
+| `set volume`      | volume, set volume to         | Sets volume to value stated after | 
 
 ### Command Types
 - **Exact Match**: Command must be spoken exactly as listed
@@ -121,11 +119,11 @@ Iris supports voice commands (when enabled) using the wake word "Hey Iris" follo
 - **Aliases**: Alternative phrases that trigger the same action
 
 ### Examples
-- "Hey Iris play" → Resumes Spotify playback
-- "Hey Iris please play some music" → Also resumes playback (word matching)
-- "Hey Iris stephen" → Deafens you in Discord (common misheard word)
+- "Hey Iris play" -> Resumes Spotify playback
+- "Hey Iris please play some music" -> Also resumes playback (word matching)
+- "Hey Iris stephen" -> Deafens you in Discord (common misheard word)
 
-> **Note**: Many Discord commands have multiple aliases due to speech recognition challenges with technical terms like "deafen" and "undeafen".
+> **Note**: Discord commands have multiple aliases due to speech recognition confusing technical terms like "deafen" and "undeafen".
 
 ### More Detailed Examples
 #### Spotify Controls
@@ -162,22 +160,6 @@ window.discord.voice.deafen();
    - Verify login credentials
    - Check network connectivity
    - Ensure correct server region is selected
-
-## Data Flow
-Iris manages real-time data flow between multiple services through WebSocket connections and IPC channels.
-
-```ascii
-[Spotify Client] <-> [Spicetify Extension] <-> [WebSocket] <-> [Electron Main] <-> [React UI]
-[Discord Client] <-> [Discord RPC] <-> [IPC Bridge] <-> [Electron Main] <-> [React UI]
-[Hoyoverse API] <-> [HTTP Client] <-> [Service Layer] <-> [Electron Main] <-> [React UI]
-```
-
-Key interactions:
-- Spotify playback state is synchronized through WebSocket connection
-- Discord voice states are managed through RPC and IPC channels
-- Hoyoverse game data is fetched through authenticated HTTP requests
-- UI updates are managed through React state management
-- Theme colors are dynamically extracted from album artwork
 
 # License
 Iris © 2025 is licensed under CC BY-NC-SA 4.0 
