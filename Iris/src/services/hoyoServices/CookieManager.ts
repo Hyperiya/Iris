@@ -1,7 +1,7 @@
 /*
 Hyperiya again!
 This time, we are going to make a cookie manager. 
-We will be using the cookie string to get the essential cookies and format them for the header. (AI GENERATED COMMENT.)
+We will be using the cookie string to get the essential cookies and format them for the header.
 */
 
 export class CookieManager {
