@@ -102,10 +102,10 @@ Iris supports voice commands (when enabled) using the wake word "Hey Iris" follo
 | Command           | Aliases                       | Action                            |
 |-------------------|-------------------------------|-----------------------------------|
 | `play`            | resume, continue              | Resume playback                   |
-| `pause` | stop    |                               | Pause playback                    |
+| `pause` | stop    | Pause playback                    |
 | `next song`       | next, skip                    | Skip to next track                |
 | `previous song`   | previous, back                | Go to previous track              |
-| `shuffle`, `mix`  |                               | Toggle shuffle mode               |
+| `shuffle`, `mix`  | Toggle shuffle mode               |
 | `repeat`          | repeat playlist, repeat album | Repeat playlist/album             |
 | `repeat song`     | repeat track                  | Repeat current track              |
 | `stop repeating`  | *word matching*               | Turn off repeat                   |
